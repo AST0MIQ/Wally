@@ -1,0 +1,53 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# serwist build output (regenerated on every build)
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
+
+# production
+/build
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# env — keep .env.example tracked
+.env
+.env*.local
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+
+# prisma local db
+/prisma/*.db
+/prisma/*.db-journal
+
+# editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# fonts: only the web build is used by the app; keep the rest local-only
+/public/fonts/Desktop/
+/public/fonts/App/
+/public/fonts/Game/
+
+# Vercel metadata and isolated verification builds
+/.vercel/
+/.next-*/
+.vercel
+.env*

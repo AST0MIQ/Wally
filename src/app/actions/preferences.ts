@@ -1,0 +1,73 @@
+"use server";
+
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
+
+import { auth } from "@/server/auth";
+import { prisma } from "@/server/db";
+import {
+  isLocale,
+  isThemeChoice,
+  LOCALE_COOKIE,
+  THEME_COOKIE,
+  type Locale,
+  type ThemeChoice,
+} from "@/i18n/config";
+
+const ONE_YEAR = 60 * 60 * 24 * 365;
+
+/**
+ * Set the active UI language. Always writes the cookie (drives next-intl);
+ * also persists to `User.locale` when signed in.
+ */
+export async function setLocale(next: Locale): Promise<void> {
+  if (!isLocale(next)) return;
+
+  const cookieStore = await cookies();
+  cookieStore.set(LOCALE_COOKIE, next, {
+    path: "/",
+    maxAge: ONE_YEAR,
+    sameSite: "lax",
+  });
+
+  const session = await auth();
+  if (session?.user?.id) {
+    await prisma.user
+      .update({
+        where: { id: session.user.id },
+        data: { locale: next === "th" ? "TH" : "EN" },
+      })
+      .catch(() => {
+        /* non-critical: cookie already applied */
+      });
+  }
+
+  revalidatePath("/", "layout");
+}
+
+/** Set the color theme. Cookie drives SSR `data-theme`; persisted when signed in. */
+export async function setTheme(next: ThemeChoice): Promise<void> {
+  if (!isThemeChoice(next)) return;
+
+  const cookieStore = await cookies();
+  cookieStore.set(THEME_COOKIE, next, {
+    path: "/",
+    maxAge: ONE_YEAR,
+    sameSite: "lax",
+  });
+
+  const session = await auth();
+  if (session?.user?.id) {
+    await prisma.user
+      .update({
+        where: { id: session.user.id },
+        data: {
+          theme:
+            next === "light" ? "LIGHT" : next === "dark" ? "DARK" : "SYSTEM",
+        },
+      })
+      .catch(() => {});
+  }
+
+  revalidatePath("/", "layout");
+}

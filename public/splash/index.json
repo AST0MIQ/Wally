@@ -1,0 +1,52 @@
+[
+  {
+    "w": 1170,
+    "h": 2532,
+    "href": "/splash/iphone-13.png"
+  },
+  {
+    "w": 1284,
+    "h": 2778,
+    "href": "/splash/iphone-13-pro-max.png"
+  },
+  {
+    "w": 1179,
+    "h": 2556,
+    "href": "/splash/iphone-15.png"
+  },
+  {
+    "w": 1290,
+    "h": 2796,
+    "href": "/splash/iphone-15-pro-max.png"
+  },
+  {
+    "w": 1125,
+    "h": 2436,
+    "href": "/splash/iphone-x.png"
+  },
+  {
+    "w": 828,
+    "h": 1792,
+    "href": "/splash/iphone-xr.png"
+  },
+  {
+    "w": 750,
+    "h": 1334,
+    "href": "/splash/iphone-8.png"
+  },
+  {
+    "w": 1536,
+    "h": 2048,
+    "href": "/splash/ipad.png"
+  },
+  {
+    "w": 1668,
+    "h": 2388,
+    "href": "/splash/ipad-pro-11.png"
+  },
+  {
+    "w": 2048,
+    "h": 2732,
+    "href": "/splash/ipad-pro-12.png"
+  }
+]

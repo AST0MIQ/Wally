@@ -1,0 +1,22 @@
+# Local configuration and generated outputs must never be uploaded.
+.env
+.env.*
+.next*/
+node_modules/
+.git/
+.vercel/
+.claude/
+.agents/
+.codex/
+*.tsbuildinfo
+.DS_Store
+# Documentation, QA fixtures and local-only tooling.
+docs/
+e2e/
+test-results/
+playwright-report/
+src/app/ui-preview/
+scripts/dev-user.ts
+public/fonts/Desktop/
+public/fonts/App/
+public/fonts/Game/
