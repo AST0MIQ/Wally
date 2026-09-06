@@ -42,6 +42,11 @@
   },
   "pwa": {
     "install": "ติดตั้งแอป",
+    "installTitle": "ติดตั้ง Wally บนหน้าจอโฮม",
+    "installDescription": "บน iPhone ให้เพิ่ม Wally จากเมนูแชร์ของเบราว์เซอร์",
+    "installStepShare": "แตะปุ่มแชร์ในแถบเครื่องมือของเบราว์เซอร์",
+    "installStepHome": "เลือก “เพิ่มไปยังหน้าจอโฮม” แล้วกดเพิ่ม",
+    "understood": "เข้าใจแล้ว",
     "updateAvailable": "มี Wally เวอร์ชันใหม่แล้ว",
     "update": "อัปเดต"
   },

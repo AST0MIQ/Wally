@@ -42,6 +42,11 @@
   },
   "pwa": {
     "install": "Install app",
+    "installTitle": "Install Wally on your Home Screen",
+    "installDescription": "On iPhone, add Wally from your browser's share menu.",
+    "installStepShare": "Tap the Share button in the browser toolbar.",
+    "installStepHome": "Choose “Add to Home Screen”, then tap Add.",
+    "understood": "Got it",
     "updateAvailable": "A new version of Wally is available.",
     "update": "Update"
   },

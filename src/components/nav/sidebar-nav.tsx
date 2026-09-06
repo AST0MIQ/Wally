@@ -1,15 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Shield, Plus, Download, Wallet } from "lucide-react";
+import { Shield, Plus, Download, Wallet, Share2, SquarePlus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/components/nav/nav-items";
 import { LanguageSwitcher } from "@/components/nav/language-switcher";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useQuickAdd } from "@/components/transactions/quick-add-provider";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 
@@ -27,7 +37,8 @@ export function SidebarNav({
   const t = useTranslations("nav");
   const tp = useTranslations("pwa");
   const { open: openQuickAdd } = useQuickAdd();
-  const { available: canInstall, promptInstall } = usePwaInstall();
+  const { available: canInstall, installed, promptInstall } = usePwaInstall();
+  const [installHelpOpen, setInstallHelpOpen] = useState(false);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -85,14 +96,18 @@ export function SidebarNav({
       </nav>
 
       <div className="mt-auto flex flex-col gap-3 border-t border-border px-1 pt-4">
-        {canInstall && (
+        {!installed && (
           <Button
             variant="secondary"
             size="sm"
             className="justify-start"
             onClick={() => {
-              onNavigate?.();
-              void promptInstall();
+              if (canInstall) {
+                onNavigate?.();
+                void promptInstall();
+                return;
+              }
+              setInstallHelpOpen(true);
             }}
           >
             <Download className="size-4" />
@@ -105,6 +120,34 @@ export function SidebarNav({
         )}
         <SignOutButton />
       </div>
+
+      <Dialog open={installHelpOpen} onOpenChange={setInstallHelpOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{tp("installTitle")}</DialogTitle>
+            <DialogDescription>{tp("installDescription")}</DialogDescription>
+          </DialogHeader>
+          <ol className="grid gap-4 py-2 text-sm">
+            <li className="flex gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Share2 className="size-4" />
+              </span>
+              <span className="pt-2">{tp("installStepShare")}</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <SquarePlus className="size-4" />
+              </span>
+              <span className="pt-2">{tp("installStepHome")}</span>
+            </li>
+          </ol>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button>{tp("understood")}</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
