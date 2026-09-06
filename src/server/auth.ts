@@ -40,6 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async signIn({ user }) {
       if (!user.id) return;
+      await applyAdminBootstrap(user.id, user.email);
       await prisma.user
         .update({
           where: { id: user.id },
