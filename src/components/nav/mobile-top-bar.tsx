@@ -24,8 +24,7 @@ export function MobileTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/70 bg-card/80 px-3 backdrop-blur-xl",
-        "pt-[env(safe-area-inset-top)]",
+        "mobile-safe-header sticky top-0 z-30 flex items-center gap-2 border-b border-border/70 bg-card/80 px-3 backdrop-blur-xl",
         className,
       )}
     >
@@ -38,7 +37,7 @@ export function MobileTopBar({
         >
           <Menu className="size-5" />
         </button>
-        <SideDrawerContent>
+        <SideDrawerContent className="mobile-safe-drawer">
           <DrawerTitle className="sr-only">{t("menu")}</DrawerTitle>
           <SidebarNav
             role={role}

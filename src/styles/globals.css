@@ -167,6 +167,21 @@ body {
   }
 }
 
+/* The top safe-area padding needs its own height. Keeping a fixed h-14 while
+   adding padding places the controls back inside the iOS status bar. */
+.mobile-safe-header {
+  height: calc(3.5rem + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+}
+
+.mobile-safe-drawer {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
 ::selection {
   background-color: color-mix(in oklab, var(--color-primary) 25%, transparent);
 }
