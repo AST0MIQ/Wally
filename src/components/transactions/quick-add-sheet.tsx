@@ -230,12 +230,19 @@ export function QuickAddSheet({
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {currency}
           </p>
-          <label htmlFor="quick-amount" className="sr-only">{tt("amount")}</label>
-          <input id="quick-amount" autoFocus inputMode="decimal" autoComplete="off" placeholder="0"
-            value={amount}
-            onChange={(e) => { const value = e.target.value; if (/^\d*(\.\d{0,2})?$/.test(value)) setAmount(value); }}
-            className={cn("w-full rounded-lg bg-transparent py-2 text-center !text-4xl font-semibold tracking-tight tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring", mode === "EXPENSE" && "text-negative", mode === "INCOME" && "text-positive")}
-          />
+          <span id="quick-amount-label" className="sr-only">{tt("amount")}</span>
+          <output
+            id="quick-amount"
+            aria-labelledby="quick-amount-label"
+            aria-live="polite"
+            className={cn(
+              "block min-h-14 w-full rounded-lg bg-transparent py-2 text-center text-4xl font-semibold tracking-tight tabular-nums",
+              mode === "EXPENSE" && "text-negative",
+              mode === "INCOME" && "text-positive",
+            )}
+          >
+            {amount || "0"}
+          </output>
           {amountValue > 0 && (
             <p className="text-sm text-muted-foreground">
               {formatCurrency(amountValue, currency, locale)}
