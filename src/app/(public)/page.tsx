@@ -26,7 +26,7 @@ export default async function LandingPage({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
+      <header className="landing-safe-header mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
         <span className="text-lg font-bold tracking-tight">Wally</span>
         <LanguageSwitcher />
       </header>
@@ -50,7 +50,7 @@ export default async function LandingPage({
         )}
       </main>
 
-      <footer className="mx-auto w-full max-w-5xl px-6 py-6 text-sm text-muted-foreground">
+      <footer className="landing-safe-footer mx-auto w-full max-w-5xl px-6 py-6 text-sm text-muted-foreground">
         {t("landing.footer")}
       </footer>
     </div>

@@ -151,6 +151,22 @@ body {
   background-image: radial-gradient(circle at 74% -12%, color-mix(in srgb, var(--primary) 5%, transparent), transparent 32rem);
 }
 
+/* Keep the landing page clear of the iPhone sensor housing and home indicator
+   when Wally is launched from the Home Screen. */
+@media (display-mode: standalone) {
+  .landing-safe-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+    padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  }
+
+  .landing-safe-footer {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  }
+}
+
 ::selection {
   background-color: color-mix(in oklab, var(--color-primary) 25%, transparent);
 }
