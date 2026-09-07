@@ -39,14 +39,18 @@ export function DrawerContent({
 export function SideDrawerContent({
   className,
   children,
+  side = "left",
   ...props
-}: React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>) {
+}: React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
+  side?: "left" | "right";
+}) {
   return (
     <DrawerPrimitive.Portal>
       <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45" />
       <DrawerPrimitive.Content
         className={cn(
-          "glass fixed inset-y-0 left-0 z-50 flex w-[82%] max-w-xs flex-col border-r border-glass",
+          "glass fixed inset-y-0 z-50 flex w-[82%] max-w-xs flex-col border-glass",
+          side === "right" ? "right-0 border-l" : "left-0 border-r",
           className,
         )}
         {...props}

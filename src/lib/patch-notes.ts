@@ -1,5 +1,5 @@
 export const PATCH_NOTES = [
-  { version: "1.3.1", th: ["ปัดจากขอบซ้ายของจอเพื่อเปิดเมนูได้ (บนมือถือ)"], en: ["Swipe from the left edge of the screen to open the menu (mobile)"] },
+  { version: "1.3.1", th: ["ย้ายปุ่มเมนูไปฝั่งขวา และปัดจากขอบขวาของจอเพื่อเปิดเมนูได้ (บนมือถือ)"], en: ["Move the menu button to the right and swipe from the right edge to open it (mobile)"] },
   { version: "1.3.0", th: ["ปรับดีไซน์แถบเมนู หน้าต่าง และแจ้งเตือนเป็นสไตล์กระจกโปร่ง (liquid glass) รองรับทั้งธีมสว่างและมืด", "ย่อการ์ดภาพรวมทรัพย์สินสุทธิให้กระชับ อ่านง่ายขึ้น", "จัดหน้าพอร์ตใหม่: ลดตัวเลขซ้ำ และรวมปุ่มเพิ่มสินทรัพย์ให้อยู่ที่เดียว"], en: ["Refresh the nav bars, sheets and toasts with a liquid-glass look in both light and dark themes", "Tighten the net-worth overview card", "Reorganise the portfolio page: fewer duplicate figures, one place to add assets"] },
   { version: "1.2.0", th: ["บันทึกสีหลักไว้กับบัญชีผู้ใช้และซิงก์ข้ามอุปกรณ์", "เพิ่มเมนู Patch Notes พร้อมจุดแจ้งเตือนเวอร์ชันใหม่", "ปรับอีเมลผู้ดูแลระบบ"], en: ["Sync the app accent color with the user account", "Add Patch Notes with an unread update indicator", "Update the administrator email"] },
   { version: "1.1.6", th: ["แสดงความคืบหน้า OCR และผลลัพธ์ทีละภาพ"], en: ["Show OCR progress and results one image at a time"] },
