@@ -22,12 +22,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           locale?: "TH" | "EN";
           baseCurrency?: string;
           timezone?: string;
+          accent?: string;
+          lastSeenVersion?: string;
         };
         session.user.id = dbUser.id;
         session.user.role = dbUser.role ?? "USER";
         session.user.locale = dbUser.locale ?? "TH";
         session.user.baseCurrency = dbUser.baseCurrency ?? "THB";
         session.user.timezone = dbUser.timezone ?? "Asia/Bangkok";
+        session.user.accent = dbUser.accent ?? "blue";
+        session.user.lastSeenVersion = dbUser.lastSeenVersion ?? "1.0.0";
       }
       return session;
     },
@@ -37,6 +41,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!user.id) return;
       await applyAdminBootstrap(user.id, user.email);
       await seedUserDefaults(user.id);
+      // A brand-new account has nothing to "catch up" on — start at the current version.
+      const { APP_VERSION } = await import("@/lib/version");
+      await prisma.user
+        .update({ where: { id: user.id }, data: { lastSeenVersion: APP_VERSION } })
+        .catch(() => {});
     },
     async signIn({ user }) {
       if (!user.id) return;

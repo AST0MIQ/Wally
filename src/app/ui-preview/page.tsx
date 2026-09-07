@@ -13,5 +13,5 @@ export default async function Preview({ searchParams }: { searchParams: Promise<
     expenseByCategory: ["Food & drinks", "Housing", "Shopping", "Transport"].map((name, i) => ({ categoryId: name, name, systemKey: null, icon: ["☕","🏠","🛍️","🚗"][i]!, color: ["#f97316","#14b8a6","#8b5cf6","#3b82f6"][i]!, amount: ["12500","7200","5150","3000"][i]!, pct: [45,26,18,11][i]! })),
     incomeExpense: [], netWorthHistory: [],
   };
-  return <AppShell role="USER" email="alex@example.com" accounts={[]} categories={[]}><DashboardView data={data} firstName="Alex" /></AppShell>;
+  return <AppShell role="USER" email="alex@example.com" lastSeenVersion="1.0.0" accounts={[]} categories={[]}><DashboardView data={data} firstName="Alex" /></AppShell>;
 }

@@ -11,7 +11,8 @@ declare module "next-auth" {
       locale: AppLocale;
       baseCurrency: string;
       timezone: string;
+      accent: string;
+      lastSeenVersion: string;
     } & DefaultSession["user"];
   }
 }
-

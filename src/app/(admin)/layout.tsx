@@ -10,7 +10,7 @@ export default async function AdminLayout({
 
   // Admins have no financial data surface — Quick Add is intentionally empty.
   return (
-    <AppShell role={user.role} email={user.email} accounts={[]} categories={[]}>
+    <AppShell role={user.role} email={user.email} lastSeenVersion={user.lastSeenVersion} accounts={[]} categories={[]}>
       {children}
     </AppShell>
   );

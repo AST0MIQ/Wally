@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ConfirmHost } from "@/components/ui/confirm";
 import { AppleSplash } from "@/components/pwa/apple-splash";
 import { ServiceWorker } from "@/components/pwa/service-worker";
+import { auth } from "@/server/auth";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -50,12 +51,14 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const session = await auth();
 
   const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isThemeChoice(themeCookie) ? themeCookie : "system";
   const dataTheme = theme === "system" ? undefined : theme;
   const accentCookie = (await cookies()).get(ACCENT_COOKIE)?.value;
-  const accent = isAccentChoice(accentCookie) ? accentCookie : "blue";
+  const userAccent = session?.user?.accent;
+  const accent = isAccentChoice(userAccent) ? userAccent : isAccentChoice(accentCookie) ? accentCookie : "blue";
 
   return (
     <html lang={locale} data-theme={dataTheme} data-accent={accent} suppressHydrationWarning>

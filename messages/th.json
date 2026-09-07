@@ -28,6 +28,7 @@
     "loadMore": "โหลดเพิ่ม"
   },
   "nav": {
+    "patchNotes": "มีอะไรใหม่",
     "dashboard": "ภาพรวม",
     "transactions": "รายการ",
     "accounts": "บัญชี",
@@ -39,6 +40,11 @@
     "addTransaction": "เพิ่มรายการ",
     "menu": "เมนู",
     "skipContent": "ข้ามไปยังเนื้อหา"
+  },
+  "patchNotes": {
+    "title": "มีอะไรใหม่",
+    "description": "รายการอัปเดตและการปรับปรุงของ Wally",
+    "latest": "ล่าสุด"
   },
   "pwa": {
     "install": "ติดตั้งแอป",

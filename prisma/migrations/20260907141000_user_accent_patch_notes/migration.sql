@@ -1,0 +1,3 @@
+ALTER TABLE "User"
+ADD COLUMN "accent" TEXT NOT NULL DEFAULT 'blue',
+ADD COLUMN "lastSeenVersion" TEXT NOT NULL DEFAULT '1.0.0';

@@ -34,6 +34,8 @@ model User {
   baseCurrency String    @default("THB") // ISO 4217
   timezone     String    @default("Asia/Bangkok")
   theme        Theme     @default(SYSTEM)
+  accent       String    @default("blue")
+  lastSeenVersion String  @default("1.0.0")
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

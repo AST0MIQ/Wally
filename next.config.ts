@@ -12,13 +12,16 @@ const withSerwist = withSerwistInit({
   reloadOnOnline: true,
 });
 
-// CSP: the app makes no cross-origin browser requests (frankfurter / Finnhub are
-// called server-side). Google avatars load client-side; OAuth is a top-level
-// navigation. `'unsafe-inline'` is kept for Next's small bootstrap scripts and
-// Tailwind's injected styles — nonce-based CSP is the stricter future step.
+// CSP: frankfurter / Finnhub are called server-side. Google avatars load
+// client-side; OAuth is a top-level navigation. The slip / holdings OCR
+// (tesseract.js) loads its worker + WASM core from jsDelivr and language data
+// from tessdata.projectnaptha.com, and needs `'wasm-unsafe-eval'` to compile the
+// WASM core (this permits WebAssembly only, not JS `eval`). `'unsafe-inline'` is
+// kept for Next's small bootstrap scripts and Tailwind's injected styles —
+// nonce-based CSP is the stricter future step.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" +
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net" +
     (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.googleusercontent.com",

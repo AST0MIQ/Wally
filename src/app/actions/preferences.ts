@@ -27,6 +27,18 @@ export async function setAccent(next: string): Promise<void> {
     maxAge: ONE_YEAR,
     sameSite: "lax",
   });
+  const session = await auth();
+  if (session?.user?.id) {
+    await prisma.user.update({ where: { id: session.user.id }, data: { accent: next } });
+  }
+  revalidatePath("/", "layout");
+}
+
+export async function markPatchNotesSeen(): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) return;
+  const { APP_VERSION } = await import("@/lib/version");
+  await prisma.user.update({ where: { id: session.user.id }, data: { lastSeenVersion: APP_VERSION } });
   revalidatePath("/", "layout");
 }
 

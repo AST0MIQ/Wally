@@ -17,6 +17,7 @@ export default async function AppLayout({
     <AppShell
       role={user.role}
       email={user.email}
+      lastSeenVersion={user.lastSeenVersion}
       accounts={accounts}
       categories={categories}
     >

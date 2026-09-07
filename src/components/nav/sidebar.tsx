@@ -6,11 +6,12 @@ import { SidebarNav } from "@/components/nav/sidebar-nav";
 type SidebarProps = {
   role: "USER" | "ADMIN";
   email?: string | null;
+  lastSeenVersion: string;
   className?: string;
 };
 
 /** Desktop fixed sidebar (md and up). */
-export function Sidebar({ role, email, className }: SidebarProps) {
+export function Sidebar({ role, email, lastSeenVersion, className }: SidebarProps) {
   return (
     <aside
       className={cn(
@@ -18,7 +19,7 @@ export function Sidebar({ role, email, className }: SidebarProps) {
         className,
       )}
     >
-      <SidebarNav role={role} email={email} />
+      <SidebarNav role={role} email={email} lastSeenVersion={lastSeenVersion} />
     </aside>
   );
 }

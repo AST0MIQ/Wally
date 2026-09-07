@@ -12,6 +12,7 @@ type AppShellProps = {
   children: ReactNode;
   role: "USER" | "ADMIN";
   email?: string | null;
+  lastSeenVersion: string;
   accounts: AccountLite[];
   categories: CategoryNode[];
 };
@@ -20,6 +21,7 @@ export function AppShell({
   children,
   role,
   email,
+  lastSeenVersion,
   accounts,
   categories,
 }: AppShellProps) {
@@ -30,11 +32,12 @@ export function AppShell({
         <Sidebar
           role={role}
           email={email}
+          lastSeenVersion={lastSeenVersion}
           className="sticky top-0 hidden md:block"
         />
 
         <div className="flex min-h-dvh flex-col">
-          <MobileTopBar role={role} email={email} className="md:hidden" />
+          <MobileTopBar role={role} email={email} lastSeenVersion={lastSeenVersion} className="md:hidden" />
 
           <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-5 md:px-8 md:pb-10 md:pt-10">
             {children}

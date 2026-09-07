@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Shield, Plus, Download, Wallet, Share2, SquarePlus } from "lucide-react";
+import { Shield, Plus, Download, Wallet, Share2, SquarePlus, ScrollText } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/components/nav/nav-items";
@@ -23,16 +23,21 @@ import {
 import { useQuickAdd } from "@/components/transactions/quick-add-provider";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { APP_VERSION } from "@/lib/version";
+import { markPatchNotesSeen } from "@/app/actions/preferences";
 
 /** Shared nav body used by the desktop sidebar and the mobile drawer. */
 export function SidebarNav({
   role,
   email,
+  lastSeenVersion,
   onNavigate,
+  onPatchNotesSeen,
 }: {
   role: "USER" | "ADMIN";
   email?: string | null;
+  lastSeenVersion: string;
   onNavigate?: () => void;
+  onPatchNotesSeen?: () => void;
 }) {
   const pathname = usePathname();
   const t = useTranslations("nav");
@@ -40,6 +45,7 @@ export function SidebarNav({
   const { open: openQuickAdd } = useQuickAdd();
   const { available: canInstall, installed, promptInstall } = usePwaInstall();
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
+  const [hasUnreadPatchNotes, setHasUnreadPatchNotes] = useState(lastSeenVersion !== APP_VERSION);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -94,6 +100,23 @@ export function SidebarNav({
             {t("admin")}
           </Link>
         )}
+        <Link
+          href="/patch-notes"
+          aria-current={isActive("/patch-notes") ? "page" : undefined}
+          onClick={() => {
+            setHasUnreadPatchNotes(false);
+            onPatchNotesSeen?.();
+            void markPatchNotesSeen();
+            onNavigate?.();
+          }}
+          className={linkClass(isActive("/patch-notes"))}
+        >
+          <span className="relative">
+            <ScrollText className="size-4" />
+            {hasUnreadPatchNotes && <span className="absolute -right-1.5 -top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-card" />}
+          </span>
+          {t("patchNotes")}
+        </Link>
       </nav>
 
       <div className="mt-auto flex flex-col gap-3 border-t border-border px-1 pt-4">

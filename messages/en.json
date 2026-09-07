@@ -28,6 +28,7 @@
     "loadMore": "Load more"
   },
   "nav": {
+    "patchNotes": "Patch notes",
     "dashboard": "Dashboard",
     "transactions": "Transactions",
     "accounts": "Accounts",
@@ -39,6 +40,11 @@
     "addTransaction": "Add transaction",
     "menu": "Menu",
     "skipContent": "Skip to content"
+  },
+  "patchNotes": {
+    "title": "Patch notes",
+    "description": "Updates and improvements in Wally",
+    "latest": "Latest"
   },
   "pwa": {
     "install": "Install app",
