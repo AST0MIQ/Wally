@@ -282,6 +282,113 @@ input[type="date"] { min-width: 0; max-width: 100%; }
   button, summary { min-height: 44px; }
   input, select, textarea { font-size: 16px !important; }
 }
+@keyframes wally-confetti {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(112vh) rotate(560deg); opacity: 0; }
+}
+
+/* ── Streak reward effects on the net-worth hero card ──
+   Escalating, tier by tier: sheen → glow → animated border →
+   gold → ruby → diamond → platinum. */
+.hero-sheen {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.22), transparent);
+  transform: translateX(-160%);
+  animation: wally-sheen 7s ease-in-out infinite;
+}
+@keyframes wally-sheen {
+  0%   { transform: translateX(-160%); }
+  55%  { transform: translateX(360%); }
+  100% { transform: translateX(360%); }
+}
+.hero-glow { animation: wally-hero-glow 4.5s ease-in-out infinite; }
+@keyframes wally-hero-glow {
+  0%, 100% { box-shadow: 0 20px 48px -36px rgb(0 0 0 / 0.55); }
+  50%      { box-shadow: 0 20px 48px -28px rgb(0 0 0 / 0.5), 0 0 34px -2px color-mix(in srgb, var(--ring) 70%, transparent); }
+}
+.hero-glow-strong { animation: wally-hero-glow-strong 3.6s ease-in-out infinite; }
+@keyframes wally-hero-glow-strong {
+  0%, 100% { box-shadow: 0 20px 48px -36px rgb(0 0 0 / 0.55); }
+  50%      { box-shadow: 0 22px 52px -24px rgb(0 0 0 / 0.5), 0 0 44px 0 color-mix(in srgb, var(--hero-glow-color, #f59e0b) 65%, transparent); }
+}
+.hero-glow-max { animation: wally-hero-glow-max 3s ease-in-out infinite; }
+@keyframes wally-hero-glow-max {
+  0%, 100% { box-shadow: 0 20px 48px -36px rgb(0 0 0 / 0.55); }
+  50%      { box-shadow: 0 24px 58px -18px rgb(0 0 0 / 0.5), 0 0 58px 2px color-mix(in srgb, var(--hero-glow-color, #e2e8f0) 72%, transparent); }
+}
+
+/* Masked gradient border shared by the border/gold/ruby/diamond/platinum styles. */
+.hero-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.6px;
+  background-size: 260% 100%;
+  animation: wally-border-pan 6s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+.hero-ring-accent::before {
+  background-image: linear-gradient(120deg,
+    color-mix(in srgb, var(--ring) 30%, transparent), var(--ring) 45%,
+    #fff 55%, var(--ring) 70%,
+    color-mix(in srgb, var(--ring) 30%, transparent));
+}
+.hero-ring-gold     { --hero-glow-color: #f59e0b; }
+.hero-ring-ruby     { --hero-glow-color: #f43f5e; }
+.hero-ring-diamond  { --hero-glow-color: #22d3ee; }
+.hero-ring-platinum { --hero-glow-color: #e2e8f0; }
+
+/* From 1 year on, the whole hero card takes the gem's colour (feels premium).
+   All kept dark enough for the card's white text. Beats .brand-gradient by
+   source order. */
+.hero-bg-gold     { background-image: linear-gradient(145deg, #7c2d12 0%, #b45309 38%, #d97706 70%, #f59e0b 100%); }
+.hero-bg-ruby     { background-image: linear-gradient(145deg, #4c0519 0%, #881337 40%, #be123c 74%, #e11d48 100%); }
+.hero-bg-diamond  { background-image: linear-gradient(145deg, #083344 0%, #0e7490 42%, #0891b2 74%, #06b6d4 100%); }
+.hero-bg-platinum { background-image: linear-gradient(145deg, #1e293b 0%, #334155 38%, #475569 68%, #64748b 100%); }
+
+.hero-ring-gold::before {
+  background-image: linear-gradient(120deg, #b45309, #f59e0b 42%, #fff3c4 56%, #f59e0b 78%, #b45309);
+}
+.hero-ring-ruby::before {
+  background-image: linear-gradient(120deg, #881337, #e11d48 42%, #ffdfe6 56%, #e11d48 78%, #881337);
+  animation-duration: 5.5s;
+}
+.hero-ring-diamond::before {
+  padding: 2.2px;
+  background-image: linear-gradient(120deg, #0e7490, #22d3ee 36%, #ecfeff 50%, #67e8f9 66%, #0e7490);
+  animation-duration: 3.2s;
+}
+.hero-ring-platinum::before {
+  padding: 2.2px;
+  background-image: linear-gradient(120deg, #94a3b8, #f8fafc 40%, #ffffff 52%, #cbd5e1 70%, #94a3b8);
+  animation-duration: 4.5s;
+}
+/* platinum: a second inner hairline for a distinct "double frame" */
+.hero-ring-platinum::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: inherit;
+  border: 1px solid rgb(226 232 240 / 0.45);
+  pointer-events: none;
+}
+@keyframes wally-border-pan {
+  0%   { background-position: 0% 0; }
+  100% { background-position: 260% 0; }
+}
+@keyframes wally-spin { to { transform: rotate(360deg); } }
+
+@keyframes wally-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.7); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

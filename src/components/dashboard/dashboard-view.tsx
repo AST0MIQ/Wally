@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, BarChart3, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, BarChart3, Check, ChevronRight, Flame, Sparkles, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
@@ -11,7 +11,9 @@ import { intlLocaleTag } from "@/i18n/config";
 import { formatDate, formatMoney } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import type { DashboardData } from "@/server/services/dashboard.service";
+import type { StreakData } from "@/server/services/streak.service";
 import { EmptyState } from "@/components/ui/empty-state";
+import { HeroCardFx, heroCardClasses } from "@/components/streak/hero-card-fx";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
@@ -20,11 +22,13 @@ import { CategoryBars } from "@/components/charts/category-bars";
 
 const CATEGORY_ROWS = 5;
 
-export function DashboardView({ data, firstName }: { data: DashboardData; firstName?: string }) {
+export function DashboardView({ data, firstName, streak }: { data: DashboardData; firstName?: string; streak?: StreakData }) {
   const locale = useLocale() as Locale;
   const t = useTranslations("dashboard");
   const ui = useTranslations("ui");
+  const ts = useTranslations("streak");
   const tCat = useTranslations("categories");
+  const heroFxTier = streak && streak.count > 0 ? streak.tierIndex : -1;
   const base = data.baseCurrency;
   const money = (value: number | string, digits = 2) => formatMoney(value, base, locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const monthLabel = (key: string) => {
@@ -61,8 +65,13 @@ export function DashboardView({ data, firstName }: { data: DashboardData; firstN
   return <section className="flex flex-col gap-9 pb-4">
     <PageHeader title={t("title")} description={ui("overview")} eyebrow={<>{t("greeting")}{firstName ? `, ${firstName}` : ""}</>} />
 
-    {/* Net worth — the one-glance answer */}
-    <section className="brand-gradient relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7">
+    {/* Net worth — the one-glance answer. Streak tiers layer on extra flair. */}
+    <section className={cn(
+      "brand-gradient relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7",
+      heroCardClasses(heroFxTier),
+    )}>
+      <HeroCardFx tierIndex={heroFxTier} />
+      <div className="relative z-[1]">
       <p className="flex items-center gap-1.5 text-xs text-white/70"><Sparkles className="size-3.5" />{t("netWorth")}</p>
       <p className="balance-mask mt-1.5 text-[2rem] font-semibold leading-none sm:text-[2.6rem]">{money(nw.netWorth, 2)}</p>
 
@@ -99,6 +108,26 @@ export function DashboardView({ data, firstName }: { data: DashboardData; firstN
       {nw.approx && (
         <p className="mt-2.5 text-[11px] text-white/60">≈ {t("approxFx")}</p>
       )}
+
+      {streak && streak.count > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-white/10 px-3 py-2 text-[11px] text-white/85">
+          <Flame className="size-3.5 shrink-0" />
+          <span className="font-semibold text-white">{ts("unitDays", { n: streak.count })}</span>
+          <span className="text-white/70">{ts("streakLabel")}</span>
+          {streak.nextKey && (
+            <span className="text-white/60">
+              · {ts("toNext", { n: streak.daysToNext ?? 0, tier: ts(`tier_${streak.nextKey}`) })}
+            </span>
+          )}
+          {streak.loggedToday && (
+            <span className="ml-auto inline-flex items-center gap-1 text-white">
+              <Check className="size-3" />
+              {ts("doneToday")}
+            </span>
+          )}
+        </div>
+      )}
+      </div>
     </section>
 
     {/* This month — spending health */}

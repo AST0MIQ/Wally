@@ -18,6 +18,8 @@ function revalidateTransfer() {
   revalidatePath("/transactions");
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
+  // the (app) layout renders the header streak ring — keep it in sync
+  revalidatePath("/", "layout");
 }
 
 export const createTransferAction = action(

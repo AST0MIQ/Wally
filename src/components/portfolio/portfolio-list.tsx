@@ -15,13 +15,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
+import { HeroCardFx, heroCardClasses } from "@/components/streak/hero-card-fx";
 
 export function PortfolioList({
   portfolios,
   accounts,
+  streakTier = -1,
 }: {
   portfolios: PortfolioSummary[];
   accounts: AccountLite[];
+  streakTier?: number;
 }) {
   const ui = useTranslations("ui");
   const locale = useLocale() as Locale;
@@ -59,14 +62,17 @@ export function PortfolioList({
         />
       ) : (
         <>
-        {canAggregate && <Card className="brand-gradient overflow-hidden border-0 p-6 text-white shadow-lg">
-          <p className="text-sm text-white/60">{t("allPortfolioValue")}</p>
-          <p className="balance-mask mt-3 text-4xl font-bold">{formatMoney(totalValue, commonCurrency, locale)}</p>
-          <div className="mt-4 flex items-center gap-3">
-            <span className={cn("rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold", totalPnl >= 0 ? "text-emerald-400" : "text-red-400")}>
-              {totalPnl >= 0 ? "+" : ""}{formatMoney(totalPnl, commonCurrency, locale)} ({totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : "0.00"}%)
-            </span>
-            <span className="text-sm text-white/55">{t("unrealized")}</span>
+        {canAggregate && <Card className={cn("brand-gradient relative overflow-hidden border-0 p-6 text-white shadow-lg", heroCardClasses(streakTier))}>
+          <HeroCardFx tierIndex={streakTier} />
+          <div className="relative z-[1]">
+            <p className="text-sm text-white/60">{t("allPortfolioValue")}</p>
+            <p className="balance-mask mt-3 text-4xl font-bold">{formatMoney(totalValue, commonCurrency, locale)}</p>
+            <div className="mt-4 flex items-center gap-3">
+              <span className={cn("rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold", totalPnl >= 0 ? "text-emerald-400" : "text-red-400")}>
+                {totalPnl >= 0 ? "+" : ""}{formatMoney(totalPnl, commonCurrency, locale)} ({totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : "0.00"}%)
+              </span>
+              <span className="text-sm text-white/55">{t("unrealized")}</span>
+            </div>
           </div>
         </Card>}
         <div className="flex items-center justify-between">

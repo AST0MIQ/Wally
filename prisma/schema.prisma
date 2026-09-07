@@ -40,6 +40,13 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  // ── Logging streak (consecutive days the user recorded something) ──
+  streakCount      Int       @default(0)
+  streakBest       Int       @default(0)
+  streakLastDate   DateTime? // UTC midnight of the last counted wall-clock day
+  streakFreezeAt   DateTime? // when the monthly "forgive one day" was last used
+  streakCelebrated Int       @default(0) // highest tier index already celebrated
+
   accounts          Account[]
   sessions          Session[]
   financeAccounts   FinanceAccount[]

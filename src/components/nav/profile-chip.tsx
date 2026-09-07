@@ -1,22 +1,33 @@
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+import { StreakRing } from "@/components/streak/streak-ring";
+
+export type ProfileChipStreak = { tierIndex: number; progressPct: number };
 
 /** Header identity chip → navigates to the full profile page. */
 export function ProfileChip({
   name,
   email,
   compact = false,
+  streak,
   className,
 }: {
   name?: string | null;
   email?: string | null;
   /** avatar only (mobile top bar) */
   compact?: boolean;
+  streak?: ProfileChipStreak;
   className?: string;
 }) {
   const label = name?.trim() || email?.split("@")[0] || "—";
   const initial = (name?.trim() || email || "?").charAt(0).toUpperCase();
+
+  const avatar = (
+    <span className="flex size-full items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+      {initial}
+    </span>
+  );
 
   return (
     <Link
@@ -28,10 +39,22 @@ export function ProfileChip({
         className,
       )}
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
-        {initial}
-      </span>
-      {!compact && <span className="max-w-[10rem] truncate text-sm font-medium">{label}</span>}
+      {streak ? (
+        <StreakRing
+          tierIndex={streak.tierIndex}
+          progressPct={streak.progressPct}
+          dim={32}
+        >
+          {avatar}
+        </StreakRing>
+      ) : (
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+          {initial}
+        </span>
+      )}
+      {!compact && (
+        <span className="max-w-[10rem] truncate text-sm font-medium">{label}</span>
+      )}
     </Link>
   );
 }

@@ -1,5 +1,6 @@
 import { requireUser } from "@/server/lib/guards";
 import { getQuickAddData } from "@/server/services/quick-add";
+import { getStreak } from "@/server/services/streak.service";
 import { AppShell } from "@/components/nav/app-shell";
 
 // Authenticated pages always depend on the current session and live database data.
@@ -11,7 +12,10 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
-  const { accounts, categories } = await getQuickAddData(user.id);
+  const [{ accounts, categories }, streak] = await Promise.all([
+    getQuickAddData(user.id),
+    getStreak(user.id),
+  ]);
 
   return (
     <AppShell
@@ -21,6 +25,7 @@ export default async function AppLayout({
       lastSeenVersion={user.lastSeenVersion}
       accounts={accounts}
       categories={categories}
+      streak={streak}
     >
       {children}
     </AppShell>

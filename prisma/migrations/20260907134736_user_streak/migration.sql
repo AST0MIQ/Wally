@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "streakBest" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "streakCelebrated" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "streakCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "streakFreezeAt" TIMESTAMP(3),
+ADD COLUMN     "streakLastDate" TIMESTAMP(3);

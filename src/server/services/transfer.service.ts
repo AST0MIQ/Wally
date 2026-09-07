@@ -3,6 +3,7 @@ import { prisma } from "@/server/db";
 import { writeAudit } from "@/server/lib/audit";
 import { AppError, notFound } from "@/server/lib/errors";
 import { assertAccountOwned } from "@/server/services/account.service";
+import { registerStreakActivity } from "@/server/services/streak.service";
 import { toPlain } from "@/lib/money";
 import type {
   TransferCreateInput,
@@ -106,6 +107,8 @@ export async function createTransfer(
     entityId: transfer.id,
     metadata: { fromAmount: input.fromAmount, toAmount },
   });
+
+  await registerStreakActivity(userId);
 
   return { id: transfer.id, deduped: false };
 }
