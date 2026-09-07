@@ -8,6 +8,7 @@ describe("money formatting", () => {
   });
 
   it("preserves source precision for investment prices", () => {
-    expect(formatCurrency("169.5505", "USD", "en")).toBe("$169.5505");
+    expect(formatCurrency("169.5505", "USD", "en")).toBe("$169.55");
+    expect(formatCurrency("9830.910226", "USD", "en")).toBe("$9,830.91");
   });
 });
