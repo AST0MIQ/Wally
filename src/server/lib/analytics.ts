@@ -30,6 +30,51 @@ function tzOffsetMinutes(tz: string, at: Date = new Date()): number {
 
 export type MonthRange = { start: Date; end: Date; key: string };
 
+export type Period = "week" | "month" | "year";
+
+/**
+ * Wall-clock start/end for a week (Mon-based), calendar month, or calendar year.
+ * `offset` 0 = current, -1 = previous.
+ */
+export function periodRange(
+  tz: string,
+  period: Period,
+  offset = 0,
+  now: Date = new Date(),
+): MonthRange {
+  const off = tzOffsetMinutes(tz, now);
+  const wall = new Date(now.getTime() + off * 60000);
+  const y = wall.getUTCFullYear();
+  const m = wall.getUTCMonth();
+  const d = wall.getUTCDate();
+
+  let startWall: number;
+  let endWall: number;
+  let key: string;
+
+  if (period === "week") {
+    const mondayIndex = (wall.getUTCDay() + 6) % 7; // 0 = Monday
+    startWall = Date.UTC(y, m, d - mondayIndex + offset * 7);
+    endWall = Date.UTC(y, m, d - mondayIndex + offset * 7 + 7);
+    key = new Date(startWall).toISOString().slice(0, 10);
+  } else if (period === "year") {
+    startWall = Date.UTC(y + offset, 0, 1);
+    endWall = Date.UTC(y + offset + 1, 0, 1);
+    key = String(y + offset);
+  } else {
+    startWall = Date.UTC(y, m + offset, 1);
+    endWall = Date.UTC(y, m + offset + 1, 1);
+    const s = new Date(startWall);
+    key = `${s.getUTCFullYear()}-${String(s.getUTCMonth() + 1).padStart(2, "0")}`;
+  }
+
+  return {
+    start: new Date(startWall - off * 60000),
+    end: new Date(endWall - off * 60000),
+    key,
+  };
+}
+
 /** `offset` 0 = current month, -1 = last month, etc. `now` is injectable for tests. */
 export function monthRange(tz: string, offset = 0, now: Date = new Date()): MonthRange {
   const off = tzOffsetMinutes(tz, now);
@@ -179,4 +224,119 @@ export async function incomeExpenseSeries(
     out.push({ key: r.key, income: f.income, expense: f.expense, net: f.net });
   }
   return out;
+}
+
+export type FlowBucket = { label: string; income: string; expense: string };
+
+/**
+ * Split a period into evenly-labelled sub-buckets for a bar chart:
+ * week → 7 days, month → its weeks, year → 12 months.
+ */
+export async function periodBuckets(
+  userId: string,
+  tz: string,
+  base: string,
+  period: Period,
+  now: Date = new Date(),
+): Promise<FlowBucket[]> {
+  const range = periodRange(tz, period, 0, now);
+  const off = tzOffsetMinutes(tz, now);
+  const startWall = range.start.getTime() + off * 60000;
+  const s = new Date(startWall);
+  const dayNames = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
+  const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+  const edges: { label: string; start: Date; end: Date }[] = [];
+  if (period === "week") {
+    for (let i = 0; i < 7; i += 1) {
+      const a = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate() + i);
+      const b = a + 86400000;
+      edges.push({ label: dayNames[i]!, start: new Date(a - off * 60000), end: new Date(b - off * 60000) });
+    }
+  } else if (period === "year") {
+    for (let i = 0; i < 12; i += 1) {
+      const a = Date.UTC(s.getUTCFullYear(), i, 1);
+      const b = Date.UTC(s.getUTCFullYear(), i + 1, 1);
+      edges.push({ label: monthNames[i]!, start: new Date(a - off * 60000), end: new Date(b - off * 60000) });
+    }
+  } else {
+    // month → weeks (Mon-aligned) that overlap the month
+    const monthStart = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), 1);
+    const monthEnd = Date.UTC(s.getUTCFullYear(), s.getUTCMonth() + 1, 1);
+    const firstDow = (new Date(monthStart).getUTCDay() + 6) % 7;
+    let cur = monthStart - firstDow * 86400000;
+    let w = 1;
+    while (cur < monthEnd) {
+      const b = cur + 7 * 86400000;
+      edges.push({
+        label: `W${w}`,
+        start: new Date(Math.max(cur, monthStart) - off * 60000),
+        end: new Date(Math.min(b, monthEnd) - off * 60000),
+      });
+      cur = b;
+      w += 1;
+    }
+  }
+
+  return Promise.all(
+    edges.map(async (e) => {
+      const f = await sumFlows(userId, e.start, e.end, base, e.end);
+      return { label: e.label, income: f.income, expense: f.expense };
+    }),
+  );
+}
+
+// ── Net cashflow across the last N whole periods (trend line) ────────
+export type SeriesPoint = {
+  key: string;
+  label: string;
+  income: string;
+  expense: string;
+  net: string;
+};
+
+const TH_MONTH_SHORT = [
+  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+];
+
+function seriesLabel(period: Period, key: string): string {
+  if (period === "year") return key; // "2026"
+  if (period === "month") {
+    const mo = Number(key.slice(5, 7));
+    return TH_MONTH_SHORT[mo - 1] ?? key;
+  }
+  // week → "d/m" of the Monday
+  const [, m, d] = key.split("-");
+  return `${Number(d)}/${Number(m)}`;
+}
+
+/**
+ * The last `count` whole periods (oldest → newest, current period last),
+ * each with income / expense / net converted to base. Feeds the trend chart.
+ */
+export async function periodSeries(
+  userId: string,
+  tz: string,
+  base: string,
+  period: Period,
+  count = period === "week" ? 8 : period === "year" ? 5 : 6,
+  now: Date = new Date(),
+): Promise<SeriesPoint[]> {
+  const offsets: number[] = [];
+  for (let i = count - 1; i >= 0; i -= 1) offsets.push(-i);
+
+  return Promise.all(
+    offsets.map(async (offset) => {
+      const r = periodRange(tz, period, offset, now);
+      const f = await sumFlows(userId, r.start, r.end, base, r.end);
+      return {
+        key: r.key,
+        label: seriesLabel(period, r.key),
+        income: f.income,
+        expense: f.expense,
+        net: f.net,
+      };
+    }),
+  );
 }

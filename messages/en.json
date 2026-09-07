@@ -39,6 +39,7 @@
     "admin": "Admin",
     "addTransaction": "Add transaction",
     "menu": "Menu",
+    "profile": "Profile",
     "skipContent": "Skip to content"
   },
   "patchNotes": {
@@ -99,6 +100,7 @@
     "approxFx": "Some values use an approximate exchange rate.",
     "collectingHistory": "History builds up over the coming days.",
     "viewAll": "View all",
+    "viewAnalytics": "See detailed analysis",
     "uncategorized": "Uncategorized",
     "empty": "Nothing here yet",
     "emptyCta": "Add an account and your first transaction to see your dashboard."
@@ -302,13 +304,42 @@
     "netWorthDown": "Net worth is down {amount} from a month ago.",
     "categoryTrends": "Category trends",
     "vsLastMonth": "vs last month",
-    "noComparison": "Not enough history yet for month-over-month insights.",
+    "vsPrevPeriod": "vs the previous period",
+    "noComparison": "Not enough history yet for a comparison.",
+    "period": "Period",
+    "periodWeek": "Week",
+    "periodMonth": "Month",
+    "periodYear": "Year",
+    "income": "Income",
+    "expense": "Expense",
+    "net": "Net",
+    "flowChart": "Income vs expense",
+    "netWorth": "Net worth",
+    "savingsRate": "Savings rate",
+    "netTrend": "Net cashflow trend",
+    "spendingByCategory": "Spending by category",
+    "cash": "Cash",
+    "investment": "Investments",
     "empty": "No data yet",
     "emptyHint": "Add some transactions to unlock analytics."
   },
   "reports": {
     "title": "Reports",
     "comingSoon": "Income, expense, category and net worth reports will appear here."
+  },
+  "profile": {
+    "subtitle": "Your account details and preferences",
+    "role": "Access level",
+    "roleAdmin": "Administrator",
+    "roleUser": "Member",
+    "baseCurrency": "Base currency",
+    "timezone": "Time zone",
+    "language": "Language",
+    "languageThai": "ไทย",
+    "languageEnglish": "English",
+    "joined": "Joined",
+    "lastLogin": "Last sign-in",
+    "settingsHint": "Theme, currency, categories and privacy"
   },
   "settings": {
     "title": "Settings",

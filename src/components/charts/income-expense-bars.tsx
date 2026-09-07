@@ -16,7 +16,7 @@ export function IncomeExpenseBars({
       {data.map((d) => (
         <div
           key={d.label}
-          className="flex min-h-0 flex-1 min-w-0 flex-1 flex-col items-center gap-1"
+          className="flex h-full min-w-0 flex-1 flex-col items-center gap-1"
           tabIndex={0}
           aria-label={`${d.label} · +${formatValue(d.income)} / −${formatValue(d.expense)}`}
           title={`${d.label} · +${formatValue(d.income)} / −${formatValue(d.expense)}`}

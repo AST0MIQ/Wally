@@ -30,6 +30,12 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** Digits + a single dot; drop leading zeros so "0" + "12" reads "12", not "012". */
+function sanitizeAmount(value: string): string {
+  const cleaned = value.replace(/[^\d.]/g, "").replace(/(\..*)\./g, "$1");
+  return cleaned.replace(/^0+(?=\d)/, "");
+}
+
 export function AccountForm({
   account,
   trigger,
@@ -54,7 +60,9 @@ export function AccountForm({
   );
   const [currency, setCurrency] = useState(account?.currency ?? "THB");
   const [openingBalance, setOpeningBalance] = useState(
-    account?.openingBalance ?? "0",
+    account?.openingBalance && account.openingBalance !== "0"
+      ? account.openingBalance
+      : "",
   );
   const [openingBalanceDate, setOpeningBalanceDate] = useState(
     account?.openingBalanceDate?.slice(0, 10) ?? todayISO(),
@@ -157,29 +165,28 @@ export function AccountForm({
             </Field>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label={t("openingBalance")}
-              error={fieldErrors.openingBalance?.[0]}
-              htmlFor="acc-ob"
-            >
-              <Input
-                id="acc-ob"
-                inputMode="decimal"
-                value={openingBalance}
-                onChange={(e) => setOpeningBalance(e.target.value)}
-              />
-            </Field>
-            <Field label={t("openingBalanceDate")} htmlFor="acc-obd">
-              <Input
-                id="acc-obd"
-                type="date"
-                className="min-w-0 max-w-full text-[13px]"
-                value={openingBalanceDate}
-                onChange={(e) => setOpeningBalanceDate(e.target.value)}
-              />
-            </Field>
-          </div>
+          <Field
+            label={t("openingBalance")}
+            error={fieldErrors.openingBalance?.[0]}
+            htmlFor="acc-ob"
+          >
+            <Input
+              id="acc-ob"
+              inputMode="decimal"
+              placeholder="0"
+              value={openingBalance}
+              onChange={(e) => setOpeningBalance(sanitizeAmount(e.target.value))}
+            />
+          </Field>
+          <Field label={t("openingBalanceDate")} htmlFor="acc-obd">
+            <Input
+              id="acc-obd"
+              type="date"
+              className="w-full"
+              value={openingBalanceDate}
+              onChange={(e) => setOpeningBalanceDate(e.target.value)}
+            />
+          </Field>
 
           <Field label={`${t("icon")} (${tc("optional")})`}>
             <IconPicker value={icon} onChange={setIcon} />

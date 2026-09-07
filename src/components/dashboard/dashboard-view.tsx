@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, BarChart3, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
@@ -77,7 +77,7 @@ export function DashboardView({ data, firstName }: { data: DashboardData; firstN
             {money(nw.totalInvestment)}
             {investmentGainPct !== null && (
               <span className={cn("ml-1.5 text-[11px] font-medium", investmentGain >= 0 ? "text-emerald-200" : "text-red-200")}>
-                {investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(1)}%
+                {investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(2)}%
               </span>
             )}
           </p>
@@ -102,7 +102,7 @@ export function DashboardView({ data, firstName }: { data: DashboardData; firstN
     </section>
 
     {/* This month — spending health */}
-    <DashSection title={t("monthlyHealth")}>
+    <DashSection title={t("monthlyHealth")} href="/analytics" label={t("viewAnalytics")}>
       <div className="grid grid-cols-2 gap-x-5 gap-y-2 sm:grid-cols-3 sm:gap-x-8">
         <StatCard quiet label={t("incomeThisMonth")} value={money(data.thisMonth.income)} tone="positive" icon={<ArrowDownLeft className="size-4" />} sub={comparison(data.thisMonth.income, data.lastMonth.income)} />
         <StatCard quiet label={t("expenseThisMonth")} value={money(data.thisMonth.expense)} tone="negative" icon={<ArrowUpRight className="size-4" />} sub={comparison(data.thisMonth.expense, data.lastMonth.expense, true)} />
@@ -128,6 +128,17 @@ export function DashboardView({ data, firstName }: { data: DashboardData; firstN
       ]}
       formatValue={(value) => money(value)}
     />
+
+    <Link
+      href="/analytics"
+      className="glass flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-glass px-5 text-sm font-semibold transition-colors hover:bg-muted"
+    >
+      <span className="flex items-center gap-2.5">
+        <BarChart3 className="size-4 text-primary" />
+        {t("viewAnalytics")}
+      </span>
+      <ChevronRight className="size-4 text-muted-foreground" />
+    </Link>
   </section>;
 }
 

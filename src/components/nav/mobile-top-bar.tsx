@@ -7,16 +7,19 @@ import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Drawer, SideDrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { SidebarNav } from "@/components/nav/sidebar-nav";
+import { ProfileChip } from "@/components/nav/profile-chip";
 import { APP_VERSION } from "@/lib/version";
 
-/** Mobile-only top bar with a hamburger (right side) that opens the menu as a right drawer. */
+/** Mobile-only top bar: hamburger + Wally on the left, profile chip on the right. */
 export function MobileTopBar({
   role,
+  name,
   email,
   lastSeenVersion,
   className,
 }: {
   role: "USER" | "ADMIN";
+  name?: string | null;
   email?: string | null;
   lastSeenVersion: string;
   className?: string;
@@ -25,7 +28,7 @@ export function MobileTopBar({
   const [open, setOpen] = useState(false);
   const [hasUnreadPatchNotes, setHasUnreadPatchNotes] = useState(lastSeenVersion !== APP_VERSION);
 
-  // Right-edge swipe → open the menu drawer (native-app feel).
+  // Left-edge swipe → open the menu drawer (native-app feel).
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const onSwipeStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -37,7 +40,7 @@ export function MobileTopBar({
     if (!touch) return;
     const dx = touch.clientX - swipeStart.current.x;
     const dy = touch.clientY - swipeStart.current.y;
-    if (dx < -48 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+    if (dx > 48 && dx > Math.abs(dy) * 1.4) {
       swipeStart.current = null;
       setOpen(true);
     }
@@ -47,7 +50,7 @@ export function MobileTopBar({
     <>
       <div
         aria-hidden
-        className="fixed right-0 z-30 w-5 md:hidden"
+        className="fixed left-0 z-30 w-5 md:hidden"
         style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))", bottom: 0, touchAction: "pan-y" }}
         onTouchStart={onSwipeStart}
         onTouchMove={onSwipeMove}
@@ -61,19 +64,17 @@ export function MobileTopBar({
           className,
         )}
       >
-        <span className="text-base font-bold tracking-tight">Wally</span>
-
-        <Drawer direction="right" open={open} onOpenChange={setOpen}>
+        <Drawer direction="left" open={open} onOpenChange={setOpen}>
           <button
             type="button"
             aria-label={t("menu")}
             onClick={() => setOpen(true)}
-            className="relative ml-auto flex size-11 items-center justify-center rounded-md text-foreground hover:bg-muted"
+            className="relative flex size-11 items-center justify-center rounded-md text-foreground hover:bg-muted"
           >
             <Menu className="size-5" />
-            {hasUnreadPatchNotes && <span className="absolute left-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-card" />}
+            {hasUnreadPatchNotes && <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-card" />}
           </button>
-          <SideDrawerContent side="right" className="mobile-safe-drawer">
+          <SideDrawerContent side="left" className="mobile-safe-drawer">
             <DrawerTitle className="sr-only">{t("menu")}</DrawerTitle>
             <SidebarNav
               role={role}
@@ -84,6 +85,10 @@ export function MobileTopBar({
             />
           </SideDrawerContent>
         </Drawer>
+
+        <span className="text-base font-bold tracking-tight">Wally</span>
+
+        <ProfileChip name={name} email={email} compact className="ml-auto" />
       </header>
     </>
   );
