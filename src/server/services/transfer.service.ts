@@ -4,7 +4,8 @@ import { writeAudit } from "@/server/lib/audit";
 import { AppError, notFound } from "@/server/lib/errors";
 import { assertAccountOwned } from "@/server/services/account.service";
 import { registerStreakActivity } from "@/server/services/streak.service";
-import { toPlain } from "@/lib/money";
+import { computeAccountBalances } from "@/server/lib/balance";
+import { money, toPlain } from "@/lib/money";
 import type {
   TransferCreateInput,
   TransferUpdateInput,
@@ -83,6 +84,24 @@ export async function createTransfer(
     input.toAmount,
   );
 
+  // The sending account (and the fee account, if separate) must stay >= 0.
+  {
+    const balances = await computeAccountBalances(userId);
+    const fee = money(input.fee ?? 0);
+    const feeOnFrom = !input.feeAccountId || input.feeAccountId === from.id;
+    const fromCharge = money(input.fromAmount).plus(feeOnFrom ? fee : 0);
+    if (fromCharge.gt(money(balances.get(from.id) ?? 0))) {
+      throw new AppError("insufficient_balance", "BAD_REQUEST");
+    }
+    if (
+      input.feeAccountId &&
+      input.feeAccountId !== from.id &&
+      fee.gt(money(balances.get(input.feeAccountId) ?? 0))
+    ) {
+      throw new AppError("insufficient_balance", "BAD_REQUEST");
+    }
+  }
+
   const transfer = await prisma.transfer.create({
     data: {
       userId,
@@ -159,6 +178,33 @@ export async function updateTransfer(
   }
   if (input.date !== undefined) data.date = input.date;
   if (input.note !== undefined) data.note = input.note;
+
+  // Keep the sending account >= 0 after the edit.
+  {
+    const nextFromAmount = money(input.fromAmount ?? toPlain(existing.fromAmount));
+    const nextFee = money(
+      input.fee !== undefined ? input.fee : toPlain(existing.fee),
+    );
+    const nextFeeAccountId =
+      input.feeAccountId !== undefined
+        ? input.feeAccountId
+        : existing.feeAccountId;
+    const feeOnNextFrom = !nextFeeAccountId || nextFeeAccountId === nextFrom;
+    const nextCharge = nextFromAmount.plus(feeOnNextFrom ? nextFee : 0);
+
+    const balances = await computeAccountBalances(userId);
+    let available = money(balances.get(nextFrom) ?? 0);
+    if (nextFrom === existing.fromAccountId) {
+      const oldFeeOnFrom =
+        !existing.feeAccountId || existing.feeAccountId === existing.fromAccountId;
+      available = available
+        .plus(existing.fromAmount)
+        .plus(oldFeeOnFrom ? existing.fee : 0);
+    }
+    if (nextCharge.gt(available)) {
+      throw new AppError("insufficient_balance", "BAD_REQUEST");
+    }
+  }
 
   await prisma.transfer.update({ where: { id: existing.id }, data });
   await writeAudit({

@@ -4,7 +4,8 @@ import { writeAudit } from "@/server/lib/audit";
 import { AppError, notFound } from "@/server/lib/errors";
 import { assertAccountOwned } from "@/server/services/account.service";
 import { registerStreakActivity } from "@/server/services/streak.service";
-import { toPlain } from "@/lib/money";
+import { computeAccountBalances } from "@/server/lib/balance";
+import { money, toPlain } from "@/lib/money";
 import type {
   TransactionCreateInput,
   TransactionListInput,
@@ -149,6 +150,14 @@ export async function createTransaction(
     input.subcategoryId,
   );
 
+  if (input.kind === "EXPENSE") {
+    const balances = await computeAccountBalances(userId);
+    const available = money(balances.get(account.id) ?? 0);
+    if (money(input.amount).gt(available)) {
+      throw new AppError("insufficient_balance", "BAD_REQUEST");
+    }
+  }
+
   const txn = await prisma.transaction.create({
     data: {
       userId,
@@ -188,6 +197,24 @@ export async function updateTransaction(
   if (!existing) notFound("Transaction not found");
 
   const nextKind = input.kind ?? existing.kind;
+  const nextAccountId = input.accountId ?? existing.accountId;
+  const nextAmount = input.amount ?? toPlain(existing.amount);
+
+  if (nextKind === "EXPENSE") {
+    const balances = await computeAccountBalances(userId);
+    let available = money(balances.get(nextAccountId) ?? 0);
+    // undo this transaction's current effect on the target account
+    if (nextAccountId === existing.accountId) {
+      available =
+        existing.kind === "EXPENSE"
+          ? available.plus(existing.amount)
+          : available.minus(existing.amount);
+    }
+    if (money(nextAmount).gt(available)) {
+      throw new AppError("insufficient_balance", "BAD_REQUEST");
+    }
+  }
+
   const data: Prisma.TransactionUpdateInput = {};
 
   if (input.kind !== undefined) data.kind = input.kind;

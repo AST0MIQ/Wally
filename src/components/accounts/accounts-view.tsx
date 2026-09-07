@@ -41,9 +41,49 @@ export function AccountsView({
   const [showArchived, setShowArchived] = useState(false);
   const [arranging, setArranging] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [accountOrder, setAccountOrder] = useState(() => accounts.map((account) => account.id));
   const dragRef = useRef<string | null>(null);
   const suppressClickRef = useRef(false);
+  // live-drag: the card element being dragged + where the pointer went down
+  const dragElRef = useRef<HTMLElement | null>(null);
+  const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const dropTargetRef = useRef<string | null>(null);
+
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  function moveDragEl(dx: number, dy: number, opts: { snap?: boolean } = {}) {
+    const el = dragElRef.current;
+    if (!el) return;
+    // no transition while the finger drives it (instant follow); ease on snap
+    el.style.transition = opts.snap
+      ? "transform 180ms cubic-bezier(0.2,0.8,0.3,1)"
+      : "none";
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${opts.snap ? 0.9 : 1.06}) rotate(2deg)`;
+  }
+
+  function resetDragEl(withTransition: boolean) {
+    const el = dragElRef.current;
+    if (el) {
+      el.style.transition = withTransition
+        ? "transform 200ms cubic-bezier(0.2,0.8,0.3,1)"
+        : "";
+      el.style.transform = "";
+      el.style.zIndex = "";
+      el.style.pointerEvents = "";
+      const clear = () => {
+        el.style.transition = "";
+        el.removeEventListener("transitionend", clear);
+      };
+      if (withTransition) el.addEventListener("transitionend", clear);
+    }
+    dragElRef.current = null;
+    dragOriginRef.current = null;
+    dropTargetRef.current = null;
+    setDropTargetId(null);
+  }
 
   const unarchive = useAction(unarchiveAccountAction);
   const reorder = useAction(reorderAccountsAction);
@@ -127,39 +167,92 @@ export function AccountsView({
                   event.currentTarget.setPointerCapture(event.pointerId);
                   dragRef.current = a.id;
                   setDraggingId(a.id);
+                  if (!prefersReducedMotion) {
+                    dragElRef.current = event.currentTarget as HTMLElement;
+                    dragOriginRef.current = { x: event.clientX, y: event.clientY };
+                    event.currentTarget.style.zIndex = "50";
+                    event.currentTarget.style.pointerEvents = "none";
+                  }
+                }}
+                onPointerMove={(event) => {
+                  if (!dragRef.current || !dragOriginRef.current) return;
+                  const dx = event.clientX - dragOriginRef.current.x;
+                  const dy = event.clientY - dragOriginRef.current.y;
+                  moveDragEl(dx, dy);
+                  const overId = document
+                    .elementFromPoint(event.clientX, event.clientY)
+                    ?.closest<HTMLElement>("[data-account-id]")?.dataset.accountId;
+                  const next =
+                    overId && overId !== dragRef.current && !arranging
+                      ? overId
+                      : null;
+                  if (next !== dropTargetRef.current) {
+                    dropTargetRef.current = next ?? null;
+                    setDropTargetId(next ?? null);
+                  }
                 }}
                 onPointerUp={(event) => {
                   const sourceId = dragRef.current;
-                  const target = document
+                  const targetEl = document
                     .elementFromPoint(event.clientX, event.clientY)
-                    ?.closest<HTMLElement>("[data-account-id]")
-                    ?.dataset.accountId;
+                    ?.closest<HTMLElement>("[data-account-id]");
+                  const target = targetEl?.dataset.accountId;
                   dragRef.current = null;
                   setDraggingId(null);
-                  if (!sourceId || !target || sourceId === target) return;
+
+                  const valid = !!sourceId && !!target && sourceId !== target;
+                  if (!valid) {
+                    resetDragEl(true); // float back to place
+                    return;
+                  }
                   suppressClickRef.current = true;
-                  if (arranging) {
-                    const next = active.map((account) => account.id);
-                    const sourceIndex = next.indexOf(sourceId);
-                    const targetIndex = next.indexOf(target);
-                    next.splice(sourceIndex, 1);
-                    next.splice(targetIndex, 0, sourceId);
-                    setAccountOrder(next);
-                    void reorder.run(
-                      { ids: next },
-                      { successMessage: t("reorderedToast"), refresh: false },
+
+                  const commit = () => {
+                    if (arranging) {
+                      const nextOrder = active.map((account) => account.id);
+                      const sourceIndex = nextOrder.indexOf(sourceId!);
+                      const targetIndex = nextOrder.indexOf(target!);
+                      nextOrder.splice(sourceIndex, 1);
+                      nextOrder.splice(targetIndex, 0, sourceId!);
+                      setAccountOrder(nextOrder);
+                      void reorder.run(
+                        { ids: nextOrder },
+                        { successMessage: t("reorderedToast"), refresh: false },
+                      );
+                    } else {
+                      openQuickAdd({
+                        mode: "TRANSFER",
+                        fromAccountId: sourceId!,
+                        toAccountId: target!,
+                      });
+                    }
+                    resetDragEl(false);
+                  };
+
+                  // snap the card toward the destination, then open the sheet
+                  if (dragElRef.current && targetEl && !prefersReducedMotion) {
+                    const from = dragElRef.current.getBoundingClientRect();
+                    const to = targetEl.getBoundingClientRect();
+                    moveDragEl(
+                      to.left + to.width / 2 - (from.left + from.width / 2),
+                      to.top + to.height / 2 - (from.top + from.height / 2),
+                      { snap: true },
                     );
+                    window.setTimeout(commit, 170);
                   } else {
-                    openQuickAdd({ mode: "TRANSFER", fromAccountId: sourceId, toAccountId: target });
+                    commit();
                   }
                 }}
                 onPointerCancel={() => {
                   dragRef.current = null;
                   setDraggingId(null);
+                  resetDragEl(true);
                 }}
                 className={cn(
-                  "interactive-lift relative flex aspect-[0.92] touch-none select-none flex-col overflow-hidden p-4",
-                  draggingId === a.id && "z-10 scale-[1.03] rotate-1 opacity-80 ring-2 ring-primary shadow-xl",
+                  "interactive-lift relative flex aspect-[0.92] touch-none select-none flex-col overflow-hidden p-4 will-change-transform",
+                  draggingId === a.id && "z-10 opacity-95 ring-2 ring-primary shadow-2xl",
+                  draggingId === a.id && prefersReducedMotion && "scale-[1.03] rotate-1 opacity-80",
+                  dropTargetId === a.id && "scale-[1.05] ring-4 ring-primary/70 shadow-lg transition-transform",
                 )}
               >
                 <span className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: a.color ?? "#2563eb" }} />

@@ -46,6 +46,7 @@ export function useAction<TInput, TData>(
               portfolio_has_transactions: t("portfolioActivity"),
               same_account: t("sameAccount"),
               oversell: t("oversell"),
+              insufficient_balance: t("insufficientBalance"),
               to_amount_required: t("receivedAmount"),
               settlement_currency_mismatch: t("currencyMismatch"),
               account_not_found: t("selection"),

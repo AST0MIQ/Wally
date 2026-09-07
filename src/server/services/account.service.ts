@@ -80,24 +80,32 @@ export type AccountLite = {
   currency: string;
   icon: string | null;
   color: string | null;
+  /** current balance in the account's own currency (plain decimal string) */
+  balance: string;
 };
 
 export async function listAccountsMinimal(
   userId: string,
 ): Promise<AccountLite[]> {
-  const rows = await prisma.financeAccount.findMany({
-    where: { userId, status: "ACTIVE" },
-    orderBy: [{ createdAt: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      currency: true,
-      icon: true,
-      color: true,
-    },
-  });
-  return rows;
+  const [rows, balances] = await Promise.all([
+    prisma.financeAccount.findMany({
+      where: { userId, status: "ACTIVE" },
+      orderBy: [{ createdAt: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        currency: true,
+        icon: true,
+        color: true,
+      },
+    }),
+    computeAccountBalances(userId),
+  ]);
+  return rows.map((r) => ({
+    ...r,
+    balance: toPlain(balances.get(r.id) ?? 0),
+  }));
 }
 
 export async function getAccount(

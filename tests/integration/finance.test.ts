@@ -423,3 +423,92 @@ describe.skipIf(!hasDb)("category rename (DB)", () => {
     expect(after.systemKey).toBeNull();
   });
 });
+
+describe.skipIf(!hasDb)("balance guard — no overdraft", () => {
+  const email = `vitest+bal+${Date.now()}@wally.local`;
+  let userId = "";
+  let acc = "";
+  let acc2 = "";
+
+  beforeAll(async () => {
+    const user = await prisma.user.create({
+      data: { email, name: "vitest-bal", baseCurrency: "THB" },
+    });
+    userId = user.id;
+    const a = await prisma.financeAccount.create({
+      data: {
+        userId,
+        name: "Wallet",
+        currency: "THB",
+        openingBalance: "500",
+        openingBalanceDate: new Date("2020-01-01"),
+      },
+    });
+    const b = await prisma.financeAccount.create({
+      data: { userId, name: "Savings", currency: "THB", openingBalance: "0" },
+    });
+    acc = a.id;
+    acc2 = b.id;
+  });
+
+  afterAll(async () => {
+    if (userId) await prisma.user.delete({ where: { id: userId } });
+  });
+
+  it("rejects an expense larger than the account balance", async () => {
+    const { createTransaction } = await import(
+      "@/server/services/transaction.service"
+    );
+    await expect(
+      createTransaction(userId, {
+        kind: "EXPENSE",
+        amount: "600",
+        accountId: acc,
+        date: new Date("2020-02-01"),
+      }),
+    ).rejects.toThrow(/insufficient_balance/);
+  });
+
+  it("allows an expense within the balance, then rejects one that would overdraw", async () => {
+    const { createTransaction } = await import(
+      "@/server/services/transaction.service"
+    );
+    await createTransaction(userId, {
+      kind: "EXPENSE",
+      amount: "400",
+      accountId: acc,
+      date: new Date("2020-02-02"),
+    });
+    await expect(
+      createTransaction(userId, {
+        kind: "EXPENSE",
+        amount: "150",
+        accountId: acc,
+        date: new Date("2020-02-03"),
+      }),
+    ).rejects.toThrow(/insufficient_balance/);
+  });
+
+  it("rejects a transfer (amount + fee) that exceeds the source balance", async () => {
+    const { createTransfer } = await import(
+      "@/server/services/transfer.service"
+    );
+    // balance is now 100
+    await expect(
+      createTransfer(userId, {
+        fromAccountId: acc,
+        toAccountId: acc2,
+        fromAmount: "90",
+        fee: "20",
+        date: new Date("2020-02-04"),
+      }),
+    ).rejects.toThrow(/insufficient_balance/);
+    await createTransfer(userId, {
+      fromAccountId: acc,
+      toAccountId: acc2,
+      fromAmount: "90",
+      fee: "10",
+      date: new Date("2020-02-05"),
+    });
+  });
+});

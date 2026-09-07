@@ -101,10 +101,18 @@ export function QuickAddSheet({
   const createTransfer = useAction(createTransferAction);
   const busy = createTxn.pending || createTransfer.pending;
 
-  // initialise defaults when opened
+  // Reset the form only when the sheet actually opens — never on a prop change
+  // (a re-rendered `accounts` / `categories` array must not wipe what the user
+  // has typed).
+  const wasOpen = useRef(false);
+  const prevModeRef = useRef<QuickAddMode | null>(null);
   useEffect(() => {
-    if (!open) return;
+    const justOpened = open && !wasOpen.current;
+    wasOpen.current = open;
+    if (!justOpened) return;
+
     setMode(defaultKind);
+    prevModeRef.current = null;
     setAmount("");
     setToAmount("");
     setRate("");
@@ -138,9 +146,13 @@ export function QuickAddSheet({
     );
   }, [open, defaultKind, defaultFromAccountId, defaultToAccountId, accounts]);
 
-  // category default per kind
+  // Pick a default category on open and whenever the income/expense mode
+  // changes — but don't clobber the user's current pick if only `categories`
+  // was re-created upstream.
   useEffect(() => {
     if (!open || mode === "TRANSFER") return;
+    if (prevModeRef.current === mode) return;
+    prevModeRef.current = mode;
     const last = readLS(`${LS_CATEGORY}:${mode}`);
     const pool = categories.filter((c) => c.kind === mode);
     const initial =
@@ -252,14 +264,30 @@ export function QuickAddSheet({
   const selectedCategory = kindCategories.find((c) => c.id === categoryId);
 
   const amountValue = Number(amount) || 0;
-  const canSave =
+
+  // An expense / transfer can't drive its source account below zero.
+  const feeValue = Number(fee) || 0;
+  const sourceBalance =
     mode === "TRANSFER"
+      ? Number(fromAccount?.balance ?? 0)
+      : Number(selectedAccount?.balance ?? 0);
+  const sourceCharge =
+    mode === "TRANSFER" ? amountValue + feeValue : amountValue;
+  const overBalance =
+    mode !== "INCOME" &&
+    !!(mode === "TRANSFER" ? fromAccountId : accountId) &&
+    amountValue > 0 &&
+    sourceCharge > sourceBalance + 1e-6;
+
+  const canSave =
+    !overBalance &&
+    (mode === "TRANSFER"
       ? amountValue > 0 &&
         !!fromAccountId &&
         !!toAccountId &&
         fromAccountId !== toAccountId &&
         (!crossCurrency || Number(toAmount) > 0)
-      : amountValue > 0 && !!accountId;
+      : amountValue > 0 && !!accountId);
 
   async function handleSave() {
     if (!canSave) return;
@@ -301,6 +329,43 @@ export function QuickAddSheet({
     }
   }
 
+  // Amount entry — shown last in every flow (pick what, then how much).
+  const amountPad = (
+    <>
+      <div className="mb-3 text-center">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          {currency}
+        </p>
+        <span id="quick-amount-label" className="sr-only">{tt("amount")}</span>
+        <output
+          id="quick-amount"
+          aria-labelledby="quick-amount-label"
+          aria-live="polite"
+          className={cn(
+            "block min-h-14 w-full rounded-lg bg-transparent py-2 text-center text-4xl font-semibold tracking-tight tabular-nums",
+            mode === "EXPENSE" && "text-negative",
+            mode === "INCOME" && "text-positive",
+          )}
+        >
+          {amount || "0"}
+        </output>
+        {amountValue > 0 && !overBalance && (
+          <p className="text-sm text-muted-foreground">
+            {formatCurrency(amountValue, currency, locale)}
+          </p>
+        )}
+        {overBalance && (
+          <p className="text-sm font-medium text-negative">
+            {t("insufficientBalance", {
+              balance: formatCurrency(sourceBalance, currency, locale),
+            })}
+          </p>
+        )}
+      </div>
+      <Numpad className="mb-4" onKey={(k) => setAmount((cur) => applyKey(cur, k))} />
+    </>
+  );
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="mx-auto max-w-lg" footer={
@@ -337,65 +402,8 @@ export function QuickAddSheet({
           ))}
         </div>
 
-        {/* amount */}
-        <div className="mb-4 text-center">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {currency}
-          </p>
-          <span id="quick-amount-label" className="sr-only">{tt("amount")}</span>
-          <output
-            id="quick-amount"
-            aria-labelledby="quick-amount-label"
-            aria-live="polite"
-            className={cn(
-              "block min-h-14 w-full rounded-lg bg-transparent py-2 text-center text-4xl font-semibold tracking-tight tabular-nums",
-              mode === "EXPENSE" && "text-negative",
-              mode === "INCOME" && "text-positive",
-            )}
-          >
-            {amount || "0"}
-          </output>
-          {amountValue > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {formatCurrency(amountValue, currency, locale)}
-            </p>
-          )}
-        </div>
-
-        <Numpad
-          className="mb-4"
-          onKey={(k) => setAmount((cur) => applyKey(cur, k))}
-        />
-
         {mode === "TRANSFER" ? (
           <div className="flex flex-col gap-3">
-            {accounts.length >= 2 && (
-              <label className="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
-                {ocrState === "READING" ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
-                <span className="flex-1">
-                  {ocrState === "READING" ? t("readingSlip", { progress: ocrProgress }) : t("uploadSlip")}
-                  {ocrState === "READY" && <small className="mt-1 block font-normal text-muted-foreground">{t("slipReady")}</small>}
-                  {ocrState === "ERROR" && <small className="mt-1 block font-normal text-negative">{t("slipFailed")}</small>}
-                </span>
-                {slipPreview ? (
-                  <img src={slipPreview} alt="" className="size-11 rounded-lg object-cover" />
-                ) : (
-                  <ImageIcon className="size-5 text-muted-foreground" />
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="sr-only"
-                  disabled={ocrState === "READING"}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void readFxSlip(file);
-                    event.target.value = "";
-                  }}
-                />
-              </label>
-            )}
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("from")}>
                 <Select
@@ -424,6 +432,37 @@ export function QuickAddSheet({
                 </Select>
               </Field>
             </div>
+
+            {amountPad}
+
+            {crossCurrency && accounts.length >= 2 && (
+              <label className="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
+                {ocrState === "READING" ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
+                <span className="flex-1">
+                  {ocrState === "READING" ? t("readingSlip", { progress: ocrProgress }) : t("uploadSlip")}
+                  {ocrState === "READY" && <small className="mt-1 block font-normal text-muted-foreground">{t("slipReady")}</small>}
+                  {ocrState === "ERROR" && <small className="mt-1 block font-normal text-negative">{t("slipFailed")}</small>}
+                </span>
+                {slipPreview ? (
+                  <img src={slipPreview} alt="" className="size-11 rounded-lg object-cover" />
+                ) : (
+                  <ImageIcon className="size-5 text-muted-foreground" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  disabled={ocrState === "READING"}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void readFxSlip(file);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+
             {crossCurrency && (
               <>
                 <div className="grid grid-cols-2 gap-3">
@@ -521,6 +560,8 @@ export function QuickAddSheet({
                 </button>
               ))}
             </div>
+
+            {amountPad}
           </>
         )}
 

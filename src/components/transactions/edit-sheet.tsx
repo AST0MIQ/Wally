@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { Locale } from "@/i18n/config";
+import { formatMoney } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import type { AccountLite } from "@/server/services/account.service";
 import type { CategoryNode } from "@/server/services/category.service";
@@ -73,6 +75,7 @@ function TxnEdit({
 }) {
   const t = useTranslations("transactions");
   const tc = useTranslations("common");
+  const locale = useLocale() as Locale;
   const tCat = useTranslations("categories");
 
   const [kind, setKind] = useState<"INCOME" | "EXPENSE">(item.type);
@@ -100,6 +103,19 @@ function TxnEdit({
 
   const pool = categories.filter((c) => c.kind === kind);
   const selectedCat = pool.find((c) => c.id === categoryId);
+
+  // An expense can't push its account below zero (its own prior amount is
+  // added back since it will be replaced).
+  const editAccount = accounts.find((a) => a.id === accountId);
+  const editAvailable =
+    Number(editAccount?.balance ?? 0) +
+    (item.type === "EXPENSE" && accountId === item.accountId
+      ? Number(item.amount)
+      : 0);
+  const overBalance =
+    kind === "EXPENSE" &&
+    Number(amount) > 0 &&
+    Number(amount) > editAvailable + 1e-6;
 
   async function save() {
     await update.run(
@@ -153,7 +169,15 @@ function TxnEdit({
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              aria-invalid={overBalance}
             />
+            {overBalance && (
+              <p className="mt-1 text-xs font-medium text-negative">
+                {t("insufficientBalance", {
+                  balance: formatMoney(editAvailable, editAccount?.currency ?? "THB", locale),
+                })}
+              </p>
+            )}
           </Field>
 
           <Field label={t("account")}>
@@ -246,7 +270,7 @@ function TxnEdit({
             </Button>
             <Button
               className="flex-1"
-              disabled={update.pending}
+              disabled={update.pending || overBalance}
               onClick={save}
             >
               {update.pending ? tc("saving") : tc("update")}
@@ -271,6 +295,7 @@ function TransferEdit({
 }) {
   const t = useTranslations("transactions");
   const tc = useTranslations("common");
+  const locale = useLocale() as Locale;
 
   const [fromAccountId, setFromAccountId] = useState(item.fromAccountId);
   const [toAccountId, setToAccountId] = useState(item.toAccountId);
@@ -292,6 +317,18 @@ function TransferEdit({
 
   const update = useAction(updateTransferAction);
   const del = useAction(deleteTransferAction);
+
+  // The sending account must stay >= 0 (this transfer's own outflow is added
+  // back since it will be replaced).
+  const fromAccount = accounts.find((a) => a.id === fromAccountId);
+  const fromAvailable =
+    Number(fromAccount?.balance ?? 0) +
+    (fromAccountId === item.fromAccountId
+      ? Number(item.fromAmount) + Number(item.fee)
+      : 0);
+  const overBalance =
+    Number(fromAmount) > 0 &&
+    Number(fromAmount) + (Number(fee) || 0) > fromAvailable + 1e-6;
 
   async function save() {
     await update.run(
@@ -352,6 +389,7 @@ function TransferEdit({
                 inputMode="decimal"
                 value={fromAmount}
                 onChange={(e) => setFromAmount(e.target.value)}
+                aria-invalid={overBalance}
               />
             </Field>
             <Field label={`${t("to")} ${t("amount")}`}>
@@ -362,6 +400,13 @@ function TransferEdit({
               />
             </Field>
           </div>
+          {overBalance && (
+            <p className="-mt-1 text-xs font-medium text-negative">
+              {t("insufficientBalance", {
+                balance: formatMoney(fromAvailable, fromAccount?.currency ?? "THB", locale),
+              })}
+            </p>
+          )}
 
           <Field label={t("fee")}>
             <Input
@@ -407,7 +452,7 @@ function TransferEdit({
             </Button>
             <Button
               className="flex-1"
-              disabled={update.pending}
+              disabled={update.pending || overBalance}
               onClick={save}
             >
               {update.pending ? tc("saving") : tc("update")}
