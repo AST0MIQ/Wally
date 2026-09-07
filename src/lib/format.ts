@@ -35,6 +35,30 @@ export function formatMoney(
   });
 }
 
+/**
+ * Space-constrained money display for cards, chips and any fixed-width slot.
+ * Values with |amount| ≥ 1,000,000 switch to compact notation (฿1.23M / ฿1.2B);
+ * anything smaller keeps full precision. Pair with `title={formatMoney(...)}`
+ * so the exact figure is still one hover/long-press away. Never use on detail
+ * pages where the precise number matters.
+ */
+export function formatMoneyCompact(
+  amount: number | string,
+  currency: string,
+  locale: Locale,
+): string {
+  const value = typeof amount === "string" ? Number(amount) : amount;
+  const v = Number.isFinite(value) ? value : 0;
+  if (Math.abs(v) < 1_000_000) return formatMoney(amount, currency, locale);
+  return new Intl.NumberFormat(intlLocaleTag[locale], {
+    style: "currency",
+    currency,
+    currencyDisplay: "narrowSymbol",
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+
 export function formatNumber(
   value: number | string,
   locale: Locale,

@@ -5,6 +5,7 @@ import {
   LineChart,
   BarChart3,
   Settings,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -15,13 +16,14 @@ export type NavItem = {
   icon: LucideIcon;
 };
 
-/** Full navigation — used by the desktop sidebar. */
+/** Full navigation — used by the desktop sidebar and the mobile drawer. */
 export const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/transactions", labelKey: "transactions", icon: ArrowLeftRight },
   { href: "/accounts", labelKey: "accounts", icon: Wallet },
   { href: "/portfolio", labelKey: "portfolio", icon: LineChart },
   { href: "/analytics", labelKey: "analytics", icon: BarChart3 },
+  { href: "/profile", labelKey: "profile", icon: UserRound },
   { href: "/settings", labelKey: "settings", icon: Settings },
 ];
 
@@ -30,5 +32,5 @@ export const BOTTOM_NAV: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/accounts", labelKey: "accounts", icon: Wallet },
   { href: "/portfolio", labelKey: "portfolio", icon: LineChart },
-  { href: "/settings", labelKey: "settings", icon: Settings },
+  { href: "/profile", labelKey: "profile", icon: UserRound },
 ];

@@ -103,7 +103,8 @@
     "viewAnalytics": "ดูวิเคราะห์แบบละเอียด",
     "uncategorized": "ไม่มีหมวดหมู่",
     "empty": "ยังไม่มีข้อมูล",
-    "emptyCta": "เพิ่มบัญชีและรายการแรกเพื่อดูภาพรวมของคุณ"
+    "emptyCta": "เพิ่มบัญชีและรายการแรกเพื่อดูภาพรวมของคุณ",
+    "spentOfIncome": "ใช้ไป {pct}% ของรายรับเดือนนี้"
   },
   "transactions": {
     "title": "รายการ",
@@ -202,7 +203,9 @@
       "SAVINGS": "เงินออม",
       "INVESTMENT": "การลงทุน",
       "OTHER": "อื่น ๆ"
-    }
+    },
+    "shareOfTotal": "{pct}% ของเงินรวม",
+    "convertToBase": "แปลงเป็น {currency}"
   },
   "portfolio": {
     "title": "พอร์ตลงทุน",

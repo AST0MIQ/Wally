@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, ArchiveRestore, GripVertical, LayoutGrid, Check } from "lucide-react";
+import { Plus, ArchiveRestore, ArrowLeftRight, GripVertical, LayoutGrid, Check } from "lucide-react";
 
 import type { Locale } from "@/i18n/config";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatMoneyCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AccountWithBalance } from "@/server/services/account.service";
 import {
@@ -42,6 +42,14 @@ export function AccountsView({
   const [arranging, setArranging] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  // account ids currently showing their balance converted to the base currency
+  const [convertedIds, setConvertedIds] = useState<Set<string>>(new Set());
+  const toggleConverted = (id: string) =>
+    setConvertedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   const [accountOrder, setAccountOrder] = useState(() => accounts.map((account) => account.id));
   const dragRef = useRef<string | null>(null);
   const suppressClickRef = useRef(false);
@@ -106,6 +114,14 @@ export function AccountsView({
     a.type === "OTHER" && a.customTypeLabel
       ? a.customTypeLabel
       : t(`types.${a.type}`);
+
+  const baseValueOf = (a: AccountWithBalance) =>
+    Number(convertedBalances[a.id] ?? a.balance);
+  const totalBase = active.reduce((sum, a) => sum + baseValueOf(a), 0);
+  const shareOf = (a: AccountWithBalance) =>
+    totalBase > 0
+      ? Math.max(0, Math.min(100, Math.round((baseValueOf(a) / totalBase) * 100)))
+      : 0;
 
   return (
     <section className="flex flex-col gap-6">
@@ -248,55 +264,98 @@ export function AccountsView({
                   setDraggingId(null);
                   resetDragEl(true);
                 }}
+                style={{
+                  backgroundColor: a.color
+                    ? `color-mix(in srgb, ${a.color} 8%, var(--card))`
+                    : undefined,
+                  borderColor: a.color
+                    ? `color-mix(in srgb, ${a.color} 30%, var(--border))`
+                    : undefined,
+                }}
                 className={cn(
-                  "interactive-lift relative flex aspect-[0.92] touch-none select-none flex-col overflow-hidden p-4 will-change-transform",
+                  "interactive-lift relative flex h-full touch-none select-none flex-col overflow-hidden p-4 will-change-transform",
                   draggingId === a.id && "z-10 opacity-95 ring-2 ring-primary shadow-2xl",
                   draggingId === a.id && prefersReducedMotion && "scale-[1.03] rotate-1 opacity-80",
                   dropTargetId === a.id && "scale-[1.05] ring-4 ring-primary/70 shadow-lg transition-transform",
                 )}
               >
-                <span className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: a.color ?? "#2563eb" }} />
                 <div className="flex items-start justify-between gap-2">
                   <span
-                    className="flex size-12 shrink-0 items-center justify-center rounded-full text-xl"
-                    style={{ backgroundColor: (a.color ?? "#2563EB") + "20" }}
+                    className="flex size-11 shrink-0 items-center justify-center rounded-xl text-lg"
+                    style={{ backgroundColor: (a.color ?? "#2563EB") + "26" }}
                   >
                     {a.icon || "🏦"}
                   </span>
                   <GripVertical className="size-5 text-muted-foreground/55" aria-label={arranging ? t("dragToReorder") : t("dragToTransfer")} />
                 </div>
+
                 <div className="mt-3 min-w-0">
-                  <p className="line-clamp-2 font-medium leading-snug">{a.name}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{typeLabel(a)} · {a.currency}</p>
+                  <p className="line-clamp-2 font-medium leading-snug text-foreground">{a.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{typeLabel(a)} · {a.currency}</p>
                 </div>
-                <div className="mt-auto pt-3">
-                <span className="balance-mask block text-xl font-semibold sm:text-2xl">
-                  {formatMoney(a.balance, a.currency, locale)}
-                </span>
-                {a.currency !== baseCurrency && (
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    {t("baseEquivalent", {
-                      amount: formatMoney(convertedBalances[a.id] ?? a.balance, baseCurrency, locale),
-                    })}
-                  </span>
-                )}
+
+                {(() => {
+                  const showBase =
+                    a.currency !== baseCurrency && convertedIds.has(a.id);
+                  const cur = showBase ? baseCurrency : a.currency;
+                  const amt = showBase ? baseValueOf(a) : a.balance;
+                  return (
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <span
+                        title={formatMoney(amt, cur, locale)}
+                        className="balance-mask min-w-0 flex-1 truncate text-lg font-semibold text-foreground sm:text-xl"
+                      >
+                        {formatMoneyCompact(amt, cur, locale)}
+                      </span>
+                      {a.currency !== baseCurrency && (
+                        <button
+                          type="button"
+                          aria-label={t("convertToBase", { currency: baseCurrency })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleConverted(a.id);
+                          }}
+                          className={cn(
+                            "flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                            showBase && "bg-primary/15 text-primary",
+                          )}
+                        >
+                          <ArrowLeftRight className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <div className="mt-auto border-t border-border/60 pt-3">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <span
+                      className="block h-full rounded-full"
+                      style={{
+                        width: `${shareOf(a)}%`,
+                        backgroundColor: a.color ?? "var(--primary)",
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {t("shareOfTotal", { pct: shareOf(a) })}
+                  </p>
                 </div>
               </Card>
             </li>
           ))}
         </ul>
         <div className="mt-5 flex items-end justify-between gap-4 px-1">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm text-muted-foreground">{t("totalBalance")}</p>
-            <p className="balance-mask text-3xl font-semibold">
-              {formatMoney(
-                active.reduce((sum, account) => sum + Number(convertedBalances[account.id] ?? account.balance), 0),
-                baseCurrency,
-                locale,
-              )}
+            <p
+              title={formatMoney(totalBase, baseCurrency, locale)}
+              className="balance-mask truncate text-2xl font-semibold sm:text-3xl"
+            >
+              {formatMoneyCompact(totalBase, baseCurrency, locale)}
             </p>
           </div>
-          <p className="max-w-36 text-right text-xs text-muted-foreground">{arranging ? t("dragToReorder") : t("dragToTransfer")}</p>
+          <p className="max-w-36 shrink-0 text-right text-xs text-muted-foreground">{arranging ? t("dragToReorder") : t("dragToTransfer")}</p>
         </div>
         </div>
       )}

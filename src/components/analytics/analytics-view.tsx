@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatMoneyCompact } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import type { AnalyticsData, Period } from "@/server/services/analytics.service";
 
@@ -68,6 +68,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
   const tCat = useTranslations("categories");
   const base = data.baseCurrency;
   const fmt = (n: number | string) => formatCurrency(n, base, locale);
+  const fmtC = (n: number | string) => formatMoneyCompact(n, base, locale);
   const fmtSigned = (n: number) => (n >= 0 ? `+${fmt(n)}` : `−${fmt(-n)}`);
 
   const catName = (c: { name: string | null; systemKey: string | null }) =>
@@ -83,7 +84,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
       <section className="flex flex-col gap-5">
         <PageHeader title={t("title")} description={ui("analytics")} />
         <PeriodTabs active={data.period} />
-        <NetWorthCard data={data} fmt={fmt} fmtSigned={fmtSigned} t={t} />
+        <NetWorthCard data={data} fmt={fmt} fmtC={fmtC} fmtSigned={fmtSigned} t={t} />
         <EmptyState title={t("empty")} description={t("emptyHint")} />
       </section>
     );
@@ -141,14 +142,15 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
       <PageHeader title={t("title")} description={ui("analytics")} />
       <PeriodTabs active={data.period} />
 
-      <NetWorthCard data={data} fmt={fmt} fmtSigned={fmtSigned} t={t} />
+      <NetWorthCard data={data} fmt={fmt} fmtC={fmtC} fmtSigned={fmtSigned} t={t} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label={t("income")} value={fmt(income)} tone="positive" />
-        <StatTile label={t("expense")} value={fmt(expense)} tone="negative" />
+        <StatTile label={t("income")} value={fmtC(income)} title={fmt(income)} tone="positive" />
+        <StatTile label={t("expense")} value={fmtC(expense)} title={fmt(expense)} tone="negative" />
         <StatTile
           label={t("net")}
-          value={fmtSigned(netMonth)}
+          value={`${netMonth >= 0 ? "+" : "−"}${fmtC(Math.abs(netMonth))}`}
+          title={fmtSigned(netMonth)}
           tone={netMonth >= 0 ? "positive" : "negative"}
         />
         <StatTile
@@ -260,18 +262,21 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
 function StatTile({
   label,
   value,
+  title,
   tone,
 }: {
   label: string;
   value: string;
+  title?: string;
   tone: "positive" | "negative" | "neutral";
 }) {
   return (
-    <Card className="p-4">
+    <Card className="min-w-0 p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p
+        title={title ?? value}
         className={cn(
-          "mt-1 text-lg font-semibold tabular-nums",
+          "mt-1 truncate text-lg font-semibold tabular-nums",
           tone === "positive" && "text-positive",
           tone === "negative" && "text-negative",
         )}
@@ -285,11 +290,13 @@ function StatTile({
 function NetWorthCard({
   data,
   fmt,
+  fmtC,
   fmtSigned,
   t,
 }: {
   data: AnalyticsData;
   fmt: (n: number | string) => string;
+  fmtC: (n: number | string) => string;
   fmtSigned: (n: number) => string;
   t: ReturnType<typeof useTranslations>;
 }) {
@@ -315,8 +322,8 @@ function NetWorthCard({
           </span>
         )}
       </div>
-      <p className="text-3xl font-semibold tracking-tight tabular-nums">
-        {fmt(data.netWorthNow)}
+      <p title={fmt(data.netWorthNow)} className="truncate text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
+        {fmtC(data.netWorthNow)}
       </p>
 
       {total > 0 && (

@@ -8,14 +8,14 @@ import { ArrowDownLeft, ArrowUpRight, BarChart3, Check, ChevronRight, Flame, Spa
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
 import { intlLocaleTag } from "@/i18n/config";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney, formatMoneyCompact } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import type { DashboardData } from "@/server/services/dashboard.service";
 import type { StreakData } from "@/server/services/streak.service";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Card } from "@/components/ui/card";
 import { HeroCardFx, heroCardClasses } from "@/components/streak/hero-card-fx";
 import { PageHeader } from "@/components/ui/page-header";
-import { StatCard } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
 import { CategoryBars } from "@/components/charts/category-bars";
@@ -31,6 +31,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
   const heroFxTier = streak && streak.count > 0 ? streak.tierIndex : -1;
   const base = data.baseCurrency;
   const money = (value: number | string, digits = 2) => formatMoney(value, base, locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const moneyC = (value: number | string) => formatMoneyCompact(value, base, locale);
   const monthLabel = (key: string) => {
     const [year, month] = key.split("-").map(Number);
     return new Intl.DateTimeFormat(intlLocaleTag[locale], { month: "short" }).format(new Date(Date.UTC(year ?? 2000, (month ?? 1) - 1, 1)));
@@ -73,19 +74,19 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       <HeroCardFx tierIndex={heroFxTier} />
       <div className="relative z-[1]">
       <p className="flex items-center gap-1.5 text-xs text-white/70"><Sparkles className="size-3.5" />{t("netWorth")}</p>
-      <p className="balance-mask mt-1.5 text-[2rem] font-semibold leading-none sm:text-[2.6rem]">{money(nw.netWorth, 2)}</p>
+      <p title={money(nw.netWorth, 2)} className="balance-mask mt-1.5 truncate text-[1.75rem] font-semibold leading-none sm:text-[2.6rem]">{moneyC(nw.netWorth)}</p>
 
       <div className="mt-5 grid grid-cols-2 gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-[11px] text-white/70">{t("cash")}</p>
-          <p className="balance-mask mt-0.5 text-base font-semibold">{money(nw.totalCash)}</p>
+          <p title={money(nw.totalCash)} className="balance-mask mt-0.5 truncate text-base font-semibold">{moneyC(nw.totalCash)}</p>
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-[11px] text-white/70">{t("investment")}</p>
-          <p className="balance-mask mt-0.5 text-base font-semibold">
-            {money(nw.totalInvestment)}
+          <p className="balance-mask mt-0.5 flex flex-wrap items-baseline gap-x-1.5 text-base font-semibold">
+            <span title={money(nw.totalInvestment)} className="min-w-0 truncate">{moneyC(nw.totalInvestment)}</span>
             {investmentGainPct !== null && (
-              <span className={cn("ml-1.5 text-[11px] font-medium", investmentGain >= 0 ? "text-emerald-200" : "text-red-200")}>
+              <span className={cn("shrink-0 text-[11px] font-medium", investmentGain >= 0 ? "text-emerald-200" : "text-red-200")}>
                 {investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(2)}%
               </span>
             )}
@@ -132,11 +133,80 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
 
     {/* This month — spending health */}
     <DashSection title={t("monthlyHealth")} href="/analytics" label={t("viewAnalytics")}>
-      <div className="grid grid-cols-2 gap-x-5 gap-y-2 sm:grid-cols-3 sm:gap-x-8">
-        <StatCard quiet label={t("incomeThisMonth")} value={money(data.thisMonth.income)} tone="positive" icon={<ArrowDownLeft className="size-4" />} sub={comparison(data.thisMonth.income, data.lastMonth.income)} />
-        <StatCard quiet label={t("expenseThisMonth")} value={money(data.thisMonth.expense)} tone="negative" icon={<ArrowUpRight className="size-4" />} sub={comparison(data.thisMonth.expense, data.lastMonth.expense, true)} />
-        <StatCard quiet label={t("netCashFlow")} value={`${net > 0 ? "+" : ""}${money(data.thisMonth.net)}`} tone={net > 0 ? "positive" : net < 0 ? "negative" : "neutral"} icon={<TrendingUp className="size-4" />} className="col-span-2 sm:col-span-1" />
-      </div>
+      {(() => {
+        const income = Number(data.thisMonth.income);
+        const expense = Number(data.thisMonth.expense);
+        const spentPct =
+          income > 0
+            ? Math.max(0, Math.min(100, (expense / income) * 100))
+            : expense > 0
+              ? 100
+              : 0;
+        const incomeCmp = comparison(data.thisMonth.income, data.lastMonth.income);
+        const expenseCmp = comparison(data.thisMonth.expense, data.lastMonth.expense, true);
+        return (
+          <Card className="flex flex-col gap-4 p-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="size-2 shrink-0 rounded-full bg-positive" />
+                  {t("incomeThisMonth")}
+                </p>
+                <p title={money(data.thisMonth.income)} className="mt-1 truncate text-xl font-semibold tabular-nums text-positive">
+                  {moneyC(data.thisMonth.income)}
+                </p>
+                {incomeCmp && <p className="mt-0.5 text-[11px]">{incomeCmp}</p>}
+              </div>
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="size-2 shrink-0 rounded-full bg-negative" />
+                  {t("expenseThisMonth")}
+                </p>
+                <p title={money(data.thisMonth.expense)} className="mt-1 truncate text-xl font-semibold tabular-nums text-negative">
+                  {moneyC(data.thisMonth.expense)}
+                </p>
+                {expenseCmp && <p className="mt-0.5 text-[11px]">{expenseCmp}</p>}
+              </div>
+            </div>
+
+            {(income > 0 || expense > 0) && (
+              <div>
+                <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+                  <span className="bg-negative transition-[width]" style={{ width: `${spentPct}%` }} />
+                  <span className="bg-positive/60" style={{ width: `${100 - spentPct}%` }} />
+                </div>
+                {income > 0 && (
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {t("spentOfIncome", { pct: Math.round(spentPct) })}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div
+              className={cn(
+                "-mx-5 -mb-5 mt-1 flex items-center justify-between rounded-b-2xl px-5 py-3.5",
+                net > 0 ? "bg-positive/10" : net < 0 ? "bg-negative/10" : "bg-muted",
+              )}
+            >
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                <TrendingUp className="size-4" />
+                {t("netCashFlow")}
+              </span>
+              <span
+                title={money(data.thisMonth.net)}
+                className={cn(
+                  "min-w-0 truncate pl-2 text-lg font-bold tabular-nums",
+                  net > 0 ? "text-positive" : net < 0 ? "text-negative" : "text-foreground",
+                )}
+              >
+                {net > 0 ? "+" : ""}
+                {moneyC(data.thisMonth.net)}
+              </span>
+            </div>
+          </Card>
+        );
+      })()}
     </DashSection>
 
     <DashSection title={t("expenseByCategory")} href="/analytics" label={t("viewAll")}>

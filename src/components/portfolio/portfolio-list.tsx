@@ -7,7 +7,7 @@ import { Plus, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatMoneyCompact } from "@/lib/format";
 import type { AccountLite } from "@/server/services/account.service";
 import type { PortfolioSummary } from "@/server/services/portfolio.service";
 
@@ -66,10 +66,15 @@ export function PortfolioList({
           <HeroCardFx tierIndex={streakTier} />
           <div className="relative z-[1]">
             <p className="text-sm text-white/60">{t("allPortfolioValue")}</p>
-            <p className="balance-mask mt-3 text-4xl font-bold">{formatMoney(totalValue, commonCurrency, locale)}</p>
-            <div className="mt-4 flex items-center gap-3">
-              <span className={cn("rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold", totalPnl >= 0 ? "text-emerald-400" : "text-red-400")}>
-                {totalPnl >= 0 ? "+" : ""}{formatMoney(totalPnl, commonCurrency, locale)} ({totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : "0.00"}%)
+            <p
+              title={formatMoney(totalValue, commonCurrency, locale)}
+              className="balance-mask mt-3 truncate text-3xl font-bold sm:text-4xl"
+            >
+              {formatMoneyCompact(totalValue, commonCurrency, locale)}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className={cn("min-w-0 truncate rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold", totalPnl >= 0 ? "text-emerald-400" : "text-red-400")}>
+                {totalPnl >= 0 ? "+" : ""}{formatMoneyCompact(totalPnl, commonCurrency, locale)} ({totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : "0.00"}%)
               </span>
               <span className="text-sm text-white/55">{t("unrealized")}</span>
             </div>

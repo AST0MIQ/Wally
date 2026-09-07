@@ -103,7 +103,8 @@
     "viewAnalytics": "See detailed analysis",
     "uncategorized": "Uncategorized",
     "empty": "Nothing here yet",
-    "emptyCta": "Add an account and your first transaction to see your dashboard."
+    "emptyCta": "Add an account and your first transaction to see your dashboard.",
+    "spentOfIncome": "Spent {pct}% of this month's income"
   },
   "transactions": {
     "title": "Transactions",
@@ -202,7 +203,9 @@
       "SAVINGS": "Savings",
       "INVESTMENT": "Investment",
       "OTHER": "Other"
-    }
+    },
+    "shareOfTotal": "{pct}% of total",
+    "convertToBase": "Show in {currency}"
   },
   "portfolio": {
     "title": "Portfolio",

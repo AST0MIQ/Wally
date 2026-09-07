@@ -119,6 +119,16 @@ export default async function ProfilePage() {
         />
       </Card>
 
+      <Link href="/settings" className="block">
+        <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
+          <div>
+            <p className="font-medium">{nav("settings")}</p>
+            <p className="text-sm text-muted-foreground">{t("settingsHint")}</p>
+          </div>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </Card>
+      </Link>
+
       <Card className="divide-y divide-border">
         {rows.map((row) => (
           <div
@@ -130,16 +140,6 @@ export default async function ProfilePage() {
           </div>
         ))}
       </Card>
-
-      <Link href="/settings" className="block">
-        <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
-          <div>
-            <p className="font-medium">{nav("settings")}</p>
-            <p className="text-sm text-muted-foreground">{t("settingsHint")}</p>
-          </div>
-          <ChevronRight className="size-4 text-muted-foreground" />
-        </Card>
-      </Link>
 
       <div>
         <SignOutButton />
