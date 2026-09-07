@@ -22,26 +22,37 @@ export function ImportHoldingsSheet({ portfolioId, open, onOpenChange }: {
   const [rows, setRows] = useState<Row[]>([]);
   const [reading, setReading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [ocrPercent, setOcrPercent] = useState(0);
+  const [failedFiles, setFailedFiles] = useState(0);
   const keys = useRef(new Map<string, string>());
   const action = useAction(createHoldingImportAction);
 
-  useEffect(() => { if (!open) { setRows([]); setProgress(0); keys.current.clear(); } }, [open]);
+  useEffect(() => { if (!open) { setRows([]); setProgress(0); setTotalFiles(0); setOcrPercent(0); setFailedFiles(0); keys.current.clear(); } }, [open]);
   const update = (id: string, patch: Partial<Row>) => setRows((old) => old.map((row) => row.id === id ? { ...row, ...patch } : row));
 
   async function read(files: File[]) {
-    setReading(true); setProgress(0);
+    setReading(true); setProgress(0); setTotalFiles(files.length); setOcrPercent(0); setFailedFiles(0);
     let worker: Awaited<ReturnType<typeof import("tesseract.js")["createWorker"]>> | undefined;
     try {
       const { createWorker } = await import("tesseract.js");
-      worker = await createWorker(["tha", "eng"]);
-      const found: Row[] = [];
+      worker = await createWorker(["tha", "eng"], undefined, {
+        logger: (message) => {
+          if (message.status === "recognizing text") setOcrPercent(Math.round(message.progress * 100));
+        },
+      });
       for (let i = 0; i < files.length; i += 1) {
-        const result = await worker.recognize(files[i]!);
-        const parsed = parseHoldingSlip(result.data.text);
-        found.push({ id: crypto.randomUUID(), symbol: parsed.symbol ?? "", currency: parsed.currency ?? "USD", quantity: parsed.quantity ?? "", costPerShare: parsed.costPerShare ?? "" });
-        setProgress(i + 1);
+        setOcrPercent(0);
+        try {
+          const result = await worker.recognize(files[i]!);
+          const parsed = parseHoldingSlip(result.data.text);
+          setRows((old) => [...old, { id: crypto.randomUUID(), symbol: parsed.symbol ?? "", currency: parsed.currency ?? "USD", quantity: parsed.quantity ?? "", costPerShare: parsed.costPerShare ?? "" }]);
+        } catch {
+          setFailedFiles((count) => count + 1);
+        } finally {
+          setProgress(i + 1);
+        }
       }
-      setRows((old) => [...old, ...found]);
     } finally { await worker?.terminate(); setReading(false); }
   }
 
@@ -62,9 +73,10 @@ export function ImportHoldingsSheet({ portfolioId, open, onOpenChange }: {
       <div className="mb-4 flex items-center justify-between"><DrawerTitle>{t("importTitle")}</DrawerTitle><DrawerClose asChild><Button variant="ghost" size="icon"><X /></Button></DrawerClose></div>
       <label className="mb-4 flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
         {reading ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
-        <span className="flex-1">{reading ? t("importReading", { done: progress, total: progress || 1 }) : t("importUpload")}</span><ImageIcon className="size-5" />
+        <span className="flex-1">{reading ? t("importReading", { done: progress, total: totalFiles, percent: ocrPercent }) : t("importUpload")}</span><ImageIcon className="size-5" />
         <input className="sr-only" type="file" accept="image/*" multiple disabled={reading} onChange={(e) => { const files = [...(e.target.files ?? [])]; e.target.value = ""; if (files.length) void read(files); }} />
       </label>
+      {failedFiles > 0 && <p className="mb-3 text-sm text-negative">{t("importReadFailed", { count: failedFiles })}</p>}
       <div className="flex flex-col gap-2">
         {rows.map((row) => <div key={row.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 rounded-xl border p-3">
           <Input value={row.symbol} placeholder="NVDA" onChange={(e) => update(row.id, { symbol: e.target.value.toUpperCase() })} />
