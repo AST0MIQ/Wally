@@ -27,7 +27,7 @@ export function DashboardView({ data, firstName }: { data: DashboardData; firstN
   const ui = useTranslations("ui");
   const tCat = useTranslations("categories");
   const base = data.baseCurrency;
-  const money = (value: number | string, digits = 0) => formatMoney(value, base, locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const money = (value: number | string, digits = 2) => formatMoney(value, base, locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const monthLabel = (key: string) => {
     const [year, month] = key.split("-").map(Number);
     return new Intl.DateTimeFormat(intlLocaleTag[locale], { month: "short" }).format(new Date(Date.UTC(year ?? 2000, (month ?? 1) - 1, 1)));

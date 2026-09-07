@@ -13,9 +13,15 @@ export function formatCurrency(
   options?: Intl.NumberFormatOptions,
 ): string {
   const value = typeof amount === "string" ? Number(amount) : amount;
+  const raw = typeof amount === "string" ? amount : String(amount);
+  const sourceFractionDigits = raw.includes(".")
+    ? raw.split(".")[1]?.replace(/0+$/, "").length ?? 0
+    : 0;
   return new Intl.NumberFormat(intlLocaleTag[locale], {
     style: "currency",
     currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: Math.max(2, Math.min(sourceFractionDigits, 6)),
     ...options,
   }).format(Number.isFinite(value) ? value : 0);
 }
@@ -29,7 +35,6 @@ export function formatMoney(
 ): string {
   return formatCurrency(amount, currency, locale, {
     currencyDisplay: "narrowSymbol",
-    maximumFractionDigits: 0,
     ...options,
   });
 }
