@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
-import { formatCurrency, formatDate, formatMoney } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 import type { AccountLite } from "@/server/services/account.service";
 import type {
   InvTxnRow,
@@ -36,14 +36,24 @@ import { Field } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
 import { TradeSheet } from "@/components/portfolio/trade-sheet";
+import { MarketRefreshButton } from "@/components/market/market-refresh-button";
+import { confirm } from "@/components/ui/confirm";
 
 export function PortfolioDetailView({
   detail,
+  secondary,
   history,
   accounts,
   finnhubEnabled,
 }: {
   detail: PortfolioDetail;
+  secondary?: {
+    currency: string;
+    marketValue: string;
+    cost: string;
+    unrealizedPnL: string;
+    approx: boolean;
+  } | null;
   history: InvTxnRow[];
   accounts: AccountLite[];
   finnhubEnabled: boolean;
@@ -54,15 +64,22 @@ export function PortfolioDetailView({
   const ccy = detail.baseCurrency;
 
   const [tradeOpen, setTradeOpen] = useState(false);
-  const [tradeType, setTradeType] = useState<"BUY" | "SELL">("BUY");
+  const [tradeType, setTradeType] = useState<"HOLDING" | "BUY" | "SELL">("HOLDING");
+  const [activeTab, setActiveTab] = useState<"HOLDINGS" | "HISTORY">("HOLDINGS");
+  const [expandedHolding, setExpandedHolding] = useState<string | null>(null);
 
   const del = useAction(deletePortfolioAction);
   const delTxn = useAction(deleteInvestmentTxnAction);
 
   const unrealized = Number(detail.totalUnrealizedPnL);
   const realized = Number(detail.totalRealizedPnL);
+  const latestPriceAt = detail.holdings
+    .map((holding) => holding.priceAsOf)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
 
-  function openTrade(type: "BUY" | "SELL") {
+  function openTrade(type: "HOLDING" | "BUY" | "SELL") {
     setTradeType(type);
     setTradeOpen(true);
   }
@@ -97,8 +114,13 @@ export function PortfolioDetailView({
               size="icon"
               aria-label={tc("delete")}
               disabled={del.pending}
-              onClick={() => {
-                if (!window.confirm(t("deletePortfolioConfirm"))) return;
+              onClick={async () => {
+                const ok = await confirm({
+                  title: t("deletePortfolioConfirm"),
+                  tone: "danger",
+                  confirmText: tc("delete"),
+                });
+                if (!ok) return;
                 del.run({ id: detail.id });
               }}
             >
@@ -108,154 +130,156 @@ export function PortfolioDetailView({
         </div>
       </header>
 
-      {/* summary */}
-      <Card className="grid grid-cols-1 gap-6 border-primary/20 bg-accent p-6 sm:grid-cols-2">
-        <Stat label={t("totalValue")}>
-          {formatMoney(detail.totalMarketValue, ccy, locale)}
-        </Stat>
-        <Stat label={t("cost")}>
-          {formatMoney(detail.totalCost, ccy, locale)}
-        </Stat>
-        <Stat
-          label={t("unrealized")}
-          className={cn(
-            unrealized > 0 && "text-positive",
-            unrealized < 0 && "text-negative",
-          )}
-        >
-          {unrealized >= 0 ? "+" : ""}
-          {formatMoney(detail.totalUnrealizedPnL, ccy, locale)} (
-          {Number(detail.totalUnrealizedPnLPct).toFixed(2)}%)
-        </Stat>
-        <Stat
-          label={t("realized")}
-          className={cn(
-            realized > 0 && "text-positive",
-            realized < 0 && "text-negative",
-          )}
-        >
-          {realized >= 0 ? "+" : ""}
-          {formatMoney(detail.totalRealizedPnL, ccy, locale)}
-        </Stat>
+      <Card className="overflow-hidden p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{t("totalValue")}</p>
+            <p className="balance-mask mt-1.5 text-3xl font-bold tracking-tight">
+              {formatCurrency(detail.totalMarketValue, ccy, locale)}
+            </p>
+            {secondary && (
+              <p className="balance-mask mt-0.5 text-sm text-muted-foreground">
+                ≈ {formatCurrency(secondary.marketValue, secondary.currency, locale)}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            {latestPriceAt && (
+              <p className="text-right text-xs text-muted-foreground">
+                {t("updatedAt", {
+                  time: new Date(latestPriceAt).toLocaleTimeString(locale === "th" ? "th-TH" : "en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+                })}
+              </p>
+            )}
+            <MarketRefreshButton />
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <span className={cn("font-semibold", unrealized > 0 && "text-positive", unrealized < 0 && "text-negative")}>
+            {unrealized >= 0 ? "+" : ""}{formatCurrency(detail.totalUnrealizedPnL, ccy, locale)}
+            {" "}({Number(detail.totalUnrealizedPnLPct).toFixed(2)}%)
+            {secondary && (
+              <span className="ml-1.5 font-normal text-muted-foreground">
+                ≈ {Number(secondary.unrealizedPnL) >= 0 ? "+" : ""}{formatCurrency(secondary.unrealizedPnL, secondary.currency, locale)}
+              </span>
+            )}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {t("cost")} {formatCurrency(detail.totalCost, ccy, locale)}
+            {secondary && <> · ≈ {formatCurrency(secondary.cost, secondary.currency, locale)}</>}
+          </span>
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+          <span className="text-sm text-muted-foreground">{t("realized")}</span>
+          <span className={cn("font-semibold", realized > 0 && "text-positive", realized < 0 && "text-negative")}>
+            {realized >= 0 ? "+" : ""}{formatCurrency(detail.totalRealizedPnL, ccy, locale)}
+          </span>
+        </div>
       </Card>
 
       <div className="flex gap-2">
         <Button className="flex-1" onClick={() => openTrade("BUY")}>
+          {t("trade")}
+        </Button>
+        <Button variant="secondary" className="flex-1" onClick={() => openTrade("HOLDING")}>
           <Plus className="size-4" />
-          {t("buy")}
-        </Button>
-        <Button
-          variant="secondary"
-          className="flex-1"
-          onClick={() => openTrade("SELL")}
-        >
-          {t("sell")}
+          {t("addAssetShort")}
         </Button>
       </div>
 
-      {/* holdings */}
-      <div className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("holdings")}
-        </h2>
-        {detail.holdings.length === 0 ? (
-          <EmptyState title={t("noHoldings")} action={<Button onClick={() => openTrade("BUY")}>{t("addTrade")}</Button>} />
+      <div className="grid grid-cols-2 border-b border-border">
+        {(["HOLDINGS", "HISTORY"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "border-b-2 px-3 py-3 text-sm font-semibold",
+              activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground",
+            )}
+          >
+            {tab === "HOLDINGS" ? t("holdingsTab") : t("historyTab")}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "HOLDINGS" ? (
+        detail.holdings.length === 0 ? (
+          <EmptyState title={t("noHoldings")} action={<Button onClick={() => openTrade("HOLDING")}>{t("addHolding")}</Button>} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="holdings-table w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground">
-                  <th className="py-2 pr-2 font-medium">{t("symbol")}</th>
-                  <th className="py-2 px-2 text-right font-medium">
-                    {t("qty")}
-                  </th>
-                  <th className="py-2 px-2 text-right font-medium">
-                    {t("avgCost")}
-                  </th>
-                  <th className="py-2 px-2 text-right font-medium">
-                    {t("price")}
-                  </th>
-                  <th className="py-2 px-2 text-right font-medium">
-                    {t("marketValue")}
-                  </th>
-                  <th className="py-2 pl-2 text-right font-medium">P&amp;L</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.holdings.map((h) => {
-                  const pnl = Number(h.unrealizedPnL);
-                  return (
-                    <tr key={h.securityId} className="border-t border-border">
-                      <td data-label={t("symbol")} className="py-2 pr-2">
-                        <p className="font-medium">{h.symbol}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {Number(h.portfolioPct).toFixed(1)}%
-                        </p>
-                      </td>
-                      <td data-label={t("qty")} className="py-2 px-2 text-right tabular-nums">
-                        {Number(h.quantity).toLocaleString(undefined, {
-                          maximumFractionDigits: 4,
-                        })}
-                      </td>
-                      <td data-label={t("avgCost")} className="py-2 px-2 text-right tabular-nums">
-                        {formatCurrency(h.avgCost, h.currency, locale)}
-                      </td>
-                      <td data-label={t("price")} className="py-2 px-2 text-right tabular-nums">
-                        {h.currentPrice ? (
-                          <span className="inline-flex items-center gap-1">
-                            {formatCurrency(h.currentPrice, h.currency, locale)}
-                            <SetPriceDialog
-                              securityId={h.securityId}
-                              symbol={h.symbol}
-                            />
-                          </span>
-                        ) : (
-                          <SetPriceDialog
-                            securityId={h.securityId}
-                            symbol={h.symbol}
-                            cta={t("setPrice")}
-                          />
-                        )}
-                      </td>
-                      <td data-label={t("marketValue")} className="py-2 px-2 text-right tabular-nums">
-                        {formatCurrency(h.marketValue, h.currency, locale)}
-                      </td>
-                      <td
-                        data-label={t("unrealized")}
-                        className={cn(
-                          "py-2 pl-2 text-right tabular-nums",
-                          pnl > 0 && "text-positive",
-                          pnl < 0 && "text-negative",
-                        )}
-                      >
-                        {pnl >= 0 ? "+" : ""}
-                        {formatCurrency(h.unrealizedPnL, h.currency, locale)}
-                        <span className="block text-xs">
-                          {Number(h.unrealizedPnLPct).toFixed(2)}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-semibold">{t("holdingsTab")} ({detail.holdings.length})</h2>
+            {detail.holdings.map((h) => {
+              const pnl = Number(h.unrealizedPnL);
+              const expanded = expandedHolding === h.securityId;
+              return (
+                <Card key={h.securityId} className="overflow-hidden p-0">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 p-3 text-left"
+                    aria-expanded={expanded}
+                    onClick={() => setExpandedHolding(expanded ? null : h.securityId)}
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      {h.symbol.slice(0, 2)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold">{h.symbol}</p>
+                        <span className="text-xs font-medium text-primary">◔ {Number(h.portfolioPct).toFixed(1)}%</span>
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {Number(h.quantity).toLocaleString(undefined, { maximumFractionDigits: 4 })} {t("shares")}
+                        {" · avg "}{formatCurrency(h.avgCost, h.currency, locale)}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="font-bold">{formatCurrency(h.marketValue, h.currency, locale)}</p>
+                      <p className={cn("mt-0.5 text-sm font-semibold", pnl > 0 && "text-positive", pnl < 0 && "text-negative")}>
+                        {pnl >= 0 ? "+" : ""}{Number(h.unrealizedPnLPct).toFixed(2)}%
+                      </p>
+                    </div>
+                    <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+                  </button>
+                  {expanded && (
+                    <div className="grid grid-cols-2 gap-x-5 gap-y-4 border-t border-border bg-muted/25 px-4 py-4 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">{t("remainingShares")}</p>
+                        <p className="mt-1 font-medium">{Number(h.quantity).toLocaleString(undefined, { maximumFractionDigits: 8 })}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">{t("price")}</p>
+                        <div className="mt-1 flex items-center font-medium">
+                          {h.currentPrice ? formatCurrency(h.currentPrice, h.currency, locale) : "—"}
+                          <SetPriceDialog securityId={h.securityId} symbol={h.symbol} />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">{t("costPerShare")}</p>
+                        <p className="mt-1 font-medium">{formatCurrency(h.avgCost, h.currency, locale)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">{t("cost")}</p>
+                        <p className="mt-1 font-medium">{formatCurrency(h.costBasis, h.currency, locale)}</p>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
-        )}
-      </div>
-
-      {/* history */}
-      <div className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("history")}
-        </h2>
-        {history.length === 0 ? (
-          <EmptyState title={t("noHistory")} />
-        ) : (
-          <ul className="flex flex-col gap-1">
+        )
+      ) : history.length === 0 ? (
+        <EmptyState title={t("noHistory")} />
+      ) : (
+          <ul className="flex flex-col gap-3">
             {history.map((x) => (
               <li
                 key={x.id}
-                className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted"
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
               >
                 <Badge variant={x.type === "BUY" ? "positive" : "negative"}>
                   {x.type === "BUY" ? t("buy") : t("sell")}
@@ -277,8 +301,13 @@ export function PortfolioDetailView({
                   type="button"
                   aria-label={tc("delete")}
                   className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-negative"
-                  onClick={() => {
-                    if (!window.confirm(t("deleteTradeConfirm"))) return;
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: t("deleteTradeConfirm"),
+                      tone: "danger",
+                      confirmText: tc("delete"),
+                    });
+                    if (!ok) return;
                     delTxn.run(
                       { id: x.id },
                       { successMessage: t("deleted") },
@@ -290,8 +319,7 @@ export function PortfolioDetailView({
               </li>
             ))}
           </ul>
-        )}
-      </div>
+      )}
 
       <TradeSheet
         portfolioId={detail.id}
@@ -301,26 +329,8 @@ export function PortfolioDetailView({
         finnhubEnabled={finnhubEnabled}
         defaultType={tradeType}
       />
-    </section>
-  );
-}
 
-function Stat({
-  label,
-  children,
-  className,
-}: {
-  label: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("text-2xl font-semibold tracking-tight tabular-nums", className)}>
-        {children}
-      </span>
-    </div>
+    </section>
   );
 }
 

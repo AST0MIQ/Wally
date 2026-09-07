@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { confirm } from "@/components/ui/confirm";
 import { ColorPicker, IconPicker } from "@/components/ui/icon-color-picker";
 
 type Kind = "EXPENSE" | "INCOME";
@@ -120,6 +121,7 @@ function CategoryRow({
         <CategoryFormDialog
           kind={category.kind}
           category={category}
+          displayName={label}
           trigger={
             <Button variant="ghost" size="icon" aria-label={tc("edit")}>
               <Pencil className="size-4" />
@@ -131,8 +133,13 @@ function CategoryRow({
           size="icon"
           aria-label={tc("delete")}
           disabled={del.pending}
-          onClick={() => {
-            if (!window.confirm(t("deleteCategoryConfirm"))) return;
+          onClick={async () => {
+            const ok = await confirm({
+              title: t("deleteCategoryConfirm"),
+              tone: "danger",
+              confirmText: tc("delete"),
+            });
+            if (!ok) return;
             del.run(
               { id: category.id },
               { successMessage: t("deleted") },
@@ -154,6 +161,7 @@ function CategoryRow({
             <SubcategoryFormDialog
               categoryId={category.id}
               subcategory={s}
+              displayName={categoryLabel(tCat, s)}
               trigger={
                 <button
                   type="button"
@@ -168,8 +176,13 @@ function CategoryRow({
               type="button"
               aria-label={tc("delete")}
               className="text-muted-foreground hover:text-negative"
-              onClick={() => {
-                if (!window.confirm(t("deleteSubcategoryConfirm"))) return;
+              onClick={async () => {
+                const ok = await confirm({
+                  title: t("deleteSubcategoryConfirm"),
+                  tone: "danger",
+                  confirmText: tc("delete"),
+                });
+                if (!ok) return;
                 delSub.run({ id: s.id }, { successMessage: t("deleted") });
               }}
             >
@@ -198,17 +211,21 @@ function CategoryRow({
 function CategoryFormDialog({
   kind,
   category,
+  displayName,
   trigger,
 }: {
   kind: Kind;
   category?: CategoryNode;
+  /** Localized label to prefill when editing (falls back to the stored name). */
+  displayName?: string;
   trigger: ReactNode;
 }) {
   const isEdit = Boolean(category);
   const t = useTranslations("categoryAdmin");
   const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(category?.name ?? "");
+  const initialName = category ? (displayName ?? category.name) : "";
+  const [name, setName] = useState(initialName);
   const [icon, setIcon] = useState(category?.icon ?? "");
   const [color, setColor] = useState(category?.color ?? "");
 
@@ -220,7 +237,12 @@ function CategoryFormDialog({
     e.preventDefault();
     if (isEdit) {
       await update.run(
-        { id: category!.id, name, icon: icon || undefined, color: color || undefined },
+        {
+          id: category!.id,
+          name: name.trim() !== initialName ? name : undefined,
+          icon: icon || undefined,
+          color: color || undefined,
+        },
         { successMessage: t("updated"), onSuccess: () => setOpen(false) },
       );
     } else {
@@ -278,17 +300,21 @@ function CategoryFormDialog({
 function SubcategoryFormDialog({
   categoryId,
   subcategory,
+  displayName,
   trigger,
 }: {
   categoryId: string;
   subcategory?: { id: string; name: string; icon: string | null };
+  /** Localized label to prefill when editing (falls back to the stored name). */
+  displayName?: string;
   trigger: ReactNode;
 }) {
   const isEdit = Boolean(subcategory);
   const t = useTranslations("categoryAdmin");
   const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(subcategory?.name ?? "");
+  const initialName = subcategory ? (displayName ?? subcategory.name) : "";
+  const [name, setName] = useState(initialName);
   const [icon, setIcon] = useState(subcategory?.icon ?? "");
 
   const create = useAction(createSubcategoryAction);
@@ -299,7 +325,11 @@ function SubcategoryFormDialog({
     e.preventDefault();
     if (isEdit) {
       await update.run(
-        { id: subcategory!.id, name, icon: icon || undefined },
+        {
+          id: subcategory!.id,
+          name: name.trim() !== initialName ? name : undefined,
+          icon: icon || undefined,
+        },
         { successMessage: t("updated"), onSuccess: () => setOpen(false) },
       );
     } else {

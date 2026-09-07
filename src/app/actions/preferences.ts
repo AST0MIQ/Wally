@@ -7,14 +7,28 @@ import { auth } from "@/server/auth";
 import { prisma } from "@/server/db";
 import {
   isLocale,
+  isAccentChoice,
+  ACCENT_COOKIE,
   isThemeChoice,
   LOCALE_COOKIE,
   THEME_COOKIE,
   type Locale,
   type ThemeChoice,
 } from "@/i18n/config";
+import { isCurrencyCode } from "@/lib/currency";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
+
+export async function setAccent(next: string): Promise<void> {
+  if (!isAccentChoice(next)) return;
+  const cookieStore = await cookies();
+  cookieStore.set(ACCENT_COOKIE, next, {
+    path: "/",
+    maxAge: ONE_YEAR,
+    sameSite: "lax",
+  });
+  revalidatePath("/", "layout");
+}
 
 /**
  * Set the active UI language. Always writes the cookie (drives next-intl);
@@ -68,6 +82,22 @@ export async function setTheme(next: ThemeChoice): Promise<void> {
       })
       .catch(() => {});
   }
+
+  revalidatePath("/", "layout");
+}
+
+/** Change the currency used by dashboards and cross-currency summaries. */
+export async function setBaseCurrency(next: string): Promise<void> {
+  const currency = next.trim().toUpperCase();
+  if (!isCurrencyCode(currency)) return;
+
+  const session = await auth();
+  if (!session?.user?.id) return;
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { baseCurrency: currency },
+  });
 
   revalidatePath("/", "layout");
 }

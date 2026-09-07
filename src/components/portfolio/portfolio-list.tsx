@@ -27,6 +27,11 @@ export function PortfolioList({
   const locale = useLocale() as Locale;
   const t = useTranslations("portfolio");
   const ta = useTranslations("accounts");
+  const commonCurrency = portfolios[0]?.baseCurrency ?? "USD";
+  const canAggregate = portfolios.length > 0 && portfolios.every((p) => p.baseCurrency === commonCurrency);
+  const totalValue = portfolios.reduce((sum, p) => sum + Number(p.totalMarketValue), 0);
+  const totalCost = portfolios.reduce((sum, p) => sum + Number(p.totalCost), 0);
+  const totalPnl = totalValue - totalCost;
 
   const addButton = (
     <PortfolioForm
@@ -42,7 +47,7 @@ export function PortfolioList({
 
   return (
     <section className="flex flex-col gap-5">
-      <PageHeader title={t("title")} description={ui("portfolio")} action={addButton} />
+      <PageHeader title={t("title")} description={ui("portfolio")} action={portfolios.length === 0 ? addButton : undefined} />
 
       {accounts.length === 0 ? (
         <EmptyState title={t("empty")} description={t("noAccounts")} action={<Link href="/accounts" className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 text-sm font-medium text-white">{ta("add")}</Link>} />
@@ -53,34 +58,45 @@ export function PortfolioList({
           action={addButton}
         />
       ) : (
-        <ul className="grid gap-4 lg:grid-cols-2">
+        <>
+        {canAggregate && <Card className="brand-gradient overflow-hidden border-0 p-6 text-white shadow-lg">
+          <p className="text-sm text-white/60">{t("allPortfolioValue")}</p>
+          <p className="balance-mask mt-3 text-4xl font-bold">{formatMoney(totalValue, commonCurrency, locale)}</p>
+          <div className="mt-4 flex items-center gap-3">
+            <span className={cn("rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold", totalPnl >= 0 ? "text-emerald-400" : "text-red-400")}>
+              {totalPnl >= 0 ? "+" : ""}{formatMoney(totalPnl, commonCurrency, locale)} ({totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : "0.00"}%)
+            </span>
+            <span className="text-sm text-white/55">{t("unrealized")}</span>
+          </div>
+        </Card>}
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">{t("allPortfolios", { count: portfolios.length })}</h2>
+          {addButton}
+        </div>
+        <ul className="grid gap-3 lg:grid-cols-2">
           {portfolios.map((p) => {
             const pnl = Number(p.totalUnrealizedPnL);
             return (
               <li key={p.id}>
                 <Link href={`/portfolio/${p.id}`} className="block rounded-2xl">
-                  <Card className="interactive-lift relative flex flex-col gap-5 overflow-hidden p-6">
-                    <span className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-xl bg-blue-500/10 text-primary"><TrendingUp className="size-5" /></span>
-                    <div className="flex flex-col gap-5 pr-12">
+                  <Card className="interactive-lift relative flex items-center gap-3 overflow-hidden p-4">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><TrendingUp className="size-5" /></span>
+                    <div className="min-w-0 flex-1">
                       <div>
                         <p className="text-base font-semibold">{p.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {p.accountName} · {p.holdingCount} {t("holdings")}
                         </p>
                       </div>
-                      <p className="balance-mask text-3xl font-semibold">
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="balance-mask text-lg font-semibold">
                         {formatMoney(
                           p.totalMarketValue,
                           p.baseCurrency,
                           locale,
                         )}
                       </p>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-4 text-sm">
-                      <span className="text-muted-foreground">
-                        {t("cost")}{" "}
-                        {formatMoney(p.totalCost, p.baseCurrency, locale)}
-                      </span>
                       <span
                         className={cn(
                           "balance-mask font-medium",
@@ -88,13 +104,7 @@ export function PortfolioList({
                           pnl < 0 && "text-negative",
                         )}
                       >
-                        {pnl >= 0 ? "+" : ""}
-                        {formatMoney(
-                          p.totalUnrealizedPnL,
-                          p.baseCurrency,
-                          locale,
-                        )}{" "}
-                        ({Number(p.totalUnrealizedPnLPct).toFixed(2)}%)
+                        {pnl >= 0 ? "+" : ""}{Number(p.totalUnrealizedPnLPct).toFixed(2)}%
                       </span>
                     </div>
                   </Card>
@@ -102,7 +112,7 @@ export function PortfolioList({
               </li>
             );
           })}
-        </ul>
+        </ul></>
       )}
     </section>
   );

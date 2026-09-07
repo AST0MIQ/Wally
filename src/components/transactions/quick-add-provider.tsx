@@ -13,8 +13,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { AccountLite } from "@/server/services/account.service";
 import type { CategoryNode } from "@/server/services/category.service";
 import { QuickAddSheet } from "@/components/transactions/quick-add-sheet";
+import type { QuickAddMode } from "@/components/transactions/quick-add-sheet";
 
-type QuickAddContextValue = { open: () => void };
+type QuickAddOptions = {
+  mode?: QuickAddMode;
+  fromAccountId?: string;
+  toAccountId?: string;
+};
+type QuickAddContextValue = { open: (options?: QuickAddOptions) => void };
 
 const QuickAddContext = createContext<QuickAddContextValue | null>(null);
 
@@ -34,6 +40,7 @@ export function QuickAddProvider({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [options, setOptions] = useState<QuickAddOptions>({});
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -50,7 +57,10 @@ export function QuickAddProvider({
     }
   }, [searchParams, pathname, router]);
 
-  const openSheet = useCallback(() => setOpen(true), []);
+  const openSheet = useCallback((next: QuickAddOptions = {}) => {
+    setOptions(next);
+    setOpen(true);
+  }, []);
 
   return (
     <QuickAddContext.Provider value={{ open: openSheet }}>
@@ -61,6 +71,9 @@ export function QuickAddProvider({
           onOpenChange={setOpen}
           accounts={accounts}
           categories={categories}
+          defaultKind={options.mode}
+          defaultFromAccountId={options.fromAccountId}
+          defaultToAccountId={options.toAccountId}
         />
       )}
     </QuickAddContext.Provider>

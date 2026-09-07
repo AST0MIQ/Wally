@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { useQuickAdd } from "@/components/transactions/quick-add-provider";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { APP_VERSION } from "@/lib/version";
 
 /** Shared nav body used by the desktop sidebar and the mobile drawer. */
 export function SidebarNav({
@@ -119,6 +120,9 @@ export function SidebarNav({
           <p className="truncate px-2 text-xs text-muted-foreground">{email}</p>
         )}
         <SignOutButton />
+        <p className="px-2 text-center text-[11px] text-muted-foreground/70">
+          Wally v{APP_VERSION}
+        </p>
       </div>
 
       <Dialog open={installHelpOpen} onOpenChange={setInstallHelpOpen}>

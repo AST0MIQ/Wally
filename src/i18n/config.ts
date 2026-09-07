@@ -5,7 +5,23 @@ export const defaultLocale: Locale = "th";
 
 export const LOCALE_COOKIE = "NEXT_LOCALE";
 export const THEME_COOKIE = "wally-theme";
+export const ACCENT_COOKIE = "wally-accent";
 export type ThemeChoice = "light" | "dark" | "system";
+export const accentChoices = [
+  "red",
+  "orange",
+  "amber",
+  "lime",
+  "emerald",
+  "teal",
+  "blue",
+  "violet",
+  "rose",
+] as const;
+export type AccentChoice = (typeof accentChoices)[number];
+export function isAccentChoice(v: string | undefined | null): v is AccentChoice {
+  return accentChoices.includes(v as AccentChoice);
+}
 export function isThemeChoice(v: string | undefined | null): v is ThemeChoice {
   return v === "light" || v === "dark" || v === "system";
 }

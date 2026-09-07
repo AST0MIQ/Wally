@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
 import { formatCurrency } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
+import { parseFxSlip, type ParsedFxSlip } from "@/lib/fx-slip";
 import type { AccountLite } from "@/server/services/account.service";
 import type { CategoryNode } from "@/server/services/category.service";
 import { createTransactionAction } from "@/app/actions/transactions";
@@ -27,7 +28,7 @@ import {
 } from "@/components/ui/drawer";
 import { Numpad, applyKey } from "@/components/transactions/numpad";
 
-type Mode = "EXPENSE" | "INCOME" | "TRANSFER";
+export type QuickAddMode = "EXPENSE" | "INCOME" | "TRANSFER";
 
 const LS_ACCOUNT = "wally:lastAccount";
 const LS_CATEGORY = "wally:lastCategory";
@@ -57,12 +58,16 @@ export function QuickAddSheet({
   accounts,
   categories,
   defaultKind = "EXPENSE",
+  defaultFromAccountId,
+  defaultToAccountId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   accounts: AccountLite[];
   categories: CategoryNode[];
-  defaultKind?: Mode;
+  defaultKind?: QuickAddMode;
+  defaultFromAccountId?: string;
+  defaultToAccountId?: string;
 }) {
   const t = useTranslations("quickAdd");
   const ui = useTranslations("ui");
@@ -72,7 +77,7 @@ export function QuickAddSheet({
   const tCat = useTranslations("categories");
   const locale = useLocale() as Locale;
 
-  const [mode, setMode] = useState<Mode>(defaultKind);
+  const [mode, setMode] = useState<QuickAddMode>(defaultKind);
   const [amount, setAmount] = useState("");
   const [accountId, setAccountId] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -80,11 +85,17 @@ export function QuickAddSheet({
   const [fromAccountId, setFromAccountId] = useState("");
   const [toAccountId, setToAccountId] = useState("");
   const [toAmount, setToAmount] = useState("");
+  const [rate, setRate] = useState("");
   const [fee, setFee] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [showMore, setShowMore] = useState(false);
+  const [slipPreview, setSlipPreview] = useState("");
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrState, setOcrState] = useState<"IDLE" | "READING" | "READY" | "ERROR">("IDLE");
   const idemRef = useRef<string>(crypto.randomUUID());
+  /** which of the two linked fields the user last drove: "received" amount or "rate" */
+  const fxDriverRef = useRef<"received" | "rate">("received");
 
   const createTxn = useAction(createTransactionAction);
   const createTransfer = useAction(createTransferAction);
@@ -96,10 +107,18 @@ export function QuickAddSheet({
     setMode(defaultKind);
     setAmount("");
     setToAmount("");
+    setRate("");
+    fxDriverRef.current = "received";
     setFee("");
     setNote("");
     setShowMore(false);
     setDate(todayISO());
+    setSlipPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return "";
+    });
+    setOcrProgress(0);
+    setOcrState("IDLE");
     idemRef.current = crypto.randomUUID();
 
     const lastAcc = readLS(LS_ACCOUNT);
@@ -108,9 +127,16 @@ export function QuickAddSheet({
         ? lastAcc
         : (accounts[0]?.id ?? "");
     setAccountId(initialAcc);
-    setFromAccountId(initialAcc);
-    setToAccountId(accounts.find((a) => a.id !== initialAcc)?.id ?? "");
-  }, [open, defaultKind, accounts]);
+    const initialFrom = accounts.some((a) => a.id === defaultFromAccountId)
+      ? defaultFromAccountId!
+      : initialAcc;
+    setFromAccountId(initialFrom);
+    setToAccountId(
+      accounts.some((a) => a.id === defaultToAccountId && a.id !== initialFrom)
+        ? defaultToAccountId!
+        : (accounts.find((a) => a.id !== initialFrom)?.id ?? ""),
+    );
+  }, [open, defaultKind, defaultFromAccountId, defaultToAccountId, accounts]);
 
   // category default per kind
   useEffect(() => {
@@ -132,6 +158,92 @@ export function QuickAddSheet({
     !!fromAccount &&
     !!toAccount &&
     fromAccount.currency !== toAccount.currency;
+
+  const fmtNumber = (value: number, digits: number) =>
+    Number.isFinite(value) && value > 0 ? String(Number(value.toFixed(digits))) : "";
+
+  // The "amount received" and "exchange rate" fields describe the same fact, so
+  // editing either keeps the other in sync. `toAmount` is what actually gets saved.
+  function editToAmount(next: string) {
+    fxDriverRef.current = "received";
+    setToAmount(next);
+    const from = Number(amount) || 0;
+    setRate(from > 0 && Number(next) > 0 ? fmtNumber(Number(next) / from, 6) : "");
+  }
+  function editRate(next: string) {
+    fxDriverRef.current = "rate";
+    setRate(next);
+    const from = Number(amount) || 0;
+    setToAmount(from > 0 && Number(next) > 0 ? fmtNumber(from * Number(next), 2) : "");
+  }
+
+  // When the sent amount changes, refresh whichever linked field the user isn't driving.
+  useEffect(() => {
+    if (!crossCurrency) return;
+    const from = Number(amount) || 0;
+    if (fxDriverRef.current === "rate" && Number(rate) > 0) {
+      setToAmount(from > 0 ? fmtNumber(from * Number(rate), 2) : "");
+    } else if (Number(toAmount) > 0) {
+      setRate(from > 0 ? fmtNumber(Number(toAmount) / from, 6) : "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amount, crossCurrency]);
+
+  async function readFxSlip(file: File) {
+    setSlipPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setOcrState("READING");
+    setOcrProgress(0);
+    let worker: Awaited<ReturnType<(typeof import("tesseract.js"))["createWorker"]>> | undefined;
+    try {
+      const { createWorker } = await import("tesseract.js");
+      worker = await createWorker(["tha", "eng"], undefined, {
+        logger: (message) => {
+          if (message.status === "recognizing text") {
+            setOcrProgress(Math.round(message.progress * 100));
+          }
+        },
+      });
+      const result = await worker.recognize(file);
+      const parsed = parseFxSlip(result.data.text);
+      const applied = applyFxSlip(parsed);
+      setOcrState(applied ? "READY" : "ERROR");
+    } catch {
+      setOcrState("ERROR");
+    } finally {
+      await worker?.terminate();
+    }
+  }
+
+  function applyFxSlip(parsed: ParsedFxSlip): boolean {
+    const from = parsed.fromCurrency
+      ? accounts.find((a) => a.currency === parsed.fromCurrency)
+      : undefined;
+    const to = parsed.toCurrency
+      ? accounts.find((a) => a.currency === parsed.toCurrency && a.id !== from?.id)
+      : undefined;
+    if (from) setFromAccountId(from.id);
+    if (to) setToAccountId(to.id);
+
+    if (parsed.fromAmount) setAmount(parsed.fromAmount);
+    if (parsed.toAmount) {
+      fxDriverRef.current = "received";
+      setToAmount(parsed.toAmount);
+    }
+    if (parsed.fromAmount && parsed.toAmount) {
+      setRate(fmtNumber(Number(parsed.toAmount) / Number(parsed.fromAmount), 6));
+    } else if (parsed.rate) {
+      setRate(parsed.rate);
+    }
+    if (parsed.date) setDate(parsed.date);
+    if (parsed.orderNo) {
+      setNote((current) => current || `FX ${parsed.orderNo}`);
+      setShowMore(true);
+    }
+    return Boolean(parsed.fromAmount || parsed.toAmount);
+  }
 
   const kindCategories = useMemo(
     () => categories.filter((c) => c.kind === mode),
@@ -257,6 +369,33 @@ export function QuickAddSheet({
 
         {mode === "TRANSFER" ? (
           <div className="flex flex-col gap-3">
+            {accounts.length >= 2 && (
+              <label className="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
+                {ocrState === "READING" ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
+                <span className="flex-1">
+                  {ocrState === "READING" ? t("readingSlip", { progress: ocrProgress }) : t("uploadSlip")}
+                  {ocrState === "READY" && <small className="mt-1 block font-normal text-muted-foreground">{t("slipReady")}</small>}
+                  {ocrState === "ERROR" && <small className="mt-1 block font-normal text-negative">{t("slipFailed")}</small>}
+                </span>
+                {slipPreview ? (
+                  <img src={slipPreview} alt="" className="size-11 rounded-lg object-cover" />
+                ) : (
+                  <ImageIcon className="size-5 text-muted-foreground" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  disabled={ocrState === "READING"}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void readFxSlip(file);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("from")}>
                 <Select
@@ -286,15 +425,31 @@ export function QuickAddSheet({
               </Field>
             </div>
             {crossCurrency && (
-              <Field
-                label={t("toAmount", { currency: toAccount?.currency ?? "" })}
-              >
-                <Input
-                  inputMode="decimal"
-                  value={toAmount}
-                  onChange={(e) => setToAmount(e.target.value)}
-                />
-              </Field>
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t("toAmount", { currency: toAccount?.currency ?? "" })}>
+                    <Input
+                      inputMode="decimal"
+                      value={toAmount}
+                      onChange={(e) => editToAmount(e.target.value)}
+                    />
+                  </Field>
+                  <Field label={t("rate")}>
+                    <Input
+                      inputMode="decimal"
+                      value={rate}
+                      onChange={(e) => editRate(e.target.value)}
+                    />
+                  </Field>
+                </div>
+                {Number(rate) > 0 && (
+                  <p className="-mt-1 text-xs text-muted-foreground">
+                    1 {fromAccount?.currency} = {rate} {toAccount?.currency}
+                    {" · "}
+                    1 {toAccount?.currency} = {fmtNumber(1 / Number(rate), 6)} {fromAccount?.currency}
+                  </p>
+                )}
+              </>
             )}
           </div>
         ) : (

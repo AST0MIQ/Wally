@@ -19,7 +19,7 @@ export function StatCard({ label, value, sub, icon, tone = "neutral", quiet = fa
         {icon && <span className={cn(
           quiet ? "flex shrink-0 items-center text-muted-foreground" : "flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground",
           !quiet && tone === "positive" && "bg-emerald-500/10 text-positive",
-          !quiet && tone === "negative" && "bg-rose-500/10 text-negative",
+          !quiet && tone === "negative" && "bg-negative/10 text-negative",
         )}>{icon}</span>}
         <span className="text-sm text-muted-foreground">{label}</span>
       </div>

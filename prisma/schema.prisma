@@ -123,6 +123,7 @@ model FinanceAccount {
   icon               String?
   color              String?
   status             AccountStatus @default(ACTIVE)
+  sortOrder          Int           @default(0)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
@@ -133,7 +134,7 @@ model FinanceAccount {
   portfolios    Portfolio[]
   settlementFor InvestmentTransaction[] @relation("Settlement")
 
-  @@index([userId, status])
+  @@index([userId, status, sortOrder])
 }
 
 enum AccountType {
@@ -317,6 +318,7 @@ model SecurityPrice {
   currency   String
   asOf       DateTime
   source     String // 'finnhub' | 'manual'
+  fetchedAt  DateTime @updatedAt
 
   @@unique([securityId, asOf, source])
   @@index([securityId, asOf])
@@ -365,6 +367,7 @@ model FxRate {
   rate   Decimal  @db.Decimal(18, 8)
   asOf   DateTime // date-only (00:00 UTC)
   source String
+  fetchedAt DateTime @updatedAt
 
   @@unique([base, quote, asOf])
   @@index([base, quote, asOf])

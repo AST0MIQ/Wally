@@ -174,6 +174,7 @@ export function AccountForm({
               <Input
                 id="acc-obd"
                 type="date"
+                className="min-w-0 max-w-full text-[13px]"
                 value={openingBalanceDate}
                 onChange={(e) => setOpeningBalanceDate(e.target.value)}
               />

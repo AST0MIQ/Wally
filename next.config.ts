@@ -18,13 +18,13 @@ const withSerwist = withSerwistInit({
 // Tailwind's injected styles — nonce-based CSP is the stricter future step.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'" +
+  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" +
     (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.googleusercontent.com",
   "font-src 'self' data:",
-  "connect-src 'self'",
-  "worker-src 'self'",
+  "connect-src 'self' https://cdn.jsdelivr.net https://tessdata.projectnaptha.com",
+  "worker-src 'self' blob:",
   "manifest-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",

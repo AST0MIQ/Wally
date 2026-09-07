@@ -27,8 +27,12 @@ export async function getOrCreateSecurity(
   input: SecurityInput,
 ): Promise<{ id: string; symbol: string; currency: string; name: string }> {
   const symbol = input.symbol.trim().toUpperCase();
+  const requestedCurrency = input.currency?.trim().toUpperCase();
   const existing = await prisma.security.findFirst({
-    where: { symbol, exchange: null },
+    where: {
+      symbol,
+      ...(requestedCurrency ? { currency: requestedCurrency } : {}),
+    },
   });
   if (existing) {
     return {
@@ -41,12 +45,18 @@ export async function getOrCreateSecurity(
 
   // enrich from Finnhub if available
   const profile = await getProfile(symbol);
+  const currency = requestedCurrency || profile.currency || "USD";
+  const symbolCollision = await prisma.security.findFirst({
+    where: { symbol },
+    select: { id: true },
+  });
   const created = await prisma.security.create({
     data: {
       symbol,
+      exchange: symbolCollision ? `CCY:${currency}` : null,
       name: input.name || profile.name || symbol,
       type: input.type ?? "STOCK",
-      currency: input.currency || profile.currency || "USD",
+      currency,
       finnhubSymbol: symbol,
     },
   });
@@ -182,6 +192,62 @@ export type PriceRefreshResult = {
   skipped: number;
 };
 
+const LIVE_PRICE_TTL_MS = 60_000;
+
+export async function refreshSecurityPrices(
+  securityIds: string[],
+): Promise<PriceRefreshResult> {
+  const securities = await prisma.security.findMany({
+    where: { id: { in: securityIds } },
+    select: {
+      id: true,
+      currency: true,
+      finnhubSymbol: true,
+      symbol: true,
+      prices: {
+        where: { source: "finnhub" },
+        orderBy: { fetchedAt: "desc" },
+        take: 1,
+        select: { fetchedAt: true },
+      },
+    },
+  });
+
+  let updated = 0;
+  let skipped = 0;
+  for (const security of securities) {
+    const lastFetch = security.prices[0]?.fetchedAt;
+    if (lastFetch && Date.now() - lastFetch.getTime() < LIVE_PRICE_TTL_MS) {
+      skipped += 1;
+      continue;
+    }
+    const quote = await getQuote(security.finnhubSymbol || security.symbol);
+    if (!quote) {
+      skipped += 1;
+      continue;
+    }
+    await prisma.securityPrice.upsert({
+      where: {
+        securityId_asOf_source: {
+          securityId: security.id,
+          asOf: quote.asOf,
+          source: "finnhub",
+        },
+      },
+      create: {
+        securityId: security.id,
+        price: quote.price.toString(),
+        currency: security.currency,
+        asOf: quote.asOf,
+        source: "finnhub",
+      },
+      update: { price: quote.price.toString() },
+    });
+    updated += 1;
+  }
+  return { securities: securities.length, updated, skipped };
+}
+
 /** Cron: refresh Finnhub quotes for every security currently held. */
 export async function refreshHeldSecurityPrices(): Promise<PriceRefreshResult> {
   const held = await prisma.investmentTransaction.findMany({
@@ -190,40 +256,14 @@ export async function refreshHeldSecurityPrices(): Promise<PriceRefreshResult> {
     select: { securityId: true, security: { select: { finnhubSymbol: true, symbol: true } } },
   });
 
-  const day = dayFloor(new Date());
-  let updated = 0;
-  let skipped = 0;
+  return refreshSecurityPrices(held.map((row) => row.securityId));
+}
 
-  for (const h of held) {
-    const symbol = h.security.finnhubSymbol || h.security.symbol;
-    const quote = await getQuote(symbol);
-    if (!quote) {
-      skipped += 1;
-      continue;
-    }
-    const security = await prisma.security.findUnique({
-      where: { id: h.securityId },
-      select: { currency: true },
-    });
-    await prisma.securityPrice.upsert({
-      where: {
-        securityId_asOf_source: {
-          securityId: h.securityId,
-          asOf: day,
-          source: "finnhub",
-        },
-      },
-      create: {
-        securityId: h.securityId,
-        price: quote.price.toString(),
-        currency: security?.currency ?? "USD",
-        asOf: day,
-        source: "finnhub",
-      },
-      update: { price: quote.price.toString() },
-    });
-    updated += 1;
-  }
-
-  return { securities: held.length, updated, skipped };
+export async function refreshUserSecurityPrices(userId: string): Promise<PriceRefreshResult> {
+  const held = await prisma.investmentTransaction.findMany({
+    where: { userId, deletedAt: null },
+    distinct: ["securityId"],
+    select: { securityId: true },
+  });
+  return refreshSecurityPrices(held.map((row) => row.securityId));
 }

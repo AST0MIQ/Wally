@@ -68,7 +68,7 @@ export function TransactionRow({
       className="group flex w-full items-center gap-3 rounded-xl px-3 py-4 text-left transition-all duration-200 hover:bg-muted/70 active:scale-[0.995]"
     >
       <span
-        className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl text-base", isIncome ? "bg-emerald-500/10 text-positive" : "bg-rose-500/10 text-negative")}
+        className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl text-base", isIncome ? "bg-emerald-500/10 text-positive" : "bg-negative/10 text-negative")}
         style={item.categoryColor ? { backgroundColor: `${item.categoryColor}18` } : undefined}
       >
         {item.categoryIcon || item.accountIcon || (isIncome ? <ArrowDownLeft className="size-5" /> : <ArrowUpRight className="size-5" />)}

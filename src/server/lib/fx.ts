@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db";
 import { Decimal, money, toPlain, type DecimalInput } from "@/lib/money";
+import { getForexRates } from "@/server/lib/finnhub";
 
 /**
  * Multi-currency FX. All rates are stored relative to a single pivot (USD):
@@ -171,6 +172,35 @@ export async function refreshLatestRates(
 
   const rows = await upsertRates(data.date, data.rates, "frankfurter");
   return { dates: [data.date], currencies: list, rowsWritten: rows };
+}
+
+/** Refresh intraday FX when the configured provider supports it. */
+export async function refreshLiveRates(currencies?: string[]): Promise<RateFetchResult> {
+  const list = currencies ?? (await currenciesInUse());
+  const wanted = list.filter((currency) => currency !== FX_PIVOT);
+  if (wanted.length === 0) return { dates: [], currencies: [], rowsWritten: 0 };
+
+  const recent = await prisma.fxRate.findFirst({
+    where: { base: FX_PIVOT, quote: { in: wanted }, source: "finnhub-live" },
+    orderBy: { fetchedAt: "desc" },
+    select: { fetchedAt: true },
+  });
+  if (recent && Date.now() - recent.fetchedAt.getTime() < 5 * 60_000) {
+    return { dates: [], currencies: wanted, rowsWritten: 0 };
+  }
+
+  const feed = await getForexRates();
+  if (!feed) return { dates: [], currencies: wanted, rowsWritten: 0 };
+  const rates = Object.fromEntries(
+    wanted.flatMap((currency) => {
+      const rate = feed.rates[currency];
+      return typeof rate === "number" && rate > 0 ? [[currency, rate]] : [];
+    }),
+  );
+  if (Object.keys(rates).length === 0) return { dates: [], currencies: wanted, rowsWritten: 0 };
+  const date = dayFloorUTC(feed.asOf).toISOString().slice(0, 10);
+  const rows = await upsertRates(date, rates, "finnhub-live");
+  return { dates: [date], currencies: Object.keys(rates), rowsWritten: rows };
 }
 
 /** Backfill a historical window (one timeseries request). */

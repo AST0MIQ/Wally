@@ -103,9 +103,9 @@ async function computePortfolioHoldings(portfolioId: string): Promise<{
   const raw = [...bySecurity.entries()].map(([securityId, { security, txns: list }]) => {
     const h = computeHolding(list);
     const price: LatestPrice = priceMap.get(securityId) ?? null;
-    const m = price
-      ? marketMetrics(h, price.price)
-      : { marketValue: ZERO, unrealizedPnL: ZERO, unrealizedPnLPct: ZERO };
+    // Missing market data is unknown, not a zero price. Use cost as a neutral
+    // valuation until a quote arrives so the UI never reports a false -100%.
+    const m = marketMetrics(h, price ? price.price : h.avgCost);
     return { securityId, security, h, price, m };
   });
 

@@ -27,7 +27,7 @@ export async function searchSecurities(
   if (!token || !query.trim()) return [];
   const url = `${BASE}/search?q=${encodeURIComponent(query.trim())}&token=${token}`;
   try {
-    const res = await fetch(url, { headers: { accept: "application/json" } });
+    const res = await fetch(url, { cache: "no-store", headers: { accept: "application/json" } });
     if (!res.ok) return [];
     const data = (await res.json()) as {
       result?: Array<{
@@ -58,7 +58,7 @@ export async function getQuote(symbol: string): Promise<Quote> {
   if (!token) return null;
   const url = `${BASE}/quote?symbol=${encodeURIComponent(symbol)}&token=${token}`;
   try {
-    const res = await fetch(url, { headers: { accept: "application/json" } });
+    const res = await fetch(url, { cache: "no-store", headers: { accept: "application/json" } });
     if (!res.ok) return null;
     const data = (await res.json()) as { c?: number; t?: number };
     if (!data.c || data.c <= 0) return null;
@@ -78,11 +78,29 @@ export async function getProfile(symbol: string): Promise<Profile> {
   if (!token) return { currency: null, name: null };
   const url = `${BASE}/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${token}`;
   try {
-    const res = await fetch(url, { headers: { accept: "application/json" } });
+    const res = await fetch(url, { cache: "no-store", headers: { accept: "application/json" } });
     if (!res.ok) return { currency: null, name: null };
     const data = (await res.json()) as { currency?: string; name?: string };
     return { currency: data.currency ?? null, name: data.name ?? null };
   } catch {
     return { currency: null, name: null };
+  }
+}
+
+export type ForexRates = { rates: Record<string, number>; asOf: Date } | null;
+
+/** Latest USD FX feed. Availability depends on the configured Finnhub plan. */
+export async function getForexRates(): Promise<ForexRates> {
+  const token = key();
+  if (!token) return null;
+  const url = `${BASE}/forex/rates?base=USD&token=${token}`;
+  try {
+    const res = await fetch(url, { cache: "no-store", headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { quote?: Record<string, number> };
+    if (!data.quote || Object.keys(data.quote).length === 0) return null;
+    return { rates: data.quote, asOf: new Date() };
+  } catch {
+    return null;
   }
 }

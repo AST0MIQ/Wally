@@ -28,7 +28,7 @@ export const PRIMARY_NAV: NavItem[] = [
 /** Condensed set for the mobile bottom bar (the center "+" is added separately). */
 export const BOTTOM_NAV: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-  { href: "/transactions", labelKey: "transactions", icon: ArrowLeftRight },
   { href: "/accounts", labelKey: "accounts", icon: Wallet },
+  { href: "/portfolio", labelKey: "portfolio", icon: LineChart },
   { href: "/settings", labelKey: "settings", icon: Settings },
 ];

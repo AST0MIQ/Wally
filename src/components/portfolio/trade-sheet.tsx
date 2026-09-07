@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { ImageIcon, Loader2, Upload } from "lucide-react";
+import { parseInvestmentSlip } from "@/lib/investment-slip";
 
 import type { AccountLite } from "@/server/services/account.service";
 import type { SecuritySearchResult } from "@/server/services/security.service";
@@ -28,19 +30,19 @@ export function TradeSheet({
   onOpenChange,
   accounts,
   finnhubEnabled,
-  defaultType = "BUY",
+  defaultType = "HOLDING",
 }: {
   portfolioId: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   accounts: AccountLite[];
   finnhubEnabled: boolean;
-  defaultType?: "BUY" | "SELL";
+  defaultType?: "HOLDING" | "BUY" | "SELL";
 }) {
   const t = useTranslations("portfolio");
   const tc = useTranslations("common");
 
-  const [type, setType] = useState<"BUY" | "SELL">(defaultType);
+  const [type, setType] = useState<"HOLDING" | "BUY" | "SELL">(defaultType);
   const [symbol, setSymbol] = useState("");
   const [securityName, setSecurityName] = useState("");
   const [query, setQuery] = useState("");
@@ -51,9 +53,14 @@ export function TradeSheet({
   const [tradeDate, setTradeDate] = useState(todayISO());
   const [settlementAccountId, setSettlementAccountId] = useState("");
   const [note, setNote] = useState("");
+  const [slipPreview, setSlipPreview] = useState("");
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrState, setOcrState] = useState<"IDLE" | "READING" | "READY" | "ERROR">("IDLE");
   const idemRef = useRef(crypto.randomUUID());
+  const slipPreviewRef = useRef("");
 
   const create = useAction(createInvestmentTxnAction);
+  const isHolding = type === "HOLDING";
 
   useEffect(() => {
     if (!open) return;
@@ -68,8 +75,50 @@ export function TradeSheet({
     setTradeDate(todayISO());
     setSettlementAccountId("");
     setNote("");
+    if (slipPreviewRef.current) URL.revokeObjectURL(slipPreviewRef.current);
+    slipPreviewRef.current = "";
+    setSlipPreview("");
+    setOcrProgress(0);
+    setOcrState("IDLE");
     idemRef.current = crypto.randomUUID();
   }, [open, defaultType]);
+
+  async function readSlip(file: File) {
+    if (slipPreviewRef.current) URL.revokeObjectURL(slipPreviewRef.current);
+    const previewUrl = URL.createObjectURL(file);
+    slipPreviewRef.current = previewUrl;
+    setSlipPreview(previewUrl);
+    setOcrState("READING");
+    setOcrProgress(0);
+    let worker: Awaited<ReturnType<typeof import("tesseract.js")["createWorker"]>> | undefined;
+    try {
+      const { createWorker } = await import("tesseract.js");
+      worker = await createWorker(["tha", "eng"], undefined, {
+        logger: (message) => {
+          if (message.status === "recognizing text") {
+            setOcrProgress(Math.round(message.progress * 100));
+          }
+        },
+      });
+      const result = await worker.recognize(file);
+
+      const parsed = parseInvestmentSlip(result.data.text);
+      if (parsed.type) setType(parsed.type);
+      if (parsed.symbol) {
+        setSymbol(parsed.symbol);
+        setQuery(parsed.symbol);
+      }
+      if (parsed.quantity) setQuantity(parsed.quantity);
+      if (parsed.price) setPrice(parsed.price);
+      if (parsed.fee) setFee(parsed.fee);
+      if (parsed.tradeDate) setTradeDate(parsed.tradeDate);
+      setOcrState(parsed.symbol || parsed.quantity || parsed.price ? "READY" : "ERROR");
+    } catch {
+      setOcrState("ERROR");
+    } finally {
+      await worker?.terminate();
+    }
+  }
 
   // debounced security search
   useEffect(() => {
@@ -93,15 +142,15 @@ export function TradeSheet({
     await create.run(
       {
         portfolioId,
-        type,
+        type: type === "HOLDING" ? "BUY" : type,
         symbol: symbol.trim().toUpperCase(),
         securityName: securityName || undefined,
         quantity,
         price,
-        fee: fee || "0",
-        tradeDate: new Date(tradeDate),
-        settlementAccountId: settlementAccountId || undefined,
-        note: note || undefined,
+        fee: isHolding ? "0" : (fee || "0"),
+        tradeDate: isHolding ? new Date() : new Date(tradeDate),
+        settlementAccountId: isHolding ? undefined : (settlementAccountId || undefined),
+        note: isHolding ? undefined : (note || undefined),
         idempotencyKey: idemRef.current,
       },
       { successMessage: tc("save"), onSuccess: () => onOpenChange(false) },
@@ -114,10 +163,38 @@ export function TradeSheet({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="mx-auto max-w-lg">
         <DrawerTitle className="mb-4 text-lg font-semibold">
-          {t("addTrade")}
+          {isHolding ? t("addHolding") : t("addTrade")}
         </DrawerTitle>
 
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+        {!isHolding && <label className="mb-4 flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
+          {ocrState === "READING" ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
+          <span className="flex-1">
+            {ocrState === "READING"
+              ? t("readingSlip", { progress: ocrProgress })
+              : isHolding ? t("uploadHolding") : t("uploadSlip")}
+            {ocrState === "READY" && <small className="mt-1 block font-normal text-muted-foreground">{t("slipReady")}</small>}
+            {ocrState === "ERROR" && <small className="mt-1 block font-normal text-negative">{t("slipFailed")}</small>}
+          </span>
+          {slipPreview ? (
+            <img src={slipPreview} alt="" className="size-11 rounded-lg object-cover" />
+          ) : (
+            <ImageIcon className="size-5 text-muted-foreground" />
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            disabled={ocrState === "READING"}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void readSlip(file);
+              event.target.value = "";
+            }}
+          />
+        </label>}
+
+        {!isHolding && <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
           {(["BUY", "SELL"] as const).map((tt) => (
             <button
               key={tt}
@@ -131,7 +208,7 @@ export function TradeSheet({
               {tt === "BUY" ? t("buy") : t("sell")}
             </button>
           ))}
-        </div>
+        </div>}
 
         <div className="flex flex-col gap-3">
           {finnhubEnabled ? (
@@ -179,14 +256,14 @@ export function TradeSheet({
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label={t("quantity")}>
+            <Field label={isHolding ? t("remainingShares") : t("quantity")}>
               <Input
                 inputMode="decimal"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
               />
             </Field>
-            <Field label={t("price")}>
+            <Field label={isHolding ? t("costPerShare") : t("price")}>
               <Input
                 inputMode="decimal"
                 value={price}
@@ -201,7 +278,7 @@ export function TradeSheet({
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          {!isHolding && <div className="grid grid-cols-2 gap-3">
             <Field label={t("fee")}>
               <Input
                 inputMode="decimal"
@@ -216,9 +293,9 @@ export function TradeSheet({
                 onChange={(e) => setTradeDate(e.target.value)}
               />
             </Field>
-          </div>
+          </div>}
 
-          <Field label={t("settlementAccount")} hint={t("settlementHint")}>
+          {!isHolding && <Field label={t("settlementAccount")} hint={t("settlementHint")}>
             <Select
               value={settlementAccountId}
               onChange={(e) => setSettlementAccountId(e.target.value)}
@@ -230,15 +307,15 @@ export function TradeSheet({
                 </option>
               ))}
             </Select>
-          </Field>
+          </Field>}
 
-          <Field label={tc("none")}>
+          {!isHolding && <Field label={tc("none")}>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={tc("optional")}
             />
-          </Field>
+          </Field>}
 
           <Button
             size="lg"

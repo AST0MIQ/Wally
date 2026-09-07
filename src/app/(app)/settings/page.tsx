@@ -8,6 +8,8 @@ import { requireUser } from "@/server/lib/guards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/nav/language-switcher";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
+import { BaseCurrencySelect } from "@/components/settings/base-currency-select";
+import { AccentPicker } from "@/components/settings/accent-picker";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -59,7 +61,13 @@ export default async function SettingsPage() {
           <CardTitle>{t("appearance")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ThemeToggle />
+          <div className="flex flex-col gap-5">
+            <ThemeToggle />
+            <div>
+              <p className="mb-2 text-sm font-medium">{t("accentColor")}</p>
+              <AccentPicker />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -67,8 +75,9 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle>{t("baseCurrency")}</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          {user.baseCurrency}
+        <CardContent className="flex flex-col gap-2">
+          <BaseCurrencySelect value={user.baseCurrency} />
+          <p className="text-xs text-muted-foreground">{t("baseCurrencyHint")}</p>
         </CardContent>
       </Card>
 

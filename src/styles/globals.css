@@ -46,15 +46,24 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #3b82f6;
-  --primary: #2563eb;
+  --primary: #1d4ed8;
   --primary-foreground: #ffffff;
   --accent: #eff6ff;
-  --accent-foreground: #1d4ed8;
+  --accent-foreground: #1e40af;
   --positive: #059669;
-  --negative: #e5484d;
+  --negative: #dc2626;
   --warning: #d97706;
   --radius: 1rem;
 }
+
+:root[data-accent="red"]     { --primary: #b91c1c; --ring: #ef4444; --accent: #fef2f2; --accent-foreground: #991b1b; }
+:root[data-accent="orange"]  { --primary: #c2410c; --ring: #f97316; --accent: #fff7ed; --accent-foreground: #9a3412; }
+:root[data-accent="amber"]   { --primary: #ca8a04; --primary-foreground: #422006; --ring: #eab308; --accent: #fffbeb; --accent-foreground: #92400e; }
+:root[data-accent="lime"]    { --primary: #4d7c0f; --ring: #84cc16; --accent: #f7fee7; --accent-foreground: #3f6212; }
+:root[data-accent="emerald"] { --primary: #047857; --ring: #10b981; --accent: #ecfdf5; --accent-foreground: #065f46; }
+:root[data-accent="teal"]    { --primary: #0f766e; --ring: #14b8a6; --accent: #f0fdfa; --accent-foreground: #115e59; }
+:root[data-accent="violet"]  { --primary: #6d28d9; --ring: #8b5cf6; --accent: #f5f3ff; --accent-foreground: #5b21b6; }
+:root[data-accent="rose"]    { --primary: #a21caf; --ring: #d946ef; --accent: #fdf4ff; --accent-foreground: #86198f; }
 
 :root[data-theme="dark"],
 .dark {
@@ -69,14 +78,23 @@
   --border: #1e293b;
   --input: #263143;
   --ring: #3b82f6;
-  --primary: #3b82f6;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
   --accent: #14264a;
   --accent-foreground: #bfdbfe;
   --positive: #34d399;
-  --negative: #fb7185;
+  --negative: #ef4444;
   --warning: #fbbf24;
 }
+
+:root[data-theme="dark"][data-accent="red"],     .dark[data-accent="red"]     { --primary: #dc2626; --ring: #ef4444; --accent: #45161a; --accent-foreground: #fecaca; }
+:root[data-theme="dark"][data-accent="orange"],  .dark[data-accent="orange"]  { --primary: #ea580c; --ring: #f97316; --accent: #4a2410; --accent-foreground: #fed7aa; }
+:root[data-theme="dark"][data-accent="amber"],   .dark[data-accent="amber"]   { --primary: #ca8a04; --primary-foreground: #422006; --ring: #eab308; --accent: #422006; --accent-foreground: #fde68a; }
+:root[data-theme="dark"][data-accent="lime"],    .dark[data-accent="lime"]    { --primary: #4d7c0f; --ring: #84cc16; --accent: #1a2e05; --accent-foreground: #d9f99d; }
+:root[data-theme="dark"][data-accent="emerald"], .dark[data-accent="emerald"] { --primary: #059669; --ring: #10b981; --accent: #0b352b; --accent-foreground: #a7f3d0; }
+:root[data-theme="dark"][data-accent="teal"],    .dark[data-accent="teal"]    { --primary: #0d9488; --ring: #14b8a6; --accent: #0c332f; --accent-foreground: #99f6e4; }
+:root[data-theme="dark"][data-accent="violet"],  .dark[data-accent="violet"]  { --primary: #7c3aed; --ring: #8b5cf6; --accent: #2e1a55; --accent-foreground: #ddd6fe; }
+:root[data-theme="dark"][data-accent="rose"],    .dark[data-accent="rose"]    { --primary: #c026d3; --ring: #d946ef; --accent: #4a1049; --accent-foreground: #f5d0fe; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -91,14 +109,25 @@
     --border: #1e293b;
     --input: #263143;
     --ring: #3b82f6;
-    --primary: #3b82f6;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
     --accent: #14264a;
     --accent-foreground: #bfdbfe;
     --positive: #34d399;
-    --negative: #fb7185;
+    --negative: #ef4444;
     --warning: #fbbf24;
   }
+
+  /* Accent overrides for "system" theme on a dark OS (no data-theme attribute).
+     Extra [data-accent] selector outweighs the auto-dark rule above. */
+  :root:not([data-theme="light"])[data-accent="red"]     { --primary: #dc2626; --ring: #ef4444; --accent: #45161a; --accent-foreground: #fecaca; }
+  :root:not([data-theme="light"])[data-accent="orange"]  { --primary: #ea580c; --ring: #f97316; --accent: #4a2410; --accent-foreground: #fed7aa; }
+  :root:not([data-theme="light"])[data-accent="amber"]   { --primary: #ca8a04; --primary-foreground: #422006; --ring: #eab308; --accent: #422006; --accent-foreground: #fde68a; }
+  :root:not([data-theme="light"])[data-accent="lime"]    { --primary: #4d7c0f; --ring: #84cc16; --accent: #1a2e05; --accent-foreground: #d9f99d; }
+  :root:not([data-theme="light"])[data-accent="emerald"] { --primary: #059669; --ring: #10b981; --accent: #0b352b; --accent-foreground: #a7f3d0; }
+  :root:not([data-theme="light"])[data-accent="teal"]    { --primary: #0d9488; --ring: #14b8a6; --accent: #0c332f; --accent-foreground: #99f6e4; }
+  :root:not([data-theme="light"])[data-accent="violet"]  { --primary: #7c3aed; --ring: #8b5cf6; --accent: #2e1a55; --accent-foreground: #ddd6fe; }
+  :root:not([data-theme="light"])[data-accent="rose"]    { --primary: #c026d3; --ring: #d946ef; --accent: #4a1049; --accent-foreground: #f5d0fe; }
 }
 
 /* ── Map tokens into Tailwind's theme ──────────────────────── */
@@ -140,6 +169,16 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Hero / summary card fill that recolours with the chosen accent. */
+.brand-gradient {
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--primary) 78%, #000) 0%,
+    var(--primary) 52%,
+    color-mix(in srgb, var(--primary) 84%, #fff) 100%
+  );
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
@@ -149,6 +188,12 @@ body {
   /* respect notches / safe areas in standalone PWA */
   min-height: 100dvh;
   background-image: radial-gradient(circle at 74% -12%, color-mix(in srgb, var(--primary) 5%, transparent), transparent 32rem);
+}
+
+/* Sonner injects its own font stack — force it onto the app typeface. */
+[data-sonner-toaster],
+[data-sonner-toaster] [data-sonner-toast] {
+  font-family: var(--font-sans);
 }
 
 /* Keep the landing page clear of the iPhone sensor housing and home indicator
@@ -195,6 +240,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .soft-divider > * + * { border-top: 1px solid color-mix(in srgb, var(--border) 78%, transparent); }
 button:not(:disabled), summary { cursor: pointer; }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--negative); }
+input[type="date"] { min-width: 0; max-width: 100%; }
 .tabular-nums { overflow-wrap: anywhere; }
 @media (max-width: 767px) {
   button, summary { min-height: 44px; }

@@ -6,6 +6,7 @@ import { action } from "@/server/lib/action";
 import {
   accountCreateSchema,
   accountIdSchema,
+  accountReorderSchema,
   accountUpdateSchema,
 } from "@/lib/validation/account";
 import {
@@ -13,6 +14,7 @@ import {
   deleteAccount,
   setAccountStatus,
   updateAccount,
+  reorderAccounts,
 } from "@/server/services/account.service";
 
 function revalidateAccounts() {
@@ -26,6 +28,14 @@ export const createAccountAction = action(
     const res = await createAccount(user.id, input);
     revalidateAccounts();
     return res;
+  },
+);
+
+export const reorderAccountsAction = action(
+  accountReorderSchema,
+  async ({ input, user }) => {
+    await reorderAccounts(user.id, input.ids);
+    revalidateAccounts();
   },
 );
 

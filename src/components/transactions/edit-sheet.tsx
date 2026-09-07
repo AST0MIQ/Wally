@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
+import { confirm } from "@/components/ui/confirm";
 
 export function EditSheet({
   item,
@@ -225,8 +226,13 @@ function TxnEdit({
               aria-label={tc("delete")}
               size="icon"
               disabled={del.pending}
-              onClick={() => {
-                if (!window.confirm(t("deleteConfirm"))) return;
+              onClick={async () => {
+                const ok = await confirm({
+                  title: t("deleteConfirm"),
+                  tone: "danger",
+                  confirmText: tc("delete"),
+                });
+                if (!ok) return;
                 del.run(
                   { id: item.id },
                   {
@@ -381,8 +387,13 @@ function TransferEdit({
               aria-label={tc("delete")}
               size="icon"
               disabled={del.pending}
-              onClick={() => {
-                if (!window.confirm(t("deleteTransferConfirm"))) return;
+              onClick={async () => {
+                const ok = await confirm({
+                  title: t("deleteTransferConfirm"),
+                  tone: "danger",
+                  confirmText: tc("delete"),
+                });
+                if (!ok) return;
                 del.run(
                   { id: item.id },
                   {

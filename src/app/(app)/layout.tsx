@@ -2,6 +2,9 @@ import { requireUser } from "@/server/lib/guards";
 import { getQuickAddData } from "@/server/services/quick-add";
 import { AppShell } from "@/components/nav/app-shell";
 
+// Authenticated pages always depend on the current session and live database data.
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {

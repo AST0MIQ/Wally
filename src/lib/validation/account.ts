@@ -34,6 +34,9 @@ export const accountUpdateSchema = accountCreateSchema.partial().extend({
 });
 
 export const accountIdSchema = z.object({ id: zCuid });
+export const accountReorderSchema = z.object({
+  ids: z.array(zCuid).min(1).max(100),
+});
 
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;

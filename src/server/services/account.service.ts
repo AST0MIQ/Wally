@@ -53,11 +53,24 @@ export async function listAccounts(
       userId,
       ...(opts.includeArchived ? {} : { status: "ACTIVE" }),
     },
-    orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ status: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
   });
 
   const balances = await computeAccountBalances(userId);
   return accounts.map((a) => serialize(a, toPlain(balances.get(a.id) ?? 0)));
+}
+
+export async function reorderAccounts(userId: string, ids: string[]): Promise<void> {
+  const uniqueIds = [...new Set(ids)];
+  const owned = await prisma.financeAccount.count({
+    where: { userId, status: "ACTIVE", id: { in: uniqueIds } },
+  });
+  if (owned !== uniqueIds.length) notFound("Account not found");
+  await prisma.$transaction(
+    uniqueIds.map((id, sortOrder) =>
+      prisma.financeAccount.update({ where: { id }, data: { sortOrder } }),
+    ),
+  );
 }
 
 export type AccountLite = {

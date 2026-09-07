@@ -94,9 +94,14 @@ export async function updateCategory(
 ): Promise<{ id: string }> {
   const existing = await prisma.category.findFirst({
     where: { id: input.id, userId },
-    select: { id: true },
+    select: { id: true, name: true, systemKey: true },
   });
   if (!existing) notFound("Category not found");
+
+  // A supplied name means the user edited the label (the client omits `name`
+  // for icon/colour-only edits). Once a seeded row is renamed it becomes the
+  // user's own label and stops being translated.
+  const renamedSystemRow = input.name !== undefined && existing.systemKey !== null;
 
   await prisma.category.update({
     where: { id: existing.id },
@@ -104,6 +109,7 @@ export async function updateCategory(
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.icon !== undefined ? { icon: input.icon || null } : {}),
       ...(input.color !== undefined ? { color: input.color || null } : {}),
+      ...(renamedSystemRow ? { systemKey: null } : {}),
     },
   });
   await writeAudit({
@@ -211,14 +217,21 @@ export async function updateSubcategory(
 ): Promise<{ id: string }> {
   const sub = await prisma.subcategory.findFirst({
     where: { id: input.id, category: { userId } },
-    select: { id: true },
+    select: { id: true, name: true, systemKey: true },
   });
   if (!sub) notFound("Subcategory not found");
+
+  // A supplied name means the user edited the label (the client omits `name`
+  // for icon-only edits). Once a seeded row is renamed it becomes the user's
+  // own label and stops being translated.
+  const renamedSystemRow = input.name !== undefined && sub.systemKey !== null;
+
   await prisma.subcategory.update({
     where: { id: sub.id },
     data: {
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.icon !== undefined ? { icon: input.icon || null } : {}),
+      ...(renamedSystemRow ? { systemKey: null } : {}),
     },
   });
   await writeAudit({

@@ -33,7 +33,7 @@ export function BottomNav({ className }: { className?: string }) {
         <li className="flex-1">
           <button
             type="button"
-            onClick={openQuickAdd}
+            onClick={() => openQuickAdd()}
             aria-label={t("addTransaction")}
             className="mx-auto flex size-13 -translate-y-3 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_10px_24px_-8px_var(--primary)] transition-all duration-200 active:scale-95"
           >

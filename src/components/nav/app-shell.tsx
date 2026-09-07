@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/nav/sidebar";
 import { MobileTopBar } from "@/components/nav/mobile-top-bar";
 import { BottomNav } from "@/components/nav/bottom-nav";
 import { QuickAddProvider } from "@/components/transactions/quick-add-provider";
+import { MarketDataRefresh } from "@/components/market/market-data-refresh";
 
 type AppShellProps = {
   children: ReactNode;
@@ -24,6 +25,7 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <QuickAddProvider accounts={accounts} categories={categories}>
+      <MarketDataRefresh />
       <div className="md:grid md:grid-cols-[224px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
         <Sidebar
           role={role}

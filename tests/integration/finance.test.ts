@@ -10,6 +10,8 @@ import {
 } from "@/server/services/portfolio.service";
 import { setManualPrice } from "@/server/services/security.service";
 import { computeNetWorth } from "@/server/lib/networth";
+import { updateCategory, updateSubcategory } from "@/server/services/category.service";
+import { seedUserDefaults } from "@/server/services/onboarding";
 
 const hasDb = await prisma
   .$queryRaw`SELECT 1`.then(() => true)
@@ -362,5 +364,62 @@ describe("dayFloorUTC", () => {
   it("truncates to UTC midnight", () => {
     const d = dayFloorUTC(new Date("2026-09-02T18:45:12.000Z"));
     expect(d.toISOString()).toBe("2026-09-02T00:00:00.000Z");
+  });
+});
+
+describe.skipIf(!hasDb)("category rename (DB)", () => {
+  const email = `vitest-cat+${Date.now()}@wally.local`;
+  let userId = "";
+
+  beforeAll(async () => {
+    const user = await prisma.user.create({
+      data: { email, name: "vitest", baseCurrency: "THB" },
+    });
+    userId = user.id;
+    await seedUserDefaults(userId);
+  });
+
+  afterAll(async () => {
+    if (userId) await prisma.user.delete({ where: { id: userId } });
+  });
+
+  it("drops systemKey when a seeded subcategory is renamed", async () => {
+    const cat = await prisma.category.findFirstOrThrow({
+      where: { userId, systemKey: "food" },
+      include: { subcategories: true },
+    });
+    const sub = cat.subcategories.find((s) => s.systemKey === "delivery")!;
+
+    await updateSubcategory(userId, { id: sub.id, name: "Grab" });
+
+    const after = await prisma.subcategory.findUniqueOrThrow({ where: { id: sub.id } });
+    expect(after.name).toBe("Grab");
+    expect(after.systemKey).toBeNull();
+  });
+
+  it("keeps systemKey for an icon-only edit", async () => {
+    const cat = await prisma.category.findFirstOrThrow({
+      where: { userId, systemKey: "transport" },
+      include: { subcategories: true },
+    });
+    const sub = cat.subcategories.find((s) => s.systemKey === "fuel")!;
+
+    await updateSubcategory(userId, { id: sub.id, icon: "🔋" });
+
+    const after = await prisma.subcategory.findUniqueOrThrow({ where: { id: sub.id } });
+    expect(after.systemKey).toBe("fuel");
+    expect(after.icon).toBe("🔋");
+  });
+
+  it("drops systemKey when a seeded category is renamed", async () => {
+    const cat = await prisma.category.findFirstOrThrow({
+      where: { userId, systemKey: "housing" },
+    });
+
+    await updateCategory(userId, { id: cat.id, name: "บ้านเช่า" });
+
+    const after = await prisma.category.findUniqueOrThrow({ where: { id: cat.id } });
+    expect(after.name).toBe("บ้านเช่า");
+    expect(after.systemKey).toBeNull();
   });
 });

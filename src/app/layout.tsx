@@ -3,9 +3,10 @@ import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
-import { THEME_COOKIE, isThemeChoice } from "@/i18n/config";
+import { ACCENT_COOKIE, THEME_COOKIE, isAccentChoice, isThemeChoice } from "@/i18n/config";
 
 import { Toaster } from "@/components/ui/toaster";
+import { ConfirmHost } from "@/components/ui/confirm";
 import { AppleSplash } from "@/components/pwa/apple-splash";
 import { ServiceWorker } from "@/components/pwa/service-worker";
 import "@/styles/globals.css";
@@ -53,9 +54,11 @@ export default async function RootLayout({
   const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isThemeChoice(themeCookie) ? themeCookie : "system";
   const dataTheme = theme === "system" ? undefined : theme;
+  const accentCookie = (await cookies()).get(ACCENT_COOKIE)?.value;
+  const accent = isAccentChoice(accentCookie) ? accentCookie : "blue";
 
   return (
-    <html lang={locale} data-theme={dataTheme} suppressHydrationWarning>
+    <html lang={locale} data-theme={dataTheme} data-accent={accent} suppressHydrationWarning>
       <head>
         <AppleSplash />
       </head>
@@ -63,6 +66,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
           <Toaster />
+          <ConfirmHost />
           <ServiceWorker />
         </NextIntlClientProvider>
       </body>
