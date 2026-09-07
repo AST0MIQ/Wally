@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { action } from "@/server/lib/action";
+import { AppError } from "@/server/lib/errors";
 import { requireUser } from "@/server/lib/guards";
 import { rateLimit, RATE_LIMITS } from "@/server/lib/rate-limit";
 import {
+  investmentHoldingImportSchema,
   investmentTxnCreateSchema,
   investmentTxnIdSchema,
   investmentTxnUpdateSchema,
@@ -69,6 +71,34 @@ export const createInvestmentTxnAction = action(
     revalidatePortfolio(input.portfolioId);
     revalidatePath("/accounts");
     return r;
+  },
+);
+
+export const createHoldingImportAction = action(
+  investmentHoldingImportSchema,
+  async ({ input, user }) => {
+    const results: { symbol: string; ok: boolean; error?: string }[] = [];
+    for (const item of input.items) {
+      try {
+        await createInvestmentTransaction(user.id, {
+          portfolioId: input.portfolioId,
+          type: "BUY",
+          symbol: item.symbol,
+          securityType: "STOCK",
+          securityCurrency: item.securityCurrency,
+          quantity: item.quantity,
+          price: item.price,
+          fee: "0",
+          tradeDate: new Date(),
+          idempotencyKey: item.idempotencyKey,
+        });
+        results.push({ symbol: item.symbol, ok: true });
+      } catch (error) {
+        results.push({ symbol: item.symbol, ok: false, error: error instanceof AppError ? error.message : "unexpected_error" });
+      }
+    }
+    revalidatePortfolio(input.portfolioId);
+    return { results, created: results.filter((row) => row.ok).length, failed: results.filter((row) => !row.ok).length };
   },
 );
 

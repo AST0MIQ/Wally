@@ -56,6 +56,17 @@ export const investmentTxnCreateSchema = z.object({
   idempotencyKey: zIdempotencyKey,
 });
 
+export const investmentHoldingImportSchema = z.object({
+  portfolioId: zCuid,
+  items: z.array(z.object({
+    symbol: zShortText.min(1),
+    securityCurrency: zCurrency.default("USD"),
+    quantity: zQuantity,
+    price: zAmount,
+    idempotencyKey: zIdempotencyKey,
+  })).min(1).max(50),
+});
+
 export const investmentTxnUpdateSchema = z.object({
   id: zCuid,
   type: z.enum(["BUY", "SELL"]).optional(),

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Upload } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
@@ -36,6 +36,7 @@ import { Field } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
 import { TradeSheet } from "@/components/portfolio/trade-sheet";
+import { ImportHoldingsSheet } from "@/components/portfolio/import-holdings-sheet";
 import { MarketRefreshButton } from "@/components/market/market-refresh-button";
 import { confirm } from "@/components/ui/confirm";
 
@@ -64,6 +65,7 @@ export function PortfolioDetailView({
   const ccy = detail.baseCurrency;
 
   const [tradeOpen, setTradeOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [tradeType, setTradeType] = useState<"HOLDING" | "BUY" | "SELL">("HOLDING");
   const [activeTab, setActiveTab] = useState<"HOLDINGS" | "HISTORY">("HOLDINGS");
   const [expandedHolding, setExpandedHolding] = useState<string | null>(null);
@@ -180,13 +182,17 @@ export function PortfolioDetailView({
         </div>
       </Card>
 
-      <div className="flex gap-2">
-        <Button className="flex-1" onClick={() => openTrade("BUY")}>
+      <div className="grid grid-cols-2 gap-2">
+        <Button className="col-span-2" onClick={() => openTrade("BUY")}>
           {t("trade")}
         </Button>
-        <Button variant="secondary" className="flex-1" onClick={() => openTrade("HOLDING")}>
+        <Button variant="secondary" onClick={() => openTrade("HOLDING")}>
           <Plus className="size-4" />
           {t("addAssetShort")}
+        </Button>
+        <Button variant="secondary" onClick={() => setImportOpen(true)}>
+          <Upload className="size-4" />
+          {t("importCtaShort")}
         </Button>
       </div>
 
@@ -329,6 +335,7 @@ export function PortfolioDetailView({
         finnhubEnabled={finnhubEnabled}
         defaultType={tradeType}
       />
+      <ImportHoldingsSheet portfolioId={detail.id} open={importOpen} onOpenChange={setImportOpen} />
 
     </section>
   );
