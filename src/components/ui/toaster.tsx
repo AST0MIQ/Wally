@@ -40,6 +40,11 @@ export function Toaster() {
     <SonnerToaster
       theme={theme}
       position="top-center"
+      mobileOffset={{
+        top: "calc(env(safe-area-inset-top, 0px) + 1rem)",
+        right: "max(env(safe-area-inset-right, 0px), 1rem)",
+        left: "max(env(safe-area-inset-left, 0px), 1rem)",
+      }}
       toastOptions={{
         classNames: {
           toast:
