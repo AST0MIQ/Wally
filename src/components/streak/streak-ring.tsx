@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useId, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -86,7 +88,10 @@ export function StreakRing({
   const glint = style === "comet" || style === "blaze" || gem !== null;
   const glow =
     style === "blaze" || gem === "diamond" || gem === "platinum" || gem === "ruby";
-  const gradId = `sr-${dim}-${style}`;
+  // Unique per instance: a shared id breaks when the first SVG holding the
+  // gradient sits in a display:none subtree (e.g. the md:hidden mobile bar),
+  // leaving the desktop ring with no stroke colour.
+  const gradId = `sr${useId().replace(/[:]/g, "")}`;
   const spark = SPARK[fx.spark];
 
   const years =
