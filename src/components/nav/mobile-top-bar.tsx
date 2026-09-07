@@ -88,7 +88,7 @@ export function MobileTopBar({
           </SideDrawerContent>
         </Drawer>
 
-        <span className="text-base font-bold tracking-tight">Wally</span>
+        <span className="text-base font-bold tracking-tight">Wally<span className="text-primary">.</span></span>
 
         <ProfileChip name={name} email={email} streak={streak} compact className="ml-auto" />
       </header>
