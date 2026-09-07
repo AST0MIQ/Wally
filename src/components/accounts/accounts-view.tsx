@@ -57,6 +57,18 @@ export function AccountsView({
   const dragElRef = useRef<HTMLElement | null>(null);
   const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
   const dropTargetRef = useRef<string | null>(null);
+  // On touch the drag arms only after a long press, so the list can scroll
+  // normally; mouse arms immediately.
+  const longPressRef = useRef<number | null>(null);
+  const armedRef = useRef(false);
+  const pressStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(
+    () => () => {
+      if (longPressRef.current != null) window.clearTimeout(longPressRef.current);
+    },
+    [],
+  );
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
@@ -81,6 +93,7 @@ export function AccountsView({
       el.style.transform = "";
       el.style.zIndex = "";
       el.style.pointerEvents = "";
+      el.style.touchAction = "";
       const clear = () => {
         el.style.transition = "";
         el.removeEventListener("transitionend", clear);
@@ -180,17 +193,53 @@ export function AccountsView({
                 }}
                 onPointerDown={(event) => {
                   if ((event.target as HTMLElement).closest("a,button")) return;
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  dragRef.current = a.id;
-                  setDraggingId(a.id);
-                  if (!prefersReducedMotion) {
-                    dragElRef.current = event.currentTarget as HTMLElement;
-                    dragOriginRef.current = { x: event.clientX, y: event.clientY };
-                    event.currentTarget.style.zIndex = "50";
-                    event.currentTarget.style.pointerEvents = "none";
+                  const el = event.currentTarget as HTMLElement;
+                  const pointerId = event.pointerId;
+                  const startX = event.clientX;
+                  const startY = event.clientY;
+                  pressStartRef.current = { x: startX, y: startY };
+                  armedRef.current = false;
+
+                  const beginDrag = () => {
+                    longPressRef.current = null;
+                    armedRef.current = true;
+                    try {
+                      el.setPointerCapture(pointerId);
+                    } catch {
+                      /* pointer already released */
+                    }
+                    dragRef.current = a.id;
+                    setDraggingId(a.id);
+                    if (!prefersReducedMotion) {
+                      dragElRef.current = el;
+                      dragOriginRef.current = { x: startX, y: startY };
+                      el.style.zIndex = "50";
+                      el.style.pointerEvents = "none";
+                      el.style.touchAction = "none";
+                    }
+                  };
+
+                  if (event.pointerType === "mouse") {
+                    beginDrag();
+                  } else {
+                    // hold to grab — a quick swipe scrolls the list instead
+                    longPressRef.current = window.setTimeout(beginDrag, 260);
                   }
                 }}
                 onPointerMove={(event) => {
+                  if (!armedRef.current) {
+                    // still waiting on the long press — a real drag means the
+                    // user wants to scroll, so drop the pending grab
+                    if (longPressRef.current != null && pressStartRef.current) {
+                      const mx = Math.abs(event.clientX - pressStartRef.current.x);
+                      const my = Math.abs(event.clientY - pressStartRef.current.y);
+                      if (mx > 10 || my > 10) {
+                        window.clearTimeout(longPressRef.current);
+                        longPressRef.current = null;
+                      }
+                    }
+                    return;
+                  }
                   if (!dragRef.current || !dragOriginRef.current) return;
                   const dx = event.clientX - dragOriginRef.current.x;
                   const dy = event.clientY - dragOriginRef.current.y;
@@ -208,6 +257,13 @@ export function AccountsView({
                   }
                 }}
                 onPointerUp={(event) => {
+                  if (longPressRef.current != null) {
+                    window.clearTimeout(longPressRef.current);
+                    longPressRef.current = null;
+                  }
+                  if (!armedRef.current) return; // was a tap / scroll, not a drag
+                  armedRef.current = false;
+
                   const sourceId = dragRef.current;
                   const targetEl = document
                     .elementFromPoint(event.clientX, event.clientY)
@@ -215,13 +271,13 @@ export function AccountsView({
                   const target = targetEl?.dataset.accountId;
                   dragRef.current = null;
                   setDraggingId(null);
+                  suppressClickRef.current = true; // a grab happened — don't also navigate
 
                   const valid = !!sourceId && !!target && sourceId !== target;
                   if (!valid) {
                     resetDragEl(true); // float back to place
                     return;
                   }
-                  suppressClickRef.current = true;
 
                   const commit = () => {
                     if (arranging) {
@@ -260,6 +316,11 @@ export function AccountsView({
                   }
                 }}
                 onPointerCancel={() => {
+                  if (longPressRef.current != null) {
+                    window.clearTimeout(longPressRef.current);
+                    longPressRef.current = null;
+                  }
+                  armedRef.current = false;
                   dragRef.current = null;
                   setDraggingId(null);
                   resetDragEl(true);
@@ -273,7 +334,7 @@ export function AccountsView({
                     : undefined,
                 }}
                 className={cn(
-                  "interactive-lift relative flex h-full touch-none select-none flex-col overflow-hidden p-4 will-change-transform",
+                  "interactive-lift relative flex h-full select-none flex-col overflow-hidden p-4 will-change-transform [-webkit-touch-callout:none]",
                   draggingId === a.id && "z-10 opacity-95 ring-2 ring-primary shadow-2xl",
                   draggingId === a.id && prefersReducedMotion && "scale-[1.03] rotate-1 opacity-80",
                   dropTargetId === a.id && "scale-[1.05] ring-4 ring-primary/70 shadow-lg transition-transform",
