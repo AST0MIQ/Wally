@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronDown, Plus, Trash2, Upload } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, Upload } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
 import { TradeSheet } from "@/components/portfolio/trade-sheet";
 import { ImportHoldingsSheet } from "@/components/portfolio/import-holdings-sheet";
@@ -66,6 +67,7 @@ export function PortfolioDetailView({
 
   const [tradeOpen, setTradeOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [tradeType, setTradeType] = useState<"HOLDING" | "BUY" | "SELL">("HOLDING");
   const [activeTab, setActiveTab] = useState<"HOLDINGS" | "HISTORY">("HOLDINGS");
   const [expandedHolding, setExpandedHolding] = useState<string | null>(null);
@@ -159,40 +161,32 @@ export function PortfolioDetailView({
             <MarketRefreshButton />
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className={cn("font-semibold", unrealized > 0 && "text-positive", unrealized < 0 && "text-negative")}>
             {unrealized >= 0 ? "+" : ""}{formatCurrency(detail.totalUnrealizedPnL, ccy, locale)}
             {" "}({Number(detail.totalUnrealizedPnLPct).toFixed(2)}%)
-            {secondary && (
-              <span className="ml-1.5 font-normal text-muted-foreground">
-                ≈ {Number(secondary.unrealizedPnL) >= 0 ? "+" : ""}{formatCurrency(secondary.unrealizedPnL, secondary.currency, locale)}
-              </span>
-            )}
           </span>
           <span className="text-sm text-muted-foreground">
             {t("cost")} {formatCurrency(detail.totalCost, ccy, locale)}
-            {secondary && <> · ≈ {formatCurrency(secondary.cost, secondary.currency, locale)}</>}
           </span>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-          <span className="text-sm text-muted-foreground">{t("realized")}</span>
-          <span className={cn("font-semibold", realized > 0 && "text-positive", realized < 0 && "text-negative")}>
-            {realized >= 0 ? "+" : ""}{formatCurrency(detail.totalRealizedPnL, ccy, locale)}
-          </span>
-        </div>
+        {realized !== 0 && (
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-sm">
+            <span className="text-muted-foreground">{t("realized")}</span>
+            <span className={cn("font-semibold", realized > 0 && "text-positive", realized < 0 && "text-negative")}>
+              {realized >= 0 ? "+" : ""}{formatCurrency(detail.totalRealizedPnL, ccy, locale)}
+            </span>
+          </div>
+        )}
       </Card>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button className="col-span-2" onClick={() => openTrade("BUY")}>
+      <div className="flex gap-2">
+        <Button className="flex-1" onClick={() => openTrade("BUY")}>
           {t("trade")}
         </Button>
-        <Button variant="secondary" onClick={() => openTrade("HOLDING")}>
+        <Button variant="secondary" className="flex-1" onClick={() => setAddOpen(true)}>
           <Plus className="size-4" />
           {t("addAssetShort")}
-        </Button>
-        <Button variant="secondary" onClick={() => setImportOpen(true)}>
-          <Upload className="size-4" />
-          {t("importCtaShort")}
         </Button>
       </div>
 
@@ -336,6 +330,55 @@ export function PortfolioDetailView({
         defaultType={tradeType}
       />
       <ImportHoldingsSheet portfolioId={detail.id} open={importOpen} onOpenChange={setImportOpen} />
+
+      <Drawer open={addOpen} onOpenChange={setAddOpen}>
+        <DrawerContent className="mx-auto max-w-lg">
+          <div className="mb-4 flex items-center justify-between">
+            <DrawerTitle className="text-lg font-semibold">{t("addHolding")}</DrawerTitle>
+            <DrawerClose asChild>
+              <Button variant="ghost" size="icon" aria-label={tc("close")}>
+                <ChevronDown />
+              </Button>
+            </DrawerClose>
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setAddOpen(false);
+                openTrade("HOLDING");
+              }}
+              className="flex items-center gap-3 rounded-xl border border-border p-4 text-left transition-colors hover:bg-muted"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Plus className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{t("addOne")}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{t("addOneHint")}</span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAddOpen(false);
+                setImportOpen(true);
+              }}
+              className="flex items-center gap-3 rounded-xl border border-border p-4 text-left transition-colors hover:bg-muted"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Upload className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{t("importCtaShort")}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{t("importHint")}</span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
     </section>
   );

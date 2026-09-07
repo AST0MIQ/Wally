@@ -11,7 +11,6 @@ import { intlLocaleTag } from "@/i18n/config";
 import { formatDate, formatMoney } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import type { DashboardData } from "@/server/services/dashboard.service";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/charts/stat-card";
@@ -63,26 +62,43 @@ export function DashboardView({ data, firstName }: { data: DashboardData; firstN
     <PageHeader title={t("title")} description={ui("overview")} eyebrow={<>{t("greeting")}{firstName ? `, ${firstName}` : ""}</>} />
 
     {/* Net worth — the one-glance answer */}
-    <section className="brand-gradient relative overflow-hidden rounded-[1.75rem] px-6 py-6 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-8">
-      <p className="flex items-center gap-2 text-sm text-white/70"><Sparkles className="size-4" />{t("netWorth")}</p>
-      <p className="balance-mask mt-2 text-[2.6rem] font-semibold leading-none sm:text-[3.25rem]">{money(nw.netWorth, 2)}</p>
+    <section className="brand-gradient relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7">
+      <p className="flex items-center gap-1.5 text-xs text-white/70"><Sparkles className="size-3.5" />{t("netWorth")}</p>
+      <p className="balance-mask mt-1.5 text-[2rem] font-semibold leading-none sm:text-[2.6rem]">{money(nw.netWorth, 2)}</p>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/15 pt-5">
-        <div><p className="text-xs text-white/70">{t("cash")}</p><p className="balance-mask mt-1 text-lg font-semibold">{money(nw.totalCash)}</p></div>
+      <div className="mt-5 grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs text-white/70">{t("investment")}</p>
-          <p className="balance-mask mt-1 text-lg font-semibold">{money(nw.totalInvestment)}</p>
-          {investmentGainPct !== null && <p className={cn("balance-mask mt-0.5 text-xs font-medium", investmentGain >= 0 ? "text-emerald-200" : "text-red-200")}>
-            {investmentGain >= 0 ? "+" : ""}{money(investmentGain)} · {investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(1)}%
-          </p>}
+          <p className="text-[11px] text-white/70">{t("cash")}</p>
+          <p className="balance-mask mt-0.5 text-base font-semibold">{money(nw.totalCash)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-white/70">{t("investment")}</p>
+          <p className="balance-mask mt-0.5 text-base font-semibold">
+            {money(nw.totalInvestment)}
+            {investmentGainPct !== null && (
+              <span className={cn("ml-1.5 text-[11px] font-medium", investmentGain >= 0 ? "text-emerald-200" : "text-red-200")}>
+                {investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(1)}%
+              </span>
+            )}
+          </p>
         </div>
       </div>
 
-      {netWorth > 0 && <div className="mt-4" aria-label={`${t("cash")} ${cashPct.toFixed(0)}%, ${t("investment")} ${(100 - cashPct).toFixed(0)}%`}>
-        <div className="flex h-1.5 overflow-hidden rounded-full bg-white/20"><span className="bg-white/85" style={{ width: `${cashPct}%` }} /><span className="bg-white/45" style={{ width: `${100 - cashPct}%` }} /></div>
-        <div className="mt-2 flex justify-between text-[11px] text-white/70"><span>{t("cash")} {cashPct.toFixed(0)}%</span><span>{t("investment")} {(100 - cashPct).toFixed(0)}%</span></div>
-      </div>}
-      {nw.approx && <Badge variant="neutral" className="mt-4 border-white/20 bg-white/10 text-white">≈ {t("approxFx")}</Badge>}
+      {netWorth > 0 && (
+        <div className="mt-3" aria-label={`${t("cash")} ${cashPct.toFixed(0)}%, ${t("investment")} ${(100 - cashPct).toFixed(0)}%`}>
+          <div className="flex h-1.5 overflow-hidden rounded-full bg-white/20">
+            <span className="bg-white/85" style={{ width: `${cashPct}%` }} />
+            <span className="bg-white/45" style={{ width: `${100 - cashPct}%` }} />
+          </div>
+          <div className="mt-1.5 flex justify-between text-[11px] text-white/70">
+            <span>{t("cash")} {cashPct.toFixed(0)}%</span>
+            <span>{t("investment")} {(100 - cashPct).toFixed(0)}%</span>
+          </div>
+        </div>
+      )}
+      {nw.approx && (
+        <p className="mt-2.5 text-[11px] text-white/60">≈ {t("approxFx")}</p>
+      )}
     </section>
 
     {/* This month — spending health */}

@@ -28,7 +28,7 @@ export function MobileTopBar({
   return (
     <header
       className={cn(
-        "mobile-safe-header sticky top-0 z-30 flex items-center gap-2 border-b border-border/70 bg-card/80 px-3 backdrop-blur-xl",
+        "glass mobile-safe-header sticky top-0 z-30 flex items-center gap-2 border-b border-glass px-3",
         className,
       )}
     >

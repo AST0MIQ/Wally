@@ -18,18 +18,18 @@ export function DrawerContent({
 }: React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & { footer?: React.ReactNode }) {
   return (
     <DrawerPrimitive.Portal>
-      <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
+      <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45" />
       <DrawerPrimitive.Content
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-8 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-border bg-card",
+          "glass fixed inset-x-0 bottom-0 z-50 mt-8 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-glass",
           "pb-[env(safe-area-inset-bottom)]",
           className,
         )}
         {...props}
       >
-        <div className="mx-auto mt-3 h-1.5 w-10 shrink-0 rounded-full bg-muted-foreground/30" />
+        <div className="mx-auto mt-3 h-1.5 w-10 shrink-0 rounded-full bg-muted-foreground/40" />
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">{children}</div>
-        {footer && <div className="shrink-0 border-t border-border bg-card px-5 py-4">{footer}</div>}
+        {footer && <div className="shrink-0 border-t border-glass px-5 py-4">{footer}</div>}
       </DrawerPrimitive.Content>
     </DrawerPrimitive.Portal>
   );
@@ -43,10 +43,10 @@ export function SideDrawerContent({
 }: React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>) {
   return (
     <DrawerPrimitive.Portal>
-      <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
+      <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45" />
       <DrawerPrimitive.Content
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[82%] max-w-xs flex-col border-r border-border bg-card",
+          "glass fixed inset-y-0 left-0 z-50 flex w-[82%] max-w-xs flex-col border-r border-glass",
           className,
         )}
         {...props}

@@ -20,7 +20,7 @@ export function BottomNav({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "fixed inset-x-3 bottom-3 z-40 rounded-2xl border border-border/80 bg-card/90 shadow-[0_18px_45px_-18px_rgb(15_23_42_/_0.45)] backdrop-blur-xl",
+        "glass fixed inset-x-3 bottom-3 z-40 rounded-2xl border border-glass",
         "mb-[env(safe-area-inset-bottom)]",
         className,
       )}

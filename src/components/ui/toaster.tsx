@@ -48,7 +48,7 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            "rounded-xl border border-border bg-popover text-popover-foreground text-sm shadow-lg",
+            "glass rounded-xl border border-glass text-popover-foreground text-sm",
           description: "text-muted-foreground",
           actionButton: "bg-primary text-primary-foreground",
           cancelButton: "bg-muted text-muted-foreground",
@@ -58,9 +58,9 @@ export function Toaster() {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
+          "--normal-bg": "var(--glass-bg)",
           "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
+          "--normal-border": "var(--glass-border)",
         } as React.CSSProperties
       }
     />

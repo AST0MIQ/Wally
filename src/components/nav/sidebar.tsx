@@ -15,7 +15,7 @@ export function Sidebar({ role, email, lastSeenVersion, className }: SidebarProp
   return (
     <aside
       className={cn(
-        "h-dvh border-r border-border/70 bg-card/65 backdrop-blur-xl",
+        "glass h-dvh border-r border-glass",
         className,
       )}
     >
