@@ -10,6 +10,7 @@ import { useAction } from "@/hooks/use-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
+import { HoldingSlipGuide } from "@/components/portfolio/holding-slip-guide";
 
 type Row = { id: string; symbol: string; currency: string; quantity: string; costPerShare: string };
 const blank = (): Row => ({ id: crypto.randomUUID(), symbol: "", currency: "USD", quantity: "", costPerShare: "" });
@@ -71,6 +72,7 @@ export function ImportHoldingsSheet({ portfolioId, open, onOpenChange }: {
   return <Drawer open={open} onOpenChange={onOpenChange}>
     <DrawerContent className="mx-auto max-w-lg">
       <div className="mb-4 flex items-center justify-between"><DrawerTitle>{t("importTitle")}</DrawerTitle><DrawerClose asChild><Button variant="ghost" size="icon"><X /></Button></DrawerClose></div>
+      {rows.length === 0 && !reading && <HoldingSlipGuide />}
       <label className="mb-4 flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
         {reading ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
         <span className="flex-1">{reading ? t("importReading", { done: progress, total: totalFiles, percent: ocrPercent }) : t("importUpload")}</span><ImageIcon className="size-5" />
