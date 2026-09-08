@@ -21,7 +21,7 @@ describe("cosmetic asset config v1", () => {
     };
     const parsed = parseAssetConfig(1, cfg);
     expect(parsed.surface).toBe("GRADIENT");
-    expect(parsed.lightCompatible).toBe(true); // defaulted
+    expect(parsed.motion).toBe("FLOATING_PARTICLES");
   });
 
   it("rejects unknown keys (no css / style / script smuggling)", () => {

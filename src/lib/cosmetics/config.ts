@@ -54,8 +54,9 @@ export const assetConfigV1Schema = z
     mobileFallbackMotion: z.enum(MOTION_PRESETS).optional(),
     /** motion to use when the viewer prefers reduced motion */
     reducedMotionMotion: z.enum(MOTION_PRESETS).optional(),
-    lightCompatible: z.boolean().default(true),
-    darkCompatible: z.boolean().default(true),
+    /** default true — the renderer treats only an explicit `false` as opt-out */
+    lightCompatible: z.boolean().optional(),
+    darkCompatible: z.boolean().optional(),
     minComponentVersion: semverish.optional(),
   })
   .strict();
@@ -93,7 +94,14 @@ export function safeParseAssetConfig(version: number, raw: unknown) {
 }
 
 /** A no-op config — the neutral default (renders as today's Wally look). */
-export const NEUTRAL_CONFIG: AssetConfigV1 = {
-  lightCompatible: true,
-  darkCompatible: true,
-};
+export const NEUTRAL_CONFIG: AssetConfigV1 = {};
+
+/** `false` only when the asset explicitly opted out of that scheme. */
+export function isSchemeCompatible(
+  config: AssetConfigV1,
+  scheme: "light" | "dark",
+): boolean {
+  return scheme === "light"
+    ? config.lightCompatible !== false
+    : config.darkCompatible !== false;
+}
