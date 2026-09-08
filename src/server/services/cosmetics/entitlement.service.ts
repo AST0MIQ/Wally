@@ -246,3 +246,58 @@ export async function listUserInventory(userId: string): Promise<{
 
   return { items, equippedBySlot };
 }
+
+export type ApplicableCollection = {
+  id: string;
+  slug: string;
+  name: string;
+  rarity: string;
+  fullyOwned: boolean;
+  slots: { slot: EquipmentSlot; assetId: string; assetName: string }[];
+};
+
+/**
+ * Published, set-applicable collections + whether the user owns every asset in
+ * each (so the /cosmetics UI can enable "Apply" and show the replace diff).
+ */
+export async function listApplicableCollections(
+  userId: string,
+): Promise<ApplicableCollection[]> {
+  const [collections, entitlements] = await Promise.all([
+    prisma.cosmeticCollection.findMany({
+      where: { status: "PUBLISHED", isApplicableAsSet: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: {
+        assets: {
+          orderBy: { slot: "asc" },
+          include: {
+            asset: { select: { id: true, name: true, acquisitionType: true } },
+          },
+        },
+      },
+    }),
+    prisma.userEntitlement.findMany({
+      where: { userId, status: "ACTIVE" },
+      select: { assetId: true },
+    }),
+  ]);
+
+  const owned = new Set(entitlements.map((e) => e.assetId));
+
+  return collections
+    .filter((c) => c.assets.length > 0)
+    .map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      rarity: c.rarity,
+      fullyOwned: c.assets.every(
+        (a) => a.asset.acquisitionType === "DEFAULT" || owned.has(a.assetId),
+      ),
+      slots: c.assets.map((a) => ({
+        slot: a.slot as EquipmentSlot,
+        assetId: a.assetId,
+        assetName: a.asset.name,
+      })),
+    }));
+}

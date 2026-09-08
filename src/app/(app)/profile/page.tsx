@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ChevronRight, Flame } from "lucide-react";
+import { ChevronRight, Flame, Sparkles } from "lucide-react";
 
 import { requireUser } from "@/server/lib/guards";
 import { prisma } from "@/server/db";
@@ -23,6 +23,7 @@ export default async function ProfilePage() {
   const t = await getTranslations("profile");
   const s = await getTranslations("streak");
   const nav = await getTranslations("nav");
+  const cos = await getTranslations("cosmetics");
 
   const [record, streak] = await Promise.all([
     prisma.user.findUniqueOrThrow({
@@ -119,15 +120,29 @@ export default async function ProfilePage() {
         />
       </Card>
 
-      <Link href="/settings" className="block">
-        <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
-          <div>
-            <p className="font-medium">{nav("settings")}</p>
-            <p className="text-sm text-muted-foreground">{t("settingsHint")}</p>
-          </div>
-          <ChevronRight className="size-4 text-muted-foreground" />
-        </Card>
-      </Link>
+      <div className="flex flex-col gap-2">
+        <Link href="/cosmetics" className="block">
+          <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
+            <div className="flex items-center gap-3">
+              <Sparkles className="size-5 shrink-0 text-primary" />
+              <div>
+                <p className="font-medium">{cos("entryTitle")}</p>
+                <p className="text-sm text-muted-foreground">{cos("entryHint")}</p>
+              </div>
+            </div>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </Card>
+        </Link>
+        <Link href="/settings" className="block">
+          <Card className="flex items-center justify-between p-5 transition-colors hover:bg-muted">
+            <div>
+              <p className="font-medium">{nav("settings")}</p>
+              <p className="text-sm text-muted-foreground">{t("settingsHint")}</p>
+            </div>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </Card>
+        </Link>
+      </div>
 
       <Card className="divide-y divide-border">
         {rows.map((row) => (
