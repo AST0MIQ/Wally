@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
+import { serializableTx } from "@/server/lib/tx";
 
 type Db = Prisma.TransactionClient;
 
@@ -46,7 +47,7 @@ export async function createRewardRule(adminId: string, input: RewardRuleCreate)
   if (Boolean(input.grantsCollectionId) === Boolean(input.grantsAssetId)) {
     conflict("reward_needs_exactly_one_target");
   }
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const rule = await tx.rewardRule.create({
       data: {
         key: input.key,
@@ -82,7 +83,7 @@ type RewardRuleUpdate = {
 };
 
 export async function updateRewardRule(adminId: string, patch: RewardRuleUpdate) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const current = await tx.rewardRule.findUnique({ where: { id: patch.id } });
     if (!current) notFound("reward_rule_not_found");
 
@@ -125,7 +126,7 @@ export async function setRewardRuleActive(
   id: string,
   isActive: boolean,
 ) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const rule = await tx.rewardRule.update({
       where: { id },
       data: { isActive },
@@ -141,7 +142,7 @@ export async function setRewardRuleActive(
 }
 
 export async function deleteRewardRule(adminId: string, id: string) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const rule = await tx.rewardRule.findUnique({ where: { id } });
     if (!rule) notFound("reward_rule_not_found");
 

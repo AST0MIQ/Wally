@@ -24,7 +24,7 @@
     "networth:backfill": "tsx scripts/backfill-networth.ts",
     "dev:user": "tsx scripts/dev-user.ts",
     "postinstall": "prisma generate",
-    "test:db": "DATABASE_URL=postgresql://localhost:5432/wally_test?schema=public DIRECT_URL=postgresql://localhost:5432/wally_test?schema=public vitest run"
+    "test:db": "tsx scripts/test-db-preflight.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

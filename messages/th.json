@@ -553,7 +553,8 @@
       "pickAsset": "เลือกไอเทม…",
       "onePerSlot": "หนึ่งไอเทมต่อหนึ่งช่อง",
       "publishBlocked": "ต้องเผยแพร่ไอเทมทุกชิ้นก่อน",
-      "empty": "ยังไม่มีคอลเลกชัน"
+      "empty": "ยังไม่มีคอลเลกชัน",
+      "frozenHint": "เผยแพร่แล้ว — รายการไอเทมถูกล็อก ใช้ \"ทำสำเนาเป็นฉบับร่าง\" เพื่อสร้างชุดใหม่"
     },
     "assets": {
       "title": "ไอเทม",
@@ -826,6 +827,10 @@
     "previewBackground": "พื้นหลังแอป",
     "previewCard": "ตัวอย่างการ์ด",
     "rendererComingPhase2": "ตัวเรนเดอร์จะมาในเฟส 2",
-    "phase2Short": "เฟส 2"
+    "phase2Short": "เฟส 2",
+    "incompatibleScheme": "ไม่แสดงในโหมด {scheme}",
+    "incompatibleVersion": "ต้องใช้แอปเวอร์ชัน {version} ขึ้นไป",
+    "incompatibleGeneric": "ไม่แสดงตามการตั้งค่าปัจจุบันของคุณ",
+    "duplicateAsDraft": "ทำสำเนาเป็นฉบับร่าง"
   }
 }

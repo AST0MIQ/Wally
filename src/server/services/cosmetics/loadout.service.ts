@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/server/db";
 import { conflict, forbidden, notFound } from "@/server/lib/errors";
+import { serializableTx } from "@/server/lib/tx";
 import {
   parseAssetConfig,
   type AssetConfigV1,
@@ -72,7 +73,7 @@ export async function getResolvedLoadout(
 }
 
 export async function equip(userId: string, slot: EquipmentSlot, assetId: string) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const asset = await tx.cosmeticAsset.findUnique({
       where: { id: assetId },
       select: { slot: true, status: true },
@@ -114,7 +115,7 @@ export async function applyCollection(
   userId: string,
   collectionId: string,
 ): Promise<ApplyCollectionResult> {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const collection = await tx.cosmeticCollection.findUnique({
       where: { id: collectionId },
       include: {
@@ -167,7 +168,7 @@ export async function applyCollection(
 
 /** Remove every equipped cosmetic — deterministic fallback to the stock look. */
 export async function resetToDefaults(userId: string) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const { count } = await tx.userEquippedAsset.deleteMany({ where: { userId } });
     return { cleared: count };
   });

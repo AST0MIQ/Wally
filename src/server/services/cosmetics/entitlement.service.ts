@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
+import { serializableTx } from "@/server/lib/tx";
 import { parseAssetConfig, type AssetConfigV1 } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 
@@ -94,7 +95,7 @@ export async function grantAsset(
   assetId: string,
   opts: GrantOpts = {},
 ) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const ent = await grantAssetInTx(tx, userId, assetId, {
       ...opts,
       grantedByAdminId: adminId,
@@ -110,22 +111,26 @@ export async function grantAsset(
   });
 }
 
-/** Grant every asset in a published collection, in one transaction. [S4] */
+/**
+ * Grant every asset in a published collection. Collection status, membership
+ * and each asset's status are re-read INSIDE the serializable transaction that
+ * does the grants + audit, so a concurrent hide/archive/detach is seen. [S4]
+ */
 export async function grantCollection(
   adminId: string,
   userId: string,
   collectionId: string,
   opts: GrantOpts = {},
 ) {
-  const collection = await prisma.cosmeticCollection.findUnique({
-    where: { id: collectionId },
-    include: { assets: { select: { assetId: true } } },
-  });
-  if (!collection) notFound("collection_not_found");
-  if (collection.status !== "PUBLISHED") conflict("collection_not_published");
-  if (collection.assets.length === 0) conflict("collection_empty");
+  return serializableTx(async (tx) => {
+    const collection = await tx.cosmeticCollection.findUnique({
+      where: { id: collectionId },
+      include: { assets: { select: { assetId: true } } },
+    });
+    if (!collection) notFound("collection_not_found");
+    if (collection.status !== "PUBLISHED") conflict("collection_not_published");
+    if (collection.assets.length === 0) conflict("collection_empty");
 
-  return prisma.$transaction(async (tx: Db) => {
     for (const { assetId } of collection.assets) {
       await grantAssetInTx(tx, userId, assetId, {
         ...opts,
@@ -150,13 +155,15 @@ export async function revokeEntitlement(
   assetId: string,
   reason?: string,
 ) {
-  const ent = await prisma.userEntitlement.findUnique({
-    where: { userId_assetId: { userId, assetId } },
-    include: { asset: { select: { slot: true } } },
-  });
-  if (!ent) notFound("entitlement_not_found");
+  return serializableTx(async (tx) => {
+    // read the entitlement + its asset slot INSIDE the tx so revocation, the
+    // conditional unequip and the audit all act on one consistent state
+    const ent = await tx.userEntitlement.findUnique({
+      where: { userId_assetId: { userId, assetId } },
+      include: { asset: { select: { slot: true } } },
+    });
+    if (!ent) notFound("entitlement_not_found");
 
-  return prisma.$transaction(async (tx: Db) => {
     await tx.userEntitlement.update({
       where: { id: ent.id },
       data: {
@@ -165,7 +172,6 @@ export async function revokeEntitlement(
         revokedByAdminId: adminId,
       },
     });
-    // if the revoked asset is currently equipped, take it off (same tx)
     await tx.userEquippedAsset.deleteMany({
       where: { userId, slot: ent.asset.slot, assetId },
     });

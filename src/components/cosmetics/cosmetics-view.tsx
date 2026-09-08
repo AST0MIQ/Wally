@@ -318,7 +318,7 @@ export function CosmeticsView({
                       slot={s.slot}
                       config={s.config}
                       previewUrl={s.previewUrl}
-                      className="h-28"
+
                     />
                   </div>
                 ))}

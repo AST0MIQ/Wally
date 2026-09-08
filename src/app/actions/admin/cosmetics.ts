@@ -15,6 +15,7 @@ import {
   setCollectionStatusSchema,
   attachAssetSchema,
   detachAssetSchema,
+  duplicateAssetSchema as duplicateCollectionSchema,
 } from "@/lib/validation/cosmetics";
 import * as assets from "@/server/services/cosmetics/asset.service";
 import * as collections from "@/server/services/cosmetics/collection.service";
@@ -113,6 +114,16 @@ export const deleteCollectionAction = adminAction(
     revalidateAppearance();
   },
   { name: "collection.delete", capability: "cosmetics:write" },
+);
+
+export const duplicateCollectionAction = adminAction(
+  duplicateCollectionSchema,
+  async ({ input, admin }) => {
+    const c = await collections.duplicateCollection(admin.id, input.id, input.slug);
+    revalidateAppearance();
+    return { id: c.id };
+  },
+  { name: "collection.duplicate", capability: "cosmetics:write" },
 );
 
 export const attachAssetAction = adminAction(

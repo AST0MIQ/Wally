@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { StatusActions } from "@/components/admin/status-actions";
 import { CollectionForm } from "@/components/admin/collection-form";
 import { CollectionAssetsPanel } from "@/components/admin/collection-assets-panel";
+import { DuplicateCollectionButton } from "@/components/admin/duplicate-collection-button";
 
 export default async function CollectionDetailPage({
   params,
@@ -42,9 +43,17 @@ export default async function CollectionDetailPage({
         id={collection.id}
         status={collection.status}
         setStatus={setCollectionStatusAction}
-        remove={deleteCollectionAction}
+        remove={collection.publishedAt === null ? deleteCollectionAction : undefined}
+        extra={
+          collection.publishedAt !== null ? (
+            <DuplicateCollectionButton id={collection.id} baseSlug={collection.slug} />
+          ) : undefined
+        }
       />
-      {collection.assets.length === 0 && (
+      {collection.publishedAt !== null && (
+        <p className="text-xs text-muted-foreground">{t("frozenHint")}</p>
+      )}
+      {collection.assets.length === 0 && collection.publishedAt === null && (
         <p className="text-xs text-warning">{t("publishBlocked")}</p>
       )}
 
@@ -66,6 +75,7 @@ export default async function CollectionDetailPage({
       <Card className="p-5">
         <CollectionAssetsPanel
           collectionId={collection.id}
+          frozen={collection.publishedAt !== null}
           attached={collection.assets.map((a) => ({
             assetId: a.assetId,
             slot: a.slot,

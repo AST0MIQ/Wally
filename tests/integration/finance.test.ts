@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { describeDb, hasDb } from "./_db";
+
 import { prisma } from "@/server/db";
 import { computeAccountBalances } from "@/server/lib/balance";
 import { convert, dayFloorUTC } from "@/server/lib/fx";
@@ -13,11 +15,8 @@ import { computeNetWorth } from "@/server/lib/networth";
 import { updateCategory, updateSubcategory } from "@/server/services/category.service";
 import { seedUserDefaults } from "@/server/services/onboarding";
 
-const hasDb = await prisma
-  .$queryRaw`SELECT 1`.then(() => true)
-  .catch(() => false);
 
-describe.skipIf(!hasDb)("finance integration (DB)", () => {
+describeDb("finance integration (DB)", () => {
   const email = `vitest+${Date.now()}@wally.local`;
   let userId = "";
   let accA = "";
@@ -136,7 +135,7 @@ describe.skipIf(!hasDb)("finance integration (DB)", () => {
   });
 });
 
-describe.skipIf(!hasDb)("investment — no double counting (§12)", () => {
+describeDb("investment — no double counting (§12)", () => {
   const stamp = Date.now();
   const email = `vitest-inv+${stamp}@wally.local`;
   // unique throwaway symbol so we never collide with a real global Security row
@@ -259,7 +258,7 @@ describe.skipIf(!hasDb)("investment — no double counting (§12)", () => {
   });
 });
 
-describe.skipIf(!hasDb)("net worth — multi-currency (§N3)", () => {
+describeDb("net worth — multi-currency (§N3)", () => {
   const stamp = Date.now();
   const email = `vitest-nw+${stamp}@wally.local`;
   const SYM = `NWT${stamp}`;
@@ -367,7 +366,7 @@ describe("dayFloorUTC", () => {
   });
 });
 
-describe.skipIf(!hasDb)("category rename (DB)", () => {
+describeDb("category rename (DB)", () => {
   const email = `vitest-cat+${Date.now()}@wally.local`;
   let userId = "";
 
@@ -424,7 +423,7 @@ describe.skipIf(!hasDb)("category rename (DB)", () => {
   });
 });
 
-describe.skipIf(!hasDb)("balance guard — no overdraft", () => {
+describeDb("balance guard — no overdraft", () => {
   const email = `vitest+bal+${Date.now()}@wally.local`;
   let userId = "";
   let acc = "";

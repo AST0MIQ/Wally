@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
+import { serializableTx } from "@/server/lib/tx";
 import type { CollectionCreateInput } from "@/lib/validation/cosmetics";
 
 type Db = Prisma.TransactionClient;
@@ -41,7 +42,7 @@ export async function createCollection(
   adminId: string,
   input: CollectionCreateInput,
 ) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const c = await tx.cosmeticCollection.create({
       data: {
         slug: input.slug,
@@ -68,7 +69,7 @@ export async function updateCollection(
   adminId: string,
   patch: { id: string } & Partial<CollectionCreateInput>,
 ) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const current = await tx.cosmeticCollection.findUnique({
       where: { id: patch.id },
     });
@@ -95,16 +96,18 @@ export async function updateCollection(
 }
 
 /**
- * DRAFT -> PUBLISHED requires every attached asset to already be PUBLISHED, so
- * applying a collection can never silently skip a draft/hidden asset. [S4]
- * HIDDEN / ARCHIVED are always allowed regardless of references. [S5]
+ * DRAFT -> PUBLISHED requires every attached asset to already be PUBLISHED
+ * (cross-row invariant — needs Serializable, not a single conditional write),
+ * so applying a collection can never silently skip a draft/hidden asset. [S4]
+ * The first PUBLISHED stamps `publishedAt`, which freezes membership forever —
+ * even a later PUBLISHED -> DRAFT. HIDDEN / ARCHIVED are always allowed. [S5]
  */
 export async function setCollectionStatus(
   adminId: string,
   id: string,
   status: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
 ) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const current = await tx.cosmeticCollection.findUnique({
       where: { id },
       include: { assets: { include: { asset: { select: { status: true } } } } },
@@ -122,7 +125,13 @@ export async function setCollectionStatus(
 
     const c = await tx.cosmeticCollection.update({
       where: { id },
-      data: { status },
+      data: {
+        status,
+        publishedAt:
+          status === "PUBLISHED" && current.publishedAt === null
+            ? new Date()
+            : current.publishedAt,
+      },
     });
     await auditInTx(tx, {
       userId: adminId,
@@ -137,8 +146,9 @@ export async function setCollectionStatus(
 
 /**
  * Attach an asset. At most one per slot per collection [S1]. Membership can
- * only change while the collection is DRAFT — a published/hidden/archived
- * collection's contents are frozen so it never re-skins users who applied it. [S5]
+ * only change while the collection has NEVER been published (`publishedAt`
+ * null) — once published, contents are frozen forever, even after a
+ * PUBLISHED -> DRAFT round-trip. A revised set needs `duplicateCollection`. [S5]
  */
 export async function attachAsset(
   adminId: string,
@@ -147,14 +157,14 @@ export async function attachAsset(
   sortOrder = 0,
 ) {
   try {
-    return await prisma.$transaction(async (tx: Db) => {
+    return await serializableTx(async (tx) => {
       const [collection, asset] = await Promise.all([
         tx.cosmeticCollection.findUnique({ where: { id: collectionId } }),
         tx.cosmeticAsset.findUnique({ where: { id: assetId } }),
       ]);
       if (!collection) notFound("collection_not_found");
       if (!asset) notFound("asset_not_found");
-      if (collection.status !== "DRAFT") conflict("collection_membership_frozen");
+      if (collection.publishedAt !== null) conflict("collection_membership_frozen");
 
       const link = await tx.collectionAsset.create({
         data: { collectionId, assetId, slot: asset.slot, sortOrder },
@@ -190,13 +200,13 @@ export async function detachAsset(
   collectionId: string,
   assetId: string,
 ) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const collection = await tx.cosmeticCollection.findUnique({
       where: { id: collectionId },
-      select: { status: true },
+      select: { publishedAt: true },
     });
     if (!collection) notFound("collection_not_found");
-    if (collection.status !== "DRAFT") conflict("collection_membership_frozen");
+    if (collection.publishedAt !== null) conflict("collection_membership_frozen");
 
     const link = await tx.collectionAsset.findUnique({
       where: { collectionId_assetId: { collectionId, assetId } },
@@ -214,9 +224,58 @@ export async function detachAsset(
   });
 }
 
-/** Hard delete — only a DRAFT with zero references. Otherwise archive. [S5] */
+/**
+ * Copy a collection (usually a published one) into a fresh editable DRAFT,
+ * membership included, so a revised set can be built without ever mutating the
+ * published original. Mirrors `duplicateAsset`. [S5]
+ */
+export async function duplicateCollection(
+  adminId: string,
+  id: string,
+  slug: string,
+) {
+  return serializableTx(async (tx) => {
+    const src = await tx.cosmeticCollection.findUnique({
+      where: { id },
+      include: { assets: { orderBy: { sortOrder: "asc" } } },
+    });
+    if (!src) notFound("collection_not_found");
+
+    const copy = await tx.cosmeticCollection.create({
+      data: {
+        slug,
+        name: `${src.name} (copy)`,
+        description: src.description,
+        coverUrl: src.coverUrl,
+        rarity: src.rarity,
+        isApplicableAsSet: src.isApplicableAsSet,
+        sortOrder: src.sortOrder,
+        createdByAdminId: adminId,
+        status: "DRAFT",
+        publishedAt: null,
+        assets: {
+          create: src.assets.map((a) => ({
+            assetId: a.assetId,
+            slot: a.slot,
+            sortOrder: a.sortOrder,
+          })),
+        },
+      },
+    });
+    await auditInTx(tx, {
+      userId: adminId,
+      action: "cosmeticCollection.duplicate",
+      entity: "CosmeticCollection",
+      entityId: copy.id,
+      metadata: { from: id, assetCount: src.assets.length },
+    });
+    return copy;
+  });
+}
+
+/** Hard delete — only a DRAFT that has NEVER been published + zero references. [S5] */
 export async function deleteCollection(adminId: string, id: string) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const c = await tx.cosmeticCollection.findUnique({
       where: { id },
       include: {
@@ -229,7 +288,7 @@ export async function deleteCollection(adminId: string, id: string) {
 
     const refs =
       c._count.assets + c._count.entitlementSources + c._count.rewardRules;
-    if (c.status !== "DRAFT" || refs > 0) {
+    if (c.status !== "DRAFT" || c.publishedAt !== null || refs > 0) {
       conflict("collection_has_references");
     }
 

@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { describeDb, hasDb } from "./_db";
+
 import { prisma } from "@/server/db";
 import { AppError } from "@/server/lib/errors";
 import {
@@ -14,6 +16,7 @@ import {
   attachAsset,
   detachAsset,
   setCollectionStatus,
+  duplicateCollection,
 } from "@/server/services/cosmetics/collection.service";
 import {
   grantAsset,
@@ -30,13 +33,10 @@ import {
   resetToDefaults,
 } from "@/server/services/cosmetics/loadout.service";
 
-const hasDb = await prisma
-  .$queryRaw`SELECT 1`.then(() => true)
-  .catch(() => false);
 
 const uniq = () => Math.random().toString(36).slice(2, 8);
 
-describe.skipIf(!hasDb)("cosmetics integration (DB)", () => {
+describeDb("cosmetics integration (DB)", () => {
   let adminId = "";
   let userId = "";
   const created = { assets: [] as string[], collections: [] as string[], users: [] as string[] };
@@ -287,22 +287,34 @@ describe.skipIf(!hasDb)("cosmetics integration (DB)", () => {
     expect(apps.find((a) => a.id === c.id)?.applicable).toBe(false);
   });
 
-  it("[5] published collection membership is frozen", async () => {
+  it("[4] once published, collection membership is frozen forever (even after PUBLISHED->DRAFT)", async () => {
     const c = await createCollection(adminId, {
       slug: `c-${uniq()}`, name: "Frozen", rarity: "COMMON", isApplicableAsSet: true,
     });
     created.collections.push(c.id);
     const a1 = await makePublishedAsset("TYPOGRAPHY");
-    await attachAsset(adminId, c.id, a1); // DRAFT -> ok
+    await attachAsset(adminId, c.id, a1); // never-published -> ok
     await setCollectionStatus(adminId, c.id, "PUBLISHED");
 
     const a2 = await makePublishedAsset("ICON_SET");
     await expect(attachAsset(adminId, c.id, a2)).rejects.toThrow(/frozen/);
     await expect(detachAsset(adminId, c.id, a1)).rejects.toThrow(/frozen/);
 
-    // back to DRAFT -> membership editable again
+    // PUBLISHED -> HIDDEN / ARCHIVED allowed
+    await expect(setCollectionStatus(adminId, c.id, "HIDDEN")).resolves.toBeTruthy();
+    await expect(setCollectionStatus(adminId, c.id, "ARCHIVED")).resolves.toBeTruthy();
+
+    // PUBLISHED -> DRAFT is allowed but membership stays frozen (publishedAt set)
     await setCollectionStatus(adminId, c.id, "DRAFT");
-    await expect(detachAsset(adminId, c.id, a1)).resolves.toBeUndefined();
+    await expect(attachAsset(adminId, c.id, a2)).rejects.toThrow(/frozen/);
+    await expect(detachAsset(adminId, c.id, a1)).rejects.toThrow(/frozen/);
+
+    // the revised-set path: duplicate into a fresh editable draft
+    const copy = await duplicateCollection(adminId, c.id, `c-${uniq()}`);
+    created.collections.push(copy.id);
+    expect(copy.status).toBe("DRAFT");
+    expect(copy.publishedAt).toBeNull();
+    await expect(detachAsset(adminId, copy.id, a1)).resolves.toBeUndefined();
   });
 
   it("[6] applyCollection re-checks PUBLISHED at apply time inside the tx", async () => {
@@ -344,5 +356,62 @@ describe.skipIf(!hasDb)("cosmetics integration (DB)", () => {
     // validated config only — never the raw JSON column shape
     expect(row?.config).toBeTypeOf("object");
     expect(row?.configVersion).toBe(1);
+  });
+
+  it("[7] concurrency: published config never changes under a publish/update race", async () => {
+    // N concurrent config updates on an already-published asset -> all reject,
+    // config unchanged.
+    const a = await makePublishedAsset("CELEBRATION_EFFECT");
+    const original = (await prisma.cosmeticAsset.findUniqueOrThrow({
+      where: { id: a },
+      select: { config: true },
+    })).config;
+    const results = await Promise.allSettled(
+      Array.from({ length: 6 }, (_, i) =>
+        updateAsset(adminId, { id: a, config: { intensity: i % 2 ? "HIGH" : "LOW" } }),
+      ),
+    );
+    expect(results.every((r) => r.status === "rejected")).toBe(true);
+    const afterCfg = (await prisma.cosmeticAsset.findUniqueOrThrow({
+      where: { id: a },
+      select: { config: true },
+    })).config;
+    expect(afterCfg).toEqual(original);
+
+    // Race: flip DRAFT->PUBLISHED while updating config. Either interleaving is
+    // legitimate (a draft may be edited then published) — the invariant is that
+    // ONCE PUBLISHED the config can never change again.
+    const d = await createAsset(adminId, {
+      slug: `t-${uniq()}`, name: "race", slot: "OVERVIEW_CARD" as never,
+      rarity: "COMMON", acquisitionType: "ADMIN_GRANT",
+      config: { surface: "FLAT" },
+    });
+    created.assets.push(d.id);
+    await Promise.allSettled([
+      setAssetStatus(adminId, d.id, "PUBLISHED"),
+      updateAsset(adminId, { id: d.id, config: { surface: "GLASS" } }),
+    ]);
+    const settled = await prisma.cosmeticAsset.findUniqueOrThrow({
+      where: { id: d.id },
+      select: { status: true, publishedAt: true, config: true },
+    });
+    if (settled.publishedAt !== null) {
+      const frozenCfg = settled.config;
+      // a further config update must now be rejected, and the config must not move
+      await expect(
+        updateAsset(adminId, { id: d.id, config: { surface: "ELEVATED" } }),
+      ).rejects.toThrow(/config_locked/);
+      const stillCfg = (await prisma.cosmeticAsset.findUniqueOrThrow({
+        where: { id: d.id },
+        select: { config: true },
+      })).config;
+      expect(stillCfg).toEqual(frozenCfg);
+    } else {
+      // never published -> publishing now must still work and then freeze
+      await setAssetStatus(adminId, d.id, "PUBLISHED");
+      await expect(
+        updateAsset(adminId, { id: d.id, config: { surface: "ELEVATED" } }),
+      ).rejects.toThrow(/config_locked/);
+    }
   });
 });

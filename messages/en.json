@@ -553,7 +553,8 @@
       "pickAsset": "Choose an asset…",
       "onePerSlot": "One asset per slot.",
       "publishBlocked": "Every asset must be published first.",
-      "empty": "No collections yet."
+      "empty": "No collections yet.",
+      "frozenHint": "Published — the item list is locked. Use \"Duplicate as draft\" to build a revised set."
     },
     "assets": {
       "title": "Assets",
@@ -826,6 +827,10 @@
     "previewBackground": "App background",
     "previewCard": "Card preview",
     "rendererComingPhase2": "Renderer coming in Phase 2",
-    "phase2Short": "Phase 2"
+    "phase2Short": "Phase 2",
+    "incompatibleScheme": "Not shown in {scheme} mode",
+    "incompatibleVersion": "Needs app v{version} or newer",
+    "incompatibleGeneric": "Not shown with your current settings",
+    "duplicateAsDraft": "Duplicate as draft"
   }
 }

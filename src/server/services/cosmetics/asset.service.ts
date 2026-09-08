@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
+import { serializableTx } from "@/server/lib/tx";
 import { parseAssetConfig, LATEST_CONFIG_VERSION } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 import type { AssetCreateInput } from "@/lib/validation/cosmetics";
@@ -50,7 +51,7 @@ export async function createAsset(adminId: string, input: AssetCreateInput) {
   // validate the config for its version before it ever hits the DB
   parseAssetConfig(LATEST_CONFIG_VERSION, input.config);
 
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const asset = await tx.cosmeticAsset.create({
       data: {
         slug: input.slug,
@@ -101,32 +102,45 @@ type AssetUpdatePatch = {
  */
 export async function updateAsset(adminId: string, patch: AssetUpdatePatch) {
   const wantsConfigChange = patch.config !== undefined;
-  // config is validated up front (no DB access needed) so a bad payload never
-  // opens a transaction
   if (wantsConfigChange) parseAssetConfig(LATEST_CONFIG_VERSION, patch.config);
 
-  return prisma.$transaction(async (tx: Db) => {
-    // read + invariant checks INSIDE the tx (TOCTOU-safe)
-    const current = await tx.cosmeticAsset.findUnique({ where: { id: patch.id } });
-    if (!current) notFound("asset_not_found");
+  const metadata = {
+    name: patch.name,
+    description: patch.description,
+    rarity: patch.rarity,
+    acquisitionType: patch.acquisitionType,
+    previewUrl: patch.previewUrl,
+  };
 
-    const frozen = current.status !== "DRAFT" || current.publishedAt !== null;
-    if (wantsConfigChange && frozen) {
-      conflict("published_asset_config_locked");
+  return serializableTx(async (tx) => {
+    if (wantsConfigChange) {
+      // CONDITIONAL WRITE: a single UPDATE whose WHERE encodes the invariant.
+      // Under any isolation level this row-locks and only matches an
+      // unpublished draft — a concurrent setAssetStatus(PUBLISHED) that commits
+      // first makes the WHERE miss (count 0) rather than a lost update.
+      const res = await tx.cosmeticAsset.updateMany({
+        where: { id: patch.id, status: "DRAFT", publishedAt: null },
+        data: { ...metadata, config: patch.config as Prisma.InputJsonValue },
+      });
+      if (res.count === 0) {
+        const exists = await tx.cosmeticAsset.findUnique({
+          where: { id: patch.id },
+          select: { id: true },
+        });
+        if (!exists) notFound("asset_not_found");
+        conflict("published_asset_config_locked");
+      }
+    } else {
+      const exists = await tx.cosmeticAsset.findUnique({
+        where: { id: patch.id },
+        select: { id: true },
+      });
+      if (!exists) notFound("asset_not_found");
+      await tx.cosmeticAsset.update({ where: { id: patch.id }, data: metadata });
     }
 
-    const asset = await tx.cosmeticAsset.update({
+    const asset = await tx.cosmeticAsset.findUniqueOrThrow({
       where: { id: patch.id },
-      data: {
-        name: patch.name,
-        description: patch.description,
-        rarity: patch.rarity,
-        acquisitionType: patch.acquisitionType,
-        previewUrl: patch.previewUrl,
-        ...(wantsConfigChange
-          ? { config: patch.config as Prisma.InputJsonValue }
-          : {}),
-      },
     });
     await auditInTx(tx, {
       userId: adminId,
@@ -144,7 +158,7 @@ export async function setAssetStatus(
   id: string,
   status: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
 ) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const current = await tx.cosmeticAsset.findUnique({ where: { id } });
     if (!current) notFound("asset_not_found");
 
@@ -172,7 +186,7 @@ export async function setAssetStatus(
 
 /** Clone a (usually published) asset into a fresh editable DRAFT. [S6] */
 export async function duplicateAsset(adminId: string, id: string, slug: string) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const src = await tx.cosmeticAsset.findUnique({ where: { id } });
     if (!src) notFound("asset_not_found");
 
@@ -205,7 +219,7 @@ export async function duplicateAsset(adminId: string, id: string, slug: string) 
 
 /** Hard delete — only a DRAFT with zero references. Otherwise archive. [S5] */
 export async function deleteAsset(adminId: string, id: string) {
-  return prisma.$transaction(async (tx: Db) => {
+  return serializableTx(async (tx) => {
     const asset = await tx.cosmeticAsset.findUnique({
       where: { id },
       include: {

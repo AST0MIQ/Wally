@@ -548,6 +548,9 @@ model CosmeticCollection {
   availableFrom     DateTime?
   availableTo       DateTime?
   sortOrder         Int            @default(0)
+  /// first time this collection entered PUBLISHED; once set, membership is
+  /// frozen forever (a revised set needs "Duplicate as draft")
+  publishedAt       DateTime?
   createdByAdmin    User?          @relation("CollectionCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
   createdByAdminId  String?
   createdAt         DateTime       @default(now())
