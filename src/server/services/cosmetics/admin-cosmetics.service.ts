@@ -117,6 +117,34 @@ export async function listUsersForAdmin(opts: {
   };
 }
 
+/** Recent grants / revocations across all users (non-financial). */
+export async function listRecentEntitlements(limit = 50) {
+  return prisma.userEntitlement.findMany({
+    orderBy: { updatedAt: "desc" },
+    take: Math.min(Math.max(limit, 1), 200),
+    include: {
+      user: { select: { id: true, email: true, name: true } },
+      asset: { select: { id: true, name: true, slot: true } },
+      sourceCollection: { select: { id: true, name: true } },
+    },
+  });
+}
+
+/** Users who have equipped at least one cosmetic. */
+export async function listUsersWithLoadout(limit = 100) {
+  return prisma.user.findMany({
+    where: { equippedCosmetics: { some: {} } },
+    orderBy: { updatedAt: "desc" },
+    take: Math.min(Math.max(limit, 1), 200),
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      _count: { select: { equippedCosmetics: true, cosmeticEntitlements: true } },
+    },
+  });
+}
+
 export async function getAdminUserDetail(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
