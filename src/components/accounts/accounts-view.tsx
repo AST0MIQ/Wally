@@ -158,7 +158,7 @@ export function AccountsView({
   // viewport — so you don't have to drag right to the bezel
   function edgeBands() {
     const vh = window.innerHeight;
-    return { vh, top: Math.max(110, vh * 0.24), bottom: Math.max(160, vh * 0.3) };
+    return { vh, top: Math.max(130, vh * 0.32), bottom: Math.max(190, vh * 0.4) };
   }
 
   function autoScrollTick() {
@@ -166,15 +166,15 @@ export function AccountsView({
     const p = lastPointRef.current;
     if (!armedRef.current || !p) return;
     const { vh, top, bottom } = edgeBands();
-    const MIN = 7; // px/frame the moment you enter the zone
-    const MAX = 36; // px/frame at the very edge
+    const MIN = 16; // px/frame the moment you enter the zone
+    const MAX = 64; // px/frame at the very edge
     let dv = 0;
     if (p.y < top) {
       const t = (top - p.y) / top; // 0 at zone edge → 1 at screen edge
-      dv = -(MIN + (MAX - MIN) * t * t);
+      dv = -(MIN + (MAX - MIN) * t);
     } else if (p.y > vh - bottom) {
       const t = (p.y - (vh - bottom)) / bottom;
-      dv = MIN + (MAX - MIN) * t * t;
+      dv = MIN + (MAX - MIN) * t;
     }
     if (dv === 0) return;
     const before = window.scrollY;
