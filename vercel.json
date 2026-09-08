@@ -4,7 +4,7 @@
     { "path": "/api/cron/fx", "schedule": "0 4 * * *" },
     { "path": "/api/cron/prices", "schedule": "0 5 * * 1-6" },
     { "path": "/api/cron/networth", "schedule": "30 5 * * *" },
-    { "path": "/api/cron/cosmetics", "schedule": "15 * * * *" }
+    { "path": "/api/cron/cosmetics", "schedule": "15 6 * * *" }
   ],
   "regions": ["sin1"]
 }

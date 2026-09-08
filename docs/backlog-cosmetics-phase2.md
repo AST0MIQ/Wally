@@ -11,7 +11,7 @@
 - Bulk asset status changes and multi-asset grants.
 - Reward automation for streak, rank and achievement milestones with an
   idempotency ledger; rank points and levels are manageable from Admin.
-- Hourly entitlement expiry and automatic unequip.
+- Daily entitlement expiry and automatic unequip (Vercel Hobby-compatible).
 - Products, orders, Stripe Checkout and signed-webhook fulfilment.
 - Database-backed feature flags and non-secret runtime configuration.
 - Database-backed RBAC from the parallel Claude implementation, merged into

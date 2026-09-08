@@ -62,7 +62,7 @@ All declared slots now have matching production and Admin preview behaviour.
 - Reset remains available from the page header and restores the Wally default.
 - The Media Library accepts drag-and-drop; Asset forms can select uploaded art
   directly without copying a URL.
-- Availability windows, automatic rewards/ranks, entitlement expiry, bulk
+- Availability windows, automatic rewards/ranks, daily entitlement expiry, bulk
   publishing/grants, runtime flags/config and the optional Stripe theme shop
   are implemented server-side and audited.
 
