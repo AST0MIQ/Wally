@@ -12,6 +12,7 @@ import {
 import {
   createCollection,
   attachAsset,
+  detachAsset,
   setCollectionStatus,
 } from "@/server/services/cosmetics/collection.service";
 import {
@@ -19,6 +20,8 @@ import {
   grantCollection,
   revokeEntitlement,
   hasEntitlement,
+  listUserInventory,
+  listApplicableCollections,
 } from "@/server/services/cosmetics/entitlement.service";
 import {
   equip,
@@ -249,5 +252,97 @@ describe.skipIf(!hasDb)("cosmetics integration (DB)", () => {
     await resetToDefaults(userId);
     const loadout = await getResolvedLoadout(userId);
     expect(Object.values(loadout).every((v) => v === null)).toBe(true);
+  });
+
+  it("[4] expiry boundary: expiresAt <= now is not owned across all readers", async () => {
+    const asset = await makePublishedAsset("CHART_STYLE");
+    await grantAsset(adminId, userId, asset);
+    // still owned with a future expiry
+    await prisma.userEntitlement.update({
+      where: { userId_assetId: { userId, assetId: asset } },
+      data: { expiresAt: new Date(Date.now() + 60_000) },
+    });
+    expect(await hasEntitlement(userId, asset)).toBe(true);
+    let inv = await listUserInventory(userId);
+    expect(inv.items.find((i) => i.assetId === asset)?.owned).toBe(true);
+
+    // expired -> not owned everywhere
+    await prisma.userEntitlement.update({
+      where: { userId_assetId: { userId, assetId: asset } },
+      data: { expiresAt: new Date(Date.now() - 1000) },
+    });
+    expect(await hasEntitlement(userId, asset)).toBe(false);
+    inv = await listUserInventory(userId);
+    expect(inv.items.find((i) => i.assetId === asset)?.owned).toBe(false);
+
+    // and in listApplicableCollections
+    const c = await createCollection(adminId, {
+      slug: `c-${uniq()}`, name: "Exp", rarity: "COMMON", isApplicableAsSet: true,
+    });
+    created.collections.push(c.id);
+    await attachAsset(adminId, c.id, asset);
+    await setCollectionStatus(adminId, c.id, "PUBLISHED");
+    const apps = await listApplicableCollections(userId);
+    expect(apps.find((a) => a.id === c.id)?.fullyOwned).toBe(false);
+    expect(apps.find((a) => a.id === c.id)?.applicable).toBe(false);
+  });
+
+  it("[5] published collection membership is frozen", async () => {
+    const c = await createCollection(adminId, {
+      slug: `c-${uniq()}`, name: "Frozen", rarity: "COMMON", isApplicableAsSet: true,
+    });
+    created.collections.push(c.id);
+    const a1 = await makePublishedAsset("TYPOGRAPHY");
+    await attachAsset(adminId, c.id, a1); // DRAFT -> ok
+    await setCollectionStatus(adminId, c.id, "PUBLISHED");
+
+    const a2 = await makePublishedAsset("ICON_SET");
+    await expect(attachAsset(adminId, c.id, a2)).rejects.toThrow(/frozen/);
+    await expect(detachAsset(adminId, c.id, a1)).rejects.toThrow(/frozen/);
+
+    // back to DRAFT -> membership editable again
+    await setCollectionStatus(adminId, c.id, "DRAFT");
+    await expect(detachAsset(adminId, c.id, a1)).resolves.toBeUndefined();
+  });
+
+  it("[6] applyCollection re-checks PUBLISHED at apply time inside the tx", async () => {
+    const c = await createCollection(adminId, {
+      slug: `c-${uniq()}`, name: "Live", rarity: "RARE", isApplicableAsSet: true,
+    });
+    created.collections.push(c.id);
+    const bg = await makePublishedAsset("APP_BACKGROUND");
+    const card = await makePublishedAsset("OVERVIEW_CARD");
+    await attachAsset(adminId, c.id, bg);
+    await attachAsset(adminId, c.id, card);
+    await setCollectionStatus(adminId, c.id, "PUBLISHED");
+    await grantCollection(adminId, userId, c.id);
+
+    // hide one asset AFTER publish -> apply must fail, loadout unchanged
+    await setAssetStatus(adminId, card, "HIDDEN");
+    const before = await getResolvedLoadout(userId);
+    await expect(applyCollection(userId, c.id)).rejects.toThrow(/unpublished/);
+    const after = await getResolvedLoadout(userId);
+    expect(after).toEqual(before);
+  });
+
+  it("[9] inventory reports real CollectionAsset membership (multi-collection)", async () => {
+    const asset = await makePublishedAsset("INTERACTION_EFFECT");
+    const c1 = await createCollection(adminId, {
+      slug: `c-${uniq()}`, name: "M1", rarity: "COMMON", isApplicableAsSet: true,
+    });
+    const c2 = await createCollection(adminId, {
+      slug: `c-${uniq()}`, name: "M2", rarity: "COMMON", isApplicableAsSet: true,
+    });
+    created.collections.push(c1.id, c2.id);
+    await attachAsset(adminId, c1.id, asset);
+    await attachAsset(adminId, c2.id, asset);
+    await grantAsset(adminId, userId, asset);
+
+    const inv = await listUserInventory(userId);
+    const row = inv.items.find((i) => i.assetId === asset);
+    expect(row?.collectionIds.sort()).toEqual([c1.id, c2.id].sort());
+    // validated config only — never the raw JSON column shape
+    expect(row?.config).toBeTypeOf("object");
+    expect(row?.configVersion).toBe(1);
   });
 });

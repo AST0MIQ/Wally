@@ -14,7 +14,6 @@ describe("cosmetic asset config v1", () => {
       borderEffect: "GLOW",
       texture: "FINE_NOISE",
       motion: "FLOATING_PARTICLES",
-      reducedMotionMotion: "NONE",
       intensity: "MEDIUM",
       mediaUrl: "/cosmetics/bg/galaxy.webp",
       minComponentVersion: "1.4",

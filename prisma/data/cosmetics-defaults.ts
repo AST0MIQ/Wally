@@ -58,11 +58,11 @@ export async function seedCosmeticDefaults(prisma: PrismaClient): Promise<void> 
         config: NEUTRAL_CONFIG,
         publishedAt: now,
       },
+      // re-seed: only re-assert the canonical-default flags, never rewrite
+      // config or publishedAt (published config is immutable)
       update: {
-        status: "PUBLISHED",
         acquisitionType: "DEFAULT",
         isCanonicalDefault: true,
-        publishedAt: now,
       },
     });
 

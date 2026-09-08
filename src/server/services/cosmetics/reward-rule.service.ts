@@ -82,22 +82,22 @@ type RewardRuleUpdate = {
 };
 
 export async function updateRewardRule(adminId: string, patch: RewardRuleUpdate) {
-  const current = await prisma.rewardRule.findUnique({ where: { id: patch.id } });
-  if (!current) notFound("reward_rule_not_found");
-
-  const nextCollection =
-    patch.grantsCollectionId === undefined
-      ? current.grantsCollectionId
-      : patch.grantsCollectionId;
-  const nextAsset =
-    patch.grantsAssetId === undefined
-      ? current.grantsAssetId
-      : patch.grantsAssetId;
-  if (Boolean(nextCollection) === Boolean(nextAsset)) {
-    conflict("reward_needs_exactly_one_target");
-  }
-
   return prisma.$transaction(async (tx: Db) => {
+    const current = await tx.rewardRule.findUnique({ where: { id: patch.id } });
+    if (!current) notFound("reward_rule_not_found");
+
+    const nextCollection =
+      patch.grantsCollectionId === undefined
+        ? current.grantsCollectionId
+        : patch.grantsCollectionId;
+    const nextAsset =
+      patch.grantsAssetId === undefined
+        ? current.grantsAssetId
+        : patch.grantsAssetId;
+    if (Boolean(nextCollection) === Boolean(nextAsset)) {
+      conflict("reward_needs_exactly_one_target");
+    }
+
     const rule = await tx.rewardRule.update({
       where: { id: patch.id },
       data: {
@@ -141,10 +141,10 @@ export async function setRewardRuleActive(
 }
 
 export async function deleteRewardRule(adminId: string, id: string) {
-  const rule = await prisma.rewardRule.findUnique({ where: { id } });
-  if (!rule) notFound("reward_rule_not_found");
-
   return prisma.$transaction(async (tx: Db) => {
+    const rule = await tx.rewardRule.findUnique({ where: { id } });
+    if (!rule) notFound("reward_rule_not_found");
+
     await tx.rewardRule.delete({ where: { id } });
     await auditInTx(tx, {
       userId: adminId,

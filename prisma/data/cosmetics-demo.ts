@@ -179,21 +179,32 @@ export async function seedCosmeticDemo(prisma: PrismaClient): Promise<void> {
       // fail loudly if a demo config is invalid
       assetConfigV1Schema.parse(a.config);
 
-      const asset = await prisma.cosmeticAsset.upsert({
+      // Published config is IMMUTABLE. Re-seeding only creates missing rows and
+      // touches safe metadata — it never rewrites `config`, `status`,
+      // `publishedAt` or `slot` on an existing asset. To change a published
+      // demo asset, bump its slug (a new row) instead.
+      const existing = await prisma.cosmeticAsset.findUnique({
         where: { slug: a.slug },
-        create: {
-          slug: a.slug,
-          name: a.name,
-          slot: a.slot,
-          rarity: a.rarity,
-          status: "PUBLISHED",
-          acquisitionType: "ADMIN_GRANT",
-          configVersion: 1,
-          config: a.config,
-          publishedAt: now,
-        },
-        update: { status: "PUBLISHED", config: a.config, publishedAt: now },
+        select: { id: true },
       });
+      const asset = existing
+        ? await prisma.cosmeticAsset.update({
+            where: { slug: a.slug },
+            data: { name: a.name, rarity: a.rarity },
+          })
+        : await prisma.cosmeticAsset.create({
+            data: {
+              slug: a.slug,
+              name: a.name,
+              slot: a.slot,
+              rarity: a.rarity,
+              status: "PUBLISHED",
+              acquisitionType: "ADMIN_GRANT",
+              configVersion: 1,
+              config: a.config,
+              publishedAt: now,
+            },
+          });
       assetCount += 1;
 
       await prisma.collectionAsset.upsert({

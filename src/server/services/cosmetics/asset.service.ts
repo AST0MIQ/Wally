@@ -100,19 +100,21 @@ type AssetUpdatePatch = {
  * who already equipped it. [S2] [S6]
  */
 export async function updateAsset(adminId: string, patch: AssetUpdatePatch) {
-  const current = await prisma.cosmeticAsset.findUnique({ where: { id: patch.id } });
-  if (!current) notFound("asset_not_found");
-
   const wantsConfigChange = patch.config !== undefined;
-  const frozen = current.status !== "DRAFT" || current.publishedAt !== null;
-  if (wantsConfigChange && frozen) {
-    conflict("published_asset_config_locked");
-  }
-  if (wantsConfigChange) {
-    parseAssetConfig(current.configVersion, patch.config);
-  }
+  // config is validated up front (no DB access needed) so a bad payload never
+  // opens a transaction
+  if (wantsConfigChange) parseAssetConfig(LATEST_CONFIG_VERSION, patch.config);
 
   return prisma.$transaction(async (tx: Db) => {
+    // read + invariant checks INSIDE the tx (TOCTOU-safe)
+    const current = await tx.cosmeticAsset.findUnique({ where: { id: patch.id } });
+    if (!current) notFound("asset_not_found");
+
+    const frozen = current.status !== "DRAFT" || current.publishedAt !== null;
+    if (wantsConfigChange && frozen) {
+      conflict("published_asset_config_locked");
+    }
+
     const asset = await tx.cosmeticAsset.update({
       where: { id: patch.id },
       data: {
@@ -142,10 +144,10 @@ export async function setAssetStatus(
   id: string,
   status: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
 ) {
-  const current = await prisma.cosmeticAsset.findUnique({ where: { id } });
-  if (!current) notFound("asset_not_found");
-
   return prisma.$transaction(async (tx: Db) => {
+    const current = await tx.cosmeticAsset.findUnique({ where: { id } });
+    if (!current) notFound("asset_not_found");
+
     const asset = await tx.cosmeticAsset.update({
       where: { id },
       data: {
@@ -170,10 +172,10 @@ export async function setAssetStatus(
 
 /** Clone a (usually published) asset into a fresh editable DRAFT. [S6] */
 export async function duplicateAsset(adminId: string, id: string, slug: string) {
-  const src = await prisma.cosmeticAsset.findUnique({ where: { id } });
-  if (!src) notFound("asset_not_found");
-
   return prisma.$transaction(async (tx: Db) => {
+    const src = await tx.cosmeticAsset.findUnique({ where: { id } });
+    if (!src) notFound("asset_not_found");
+
     const copy = await tx.cosmeticAsset.create({
       data: {
         slug,
@@ -203,31 +205,32 @@ export async function duplicateAsset(adminId: string, id: string, slug: string) 
 
 /** Hard delete — only a DRAFT with zero references. Otherwise archive. [S5] */
 export async function deleteAsset(adminId: string, id: string) {
-  const asset = await prisma.cosmeticAsset.findUnique({
-    where: { id },
-    include: {
-      _count: {
-        select: {
-          entitlements: true,
-          equipped: true,
-          collections: true,
-          rewardRules: true,
+  return prisma.$transaction(async (tx: Db) => {
+    const asset = await tx.cosmeticAsset.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            entitlements: true,
+            equipped: true,
+            collections: true,
+            rewardRules: true,
+          },
         },
       },
-    },
-  });
-  if (!asset) notFound("asset_not_found");
+    });
+    if (!asset) notFound("asset_not_found");
 
-  const refs =
-    asset._count.entitlements +
-    asset._count.equipped +
-    asset._count.collections +
-    asset._count.rewardRules;
-  if (asset.status !== "DRAFT" || refs > 0) {
-    conflict("asset_has_references");
-  }
+    const refs =
+      asset._count.entitlements +
+      asset._count.equipped +
+      asset._count.collections +
+      asset._count.rewardRules;
+    if (asset.status !== "DRAFT" || refs > 0) {
+      conflict("asset_has_references");
+    }
 
-  return prisma.$transaction(async (tx: Db) => {
+    // onDelete: Restrict on entitlement/equipped -> asset is the DB-level guard
     await tx.cosmeticAsset.delete({ where: { id } });
     await auditInTx(tx, {
       userId: adminId,

@@ -49,14 +49,12 @@ export const assetConfigV1Schema = z
     texture: z.enum(TEXTURE_PRESETS).optional(),
     motion: z.enum(MOTION_PRESETS).optional(),
     intensity: z.enum(INTENSITY_LEVELS).optional(),
+    /** decorative same-origin media (image) for slots that support it */
     mediaUrl: mediaUrlSchema.optional(),
-    /** simpler motion to use on small screens */
-    mobileFallbackMotion: z.enum(MOTION_PRESETS).optional(),
-    /** motion to use when the viewer prefers reduced motion */
-    reducedMotionMotion: z.enum(MOTION_PRESETS).optional(),
-    /** default true — the renderer treats only an explicit `false` as opt-out */
+    /** default true — the renderer drops the layer only on an explicit `false` */
     lightCompatible: z.boolean().optional(),
     darkCompatible: z.boolean().optional(),
+    /** renderer drops the layer when APP_VERSION < this (semver-ish) */
     minComponentVersion: semverish.optional(),
   })
   .strict();
@@ -104,4 +102,37 @@ export function isSchemeCompatible(
   return scheme === "light"
     ? config.lightCompatible !== false
     : config.darkCompatible !== false;
+}
+
+function parseVersion(v: string): [number, number, number] {
+  const [a = 0, b = 0, c = 0] = v.split(".").map((n) => Number(n) || 0);
+  return [a, b, c];
+}
+
+/** True when `appVersion` satisfies `config.minComponentVersion` (or none set). */
+export function meetsMinVersion(
+  config: AssetConfigV1,
+  appVersion: string,
+): boolean {
+  if (!config.minComponentVersion) return true;
+  const [a1, a2, a3] = parseVersion(appVersion);
+  const [b1, b2, b3] = parseVersion(config.minComponentVersion);
+  if (a1 !== b1) return a1 > b1;
+  if (a2 !== b2) return a2 > b2;
+  return a3 >= b3;
+}
+
+/**
+ * Whether this asset's layer should render at all, given the viewer's scheme
+ * and the running app version. Used identically by the renderer and Preview so
+ * Admin can never publish a config that behaves differently in production.
+ */
+export function shouldRenderLayer(
+  config: AssetConfigV1,
+  ctx: { scheme: "light" | "dark"; appVersion: string },
+): boolean {
+  return (
+    isSchemeCompatible(config, ctx.scheme) &&
+    meetsMinVersion(config, ctx.appVersion)
+  );
 }

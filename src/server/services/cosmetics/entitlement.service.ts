@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
+import { parseAssetConfig, type AssetConfigV1 } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 
 type Db = Prisma.TransactionClient;
@@ -188,15 +189,28 @@ export type InventoryAsset = {
   owned: boolean;
   equipped: boolean;
   acquisitionType: string;
-  sourceCollectionId: string | null;
+  /** every collection this asset actually belongs to (CollectionAsset) */
+  collectionIds: string[];
   expiresAt: Date | null;
+  /** validated on the server — the client never sees raw stored config */
+  configVersion: number;
+  config: AssetConfigV1;
+  previewUrl: string | null;
 };
+
+/** ACTIVE + not past its expiry — matches hasEntitlement(). */
+function entitlementOwns(e: { status: string; expiresAt: Date | null }, now: number) {
+  return (
+    e.status === "ACTIVE" && (e.expiresAt === null || e.expiresAt.getTime() > now)
+  );
+}
 
 /** What a user sees at /cosmetics: everything published, tagged owned/locked/equipped. */
 export async function listUserInventory(userId: string): Promise<{
   items: InventoryAsset[];
   equippedBySlot: Partial<Record<EquipmentSlot, string>>;
 }> {
+  const now = Date.now();
   const [assets, entitlements, equipped] = await Promise.all([
     prisma.cosmeticAsset.findMany({
       where: { status: "PUBLISHED" },
@@ -209,11 +223,15 @@ export async function listUserInventory(userId: string): Promise<{
         rarity: true,
         status: true,
         acquisitionType: true,
+        configVersion: true,
+        config: true,
+        previewUrl: true,
+        collections: { select: { collectionId: true } },
       },
     }),
     prisma.userEntitlement.findMany({
-      where: { userId, status: "ACTIVE" },
-      select: { assetId: true, sourceCollectionId: true, expiresAt: true },
+      where: { userId },
+      select: { assetId: true, status: true, expiresAt: true },
     }),
     prisma.userEquippedAsset.findMany({
       where: { userId },
@@ -228,7 +246,15 @@ export async function listUserInventory(userId: string): Promise<{
 
   const items: InventoryAsset[] = assets.map((a) => {
     const ent = owned.get(a.id);
-    const isOwned = a.acquisitionType === "DEFAULT" || Boolean(ent);
+    const isOwned =
+      a.acquisitionType === "DEFAULT" ||
+      (ent ? entitlementOwns(ent, now) : false);
+    let config: AssetConfigV1 = {};
+    try {
+      config = parseAssetConfig(a.configVersion, a.config);
+    } catch {
+      /* malformed stored config -> render nothing */
+    }
     return {
       assetId: a.id,
       slug: a.slug,
@@ -239,30 +265,49 @@ export async function listUserInventory(userId: string): Promise<{
       owned: isOwned,
       equipped: equippedSet.has(a.id),
       acquisitionType: a.acquisitionType,
-      sourceCollectionId: ent?.sourceCollectionId ?? null,
+      collectionIds: a.collections.map((c) => c.collectionId),
       expiresAt: ent?.expiresAt ?? null,
+      configVersion: a.configVersion,
+      config,
+      previewUrl: a.previewUrl,
     };
   });
 
   return { items, equippedBySlot };
 }
 
+export type ApplicableCollectionSlot = {
+  slot: EquipmentSlot;
+  assetId: string;
+  assetName: string;
+  assetStatus: string;
+  owned: boolean;
+  configVersion: number;
+  config: AssetConfigV1;
+  previewUrl: string | null;
+};
+
 export type ApplicableCollection = {
   id: string;
   slug: string;
   name: string;
   rarity: string;
+  /** owns every asset AND every asset is PUBLISHED */
+  applicable: boolean;
   fullyOwned: boolean;
-  slots: { slot: EquipmentSlot; assetId: string; assetName: string }[];
+  slots: ApplicableCollectionSlot[];
 };
 
 /**
  * Published, set-applicable collections + whether the user owns every asset in
- * each (so the /cosmetics UI can enable "Apply" and show the replace diff).
+ * each and every asset is still PUBLISHED (so the /cosmetics UI can enable
+ * "Apply" and render a composite preview + replace diff). Ownership matches
+ * hasEntitlement() including expiry.
  */
 export async function listApplicableCollections(
   userId: string,
 ): Promise<ApplicableCollection[]> {
+  const now = Date.now();
   const [collections, entitlements] = await Promise.all([
     prisma.cosmeticCollection.findMany({
       where: { status: "PUBLISHED", isApplicableAsSet: true },
@@ -271,33 +316,66 @@ export async function listApplicableCollections(
         assets: {
           orderBy: { slot: "asc" },
           include: {
-            asset: { select: { id: true, name: true, acquisitionType: true } },
+            asset: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                acquisitionType: true,
+                configVersion: true,
+                config: true,
+                previewUrl: true,
+              },
+            },
           },
         },
       },
     }),
     prisma.userEntitlement.findMany({
-      where: { userId, status: "ACTIVE" },
-      select: { assetId: true },
+      where: { userId },
+      select: { assetId: true, status: true, expiresAt: true },
     }),
   ]);
 
-  const owned = new Set(entitlements.map((e) => e.assetId));
+  const ownedMap = new Map(entitlements.map((e) => [e.assetId, e]));
+  const ownsAsset = (assetId: string, acquisitionType: string) =>
+    acquisitionType === "DEFAULT" ||
+    (() => {
+      const e = ownedMap.get(assetId);
+      return e ? entitlementOwns(e, now) : false;
+    })();
 
   return collections
     .filter((c) => c.assets.length > 0)
-    .map((c) => ({
-      id: c.id,
-      slug: c.slug,
-      name: c.name,
-      rarity: c.rarity,
-      fullyOwned: c.assets.every(
-        (a) => a.asset.acquisitionType === "DEFAULT" || owned.has(a.assetId),
-      ),
-      slots: c.assets.map((a) => ({
-        slot: a.slot as EquipmentSlot,
-        assetId: a.assetId,
-        assetName: a.asset.name,
-      })),
-    }));
+    .map((c) => {
+      const slots: ApplicableCollectionSlot[] = c.assets.map((a) => {
+        let config: AssetConfigV1 = {};
+        try {
+          config = parseAssetConfig(a.asset.configVersion, a.asset.config);
+        } catch {
+          /* ignore malformed config in preview */
+        }
+        return {
+          slot: a.slot as EquipmentSlot,
+          assetId: a.assetId,
+          assetName: a.asset.name,
+          assetStatus: a.asset.status,
+          owned: ownsAsset(a.assetId, a.asset.acquisitionType),
+          configVersion: a.asset.configVersion,
+          config,
+          previewUrl: a.asset.previewUrl,
+        };
+      });
+      const fullyOwned = slots.every((s) => s.owned);
+      const allPublished = slots.every((s) => s.assetStatus === "PUBLISHED");
+      return {
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        rarity: c.rarity,
+        applicable: fullyOwned && allPublished,
+        fullyOwned,
+        slots,
+      };
+    });
 }

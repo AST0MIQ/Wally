@@ -54,3 +54,42 @@ export const SLOT_GROUPS: Record<string, readonly EquipmentSlot[]> = {
   data: ["CHART_STYLE"],
   effects: ["INTERACTION_EFFECT", "CELEBRATION_EFFECT"],
 };
+
+/**
+ * Which config fields actually have a runtime effect for each *rendered* slot.
+ * The admin config form only shows these, so a published config can never
+ * imply an effect that Preview and production don't both apply.
+ * `motion` here is limited to what the layer's CSS supports.
+ */
+export type ConfigField =
+  | "colors"
+  | "shape"
+  | "surface"
+  | "borderEffect"
+  | "texture"
+  | "motion"
+  | "intensity"
+  | "mediaUrl";
+
+export const SLOT_CONFIG_FIELDS: Record<RenderedSlot, readonly ConfigField[]> = {
+  APP_BACKGROUND: ["colors", "surface", "texture", "motion", "intensity", "mediaUrl"],
+  OVERVIEW_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
+  INVESTMENT_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
+  PROFILE_FRAME: ["colors", "borderEffect", "motion", "intensity"],
+  PROFILE_AURA: ["colors", "motion", "intensity"],
+  PROFILE_BADGE: ["colors", "shape"],
+};
+
+/** Motion presets a given rendered slot's CSS can actually animate. */
+export const SLOT_MOTION: Record<RenderedSlot, readonly string[]> = {
+  APP_BACKGROUND: ["NONE", "FLOATING_PARTICLES"],
+  OVERVIEW_CARD: ["NONE", "SHIMMER", "PULSE", "FLOATING_PARTICLES"],
+  INVESTMENT_CARD: ["NONE", "SHIMMER", "PULSE", "FLOATING_PARTICLES"],
+  PROFILE_FRAME: ["NONE", "PULSE"],
+  PROFILE_AURA: ["NONE", "PULSE"],
+  PROFILE_BADGE: ["NONE"],
+};
+
+export function slotConfigFields(slot: string): readonly ConfigField[] {
+  return (SLOT_CONFIG_FIELDS as Record<string, readonly ConfigField[]>)[slot] ?? [];
+}

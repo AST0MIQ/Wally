@@ -72,19 +72,23 @@ export async function getResolvedLoadout(
 }
 
 export async function equip(userId: string, slot: EquipmentSlot, assetId: string) {
-  const asset = await prisma.cosmeticAsset.findUnique({
-    where: { id: assetId },
-    select: { slot: true, status: true },
-  });
-  if (!asset) notFound("asset_not_found");
-  if (asset.slot !== slot) conflict("wrong_slot");
-  if (asset.status !== "PUBLISHED") conflict("asset_not_published");
-  if (!(await hasEntitlement(userId, assetId))) forbidden("not_owned");
+  return prisma.$transaction(async (tx: Db) => {
+    const asset = await tx.cosmeticAsset.findUnique({
+      where: { id: assetId },
+      select: { slot: true, status: true },
+    });
+    if (!asset) notFound("asset_not_found");
+    if (asset.slot !== slot) conflict("wrong_slot");
+    if (asset.status !== "PUBLISHED") conflict("asset_not_published");
+    if (!(await hasEntitlement(userId, assetId, tx))) forbidden("not_owned");
 
-  return prisma.userEquippedAsset.upsert({
-    where: { userId_slot: { userId, slot } },
-    create: { userId, slot, assetId },
-    update: { assetId, equippedAt: new Date() },
+    // composite FK [assetId, slot] -> CosmeticAsset[id, slot] is the DB-level
+    // second line of defense for the slot match.
+    return tx.userEquippedAsset.upsert({
+      where: { userId_slot: { userId, slot } },
+      create: { userId, slot, assetId },
+      update: { assetId, equippedAt: new Date() },
+    });
   });
 }
 
@@ -99,37 +103,41 @@ export type ApplyCollectionResult = {
 };
 
 /**
- * Apply a whole collection. Deterministic by slot (the DB guarantees one asset
- * per slot per collection). Verifies the collection is PUBLISHED and the user
- * owns EVERY asset before changing anything — a single missing entitlement
- * fails the whole transaction. [S1] [S4]
+ * Apply a whole collection. Everything — the collection row, its membership,
+ * every asset's PUBLISHED status and the user's entitlement — is read INSIDE
+ * the transaction at application time. A hidden / archived / draft collection
+ * or asset, or a single missing entitlement, fails the whole operation and the
+ * loadout is left unchanged. Deterministic by slot (the DB guarantees one asset
+ * per slot per collection). [S1] [S4] [S6]
  */
 export async function applyCollection(
   userId: string,
   collectionId: string,
 ): Promise<ApplyCollectionResult> {
-  const collection = await prisma.cosmeticCollection.findUnique({
-    where: { id: collectionId },
-    include: {
-      assets: {
-        orderBy: { slot: "asc" },
-        select: { assetId: true, slot: true },
-      },
-    },
-  });
-  if (!collection) notFound("collection_not_found");
-  if (collection.status !== "PUBLISHED") conflict("collection_not_published");
-  if (collection.assets.length === 0) conflict("collection_empty");
-
   return prisma.$transaction(async (tx: Db) => {
-    // 1) verify ownership of every asset first — nothing changes on failure
-    for (const { assetId } of collection.assets) {
-      if (!(await hasEntitlement(userId, assetId, tx))) {
+    const collection = await tx.cosmeticCollection.findUnique({
+      where: { id: collectionId },
+      include: {
+        assets: {
+          orderBy: { slot: "asc" },
+          include: { asset: { select: { id: true, status: true } } },
+        },
+      },
+    });
+    if (!collection) notFound("collection_not_found");
+    if (collection.status !== "PUBLISHED") conflict("collection_not_published");
+    if (collection.assets.length === 0) conflict("collection_empty");
+
+    // every asset must be PUBLISHED *now* and owned *now* — check all first
+    for (const link of collection.assets) {
+      if (link.asset.status !== "PUBLISHED") {
+        conflict("collection_has_unpublished_assets");
+      }
+      if (!(await hasEntitlement(userId, link.assetId, tx))) {
         forbidden("collection_not_fully_owned");
       }
     }
 
-    // 2) snapshot current loadout for the "replaced" report
     const before = await tx.userEquippedAsset.findMany({
       where: {
         userId,
@@ -139,7 +147,6 @@ export async function applyCollection(
     });
     const beforeBySlot = new Map(before.map((b) => [b.slot, b.assetId]));
 
-    // 3) equip one asset per slot
     const equipped: ApplyCollectionResult["equipped"] = [];
     const replaced: ApplyCollectionResult["replaced"] = [];
     for (const { assetId, slot } of collection.assets) {

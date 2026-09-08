@@ -4,11 +4,16 @@
  * in `src/styles/cosmetics.css`; the custom properties are applied via an
  * inline `style` attribute (allowed by the app CSP's `style-src 'unsafe-inline'`).
  *
- * There is never a raw CSS string here — only `#rrggbb` values and a fixed
- * vocabulary of class names.
+ * There is never a raw CSS string here — only `#rrggbb` values, a fixed
+ * vocabulary of class names, and a same-origin `/…` media path.
+ *
+ * `slot` gates which config fields have an effect, so the renderer and the
+ * admin/user Preview interpret a config identically (no "publishes different
+ * from production").
  */
 import type { AssetConfigV1 } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
+import { SLOT_MOTION, slotConfigFields } from "@/lib/cosmetics/slots";
 
 const COLOR_VAR: Record<string, string> = {
   background: "--ck-bg",
@@ -29,59 +34,82 @@ export function cosmeticVars(config: AssetConfigV1): Record<string, string> {
   return vars;
 }
 
+/** Same-origin decorative image path, or null. Re-checked defensively. */
+export function cosmeticMediaUrl(config: AssetConfigV1): string | null {
+  const url = config.mediaUrl;
+  if (!url) return null;
+  return /^\/(?!\/)[A-Za-z0-9\-._~/]*$/.test(url) && !url.includes("..")
+    ? url
+    : null;
+}
+
 /**
- * @param reducedMotion  the viewer prefers reduced motion — swap in the
- *                       reduced-motion fallback (default: no motion)
+ * `prefers-reduced-motion` is handled entirely by the `@media` gate in
+ * cosmetics.css — no JS branch here, so the renderer and Preview always agree.
  */
 export function cosmeticClasses(
   config: AssetConfigV1,
-  opts: { reducedMotion?: boolean } = {},
+  opts: { slot?: EquipmentSlot } = {},
 ): string {
+  const allowed = opts.slot ? slotConfigFields(opts.slot) : null;
+  const can = (f: string) => !allowed || (allowed as readonly string[]).includes(f);
   const c: string[] = [];
 
-  switch (config.shape) {
-    case "SOFT": c.push("ck-shape-soft"); break;
-    case "ROUNDED": c.push("ck-shape-rounded"); break;
-    case "SHARP": c.push("ck-shape-sharp"); break;
-    case "PILL": c.push("ck-shape-pill"); break;
+  if (can("shape")) {
+    switch (config.shape) {
+      case "SOFT": c.push("ck-shape-soft"); break;
+      case "ROUNDED": c.push("ck-shape-rounded"); break;
+      case "SHARP": c.push("ck-shape-sharp"); break;
+      case "PILL": c.push("ck-shape-pill"); break;
+    }
   }
-  switch (config.surface) {
-    case "GLASS": c.push("ck-surface-glass"); break;
-    case "GRADIENT": c.push("ck-surface-gradient"); break;
-    case "ELEVATED": c.push("ck-surface-elevated"); break;
-    case "FLAT": c.push("ck-surface-flat"); break;
+  if (can("surface")) {
+    switch (config.surface) {
+      case "GLASS": c.push("ck-surface-glass"); break;
+      case "GRADIENT": c.push("ck-surface-gradient"); break;
+      case "ELEVATED": c.push("ck-surface-elevated"); break;
+      case "FLAT": c.push("ck-surface-flat"); break;
+    }
   }
-  switch (config.borderEffect) {
-    case "GRADIENT_BORDER": c.push("ck-border-gradient"); break;
-    case "GLOW": c.push("ck-border-glow"); break;
-    case "SHINE": c.push("ck-border-shine"); break;
+  if (can("borderEffect")) {
+    switch (config.borderEffect) {
+      case "GRADIENT_BORDER": c.push("ck-border-gradient"); break;
+      case "GLOW": c.push("ck-border-glow"); break;
+      case "SHINE": c.push("ck-border-shine"); break;
+    }
   }
-  if (config.texture === "FINE_NOISE") c.push("ck-texture-noise");
+  if (can("texture") && config.texture === "FINE_NOISE") c.push("ck-texture-noise");
 
-  const motion = opts.reducedMotion
-    ? (config.reducedMotionMotion ?? "NONE")
-    : config.motion;
-  switch (motion) {
-    case "SHIMMER": c.push("ck-motion-shimmer"); break;
-    case "PULSE": c.push("ck-motion-pulse"); break;
-    case "FLOATING_PARTICLES": c.push("ck-motion-particles"); break;
+  if (can("motion")) {
+    const supported = opts.slot ? SLOT_MOTION[opts.slot as keyof typeof SLOT_MOTION] : null;
+    const raw = config.motion;
+    const motion =
+      supported && raw && !(supported as readonly string[]).includes(raw)
+        ? "NONE"
+        : raw;
+    switch (motion) {
+      case "SHIMMER": c.push("ck-motion-shimmer"); break;
+      case "PULSE": c.push("ck-motion-pulse"); break;
+      case "FLOATING_PARTICLES": c.push("ck-motion-particles"); break;
+    }
   }
 
-  if (config.intensity) c.push(`ck-intensity-${config.intensity.toLowerCase()}`);
+  if (can("intensity") && config.intensity) {
+    c.push(`ck-intensity-${config.intensity.toLowerCase()}`);
+  }
 
   return c.join(" ");
 }
 
-/** True when this asset config draws anything at all. */
-export function configIsDecorative(config: AssetConfigV1): boolean {
+/** True when this asset config draws anything at all for `slot`. */
+export function configIsDecorative(
+  config: AssetConfigV1,
+  slot?: EquipmentSlot,
+): boolean {
   return Boolean(
-    (config.colors && Object.keys(config.colors).length) ||
-      config.surface ||
-      config.borderEffect ||
-      config.texture ||
-      (config.motion && config.motion !== "NONE") ||
-      config.shape ||
-      config.mediaUrl,
+    cosmeticClasses(config, { slot }) ||
+      (config.colors && Object.keys(config.colors).length) ||
+      cosmeticMediaUrl(config),
   );
 }
 
