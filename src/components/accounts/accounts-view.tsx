@@ -79,6 +79,17 @@ export function AccountsView({
     };
   }, []);
 
+  // which account slot the pointer is over — a rect scan instead of
+  // elementFromPoint, so the dragged card never needs pointer-events:none
+  // (which let iOS reach through to the text on the cards underneath)
+  function accountCardAt(x: number, y: number): HTMLElement | null {
+    for (const card of document.querySelectorAll<HTMLElement>("[data-account-id]")) {
+      const r = card.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return card;
+    }
+    return null;
+  }
+
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -186,7 +197,7 @@ export function AccountsView({
           }
         />
       ) : (
-        <div className="rounded-[2rem] bg-[radial-gradient(circle_at_15%_20%,color-mix(in_srgb,var(--primary)_16%,transparent),transparent_34%),radial-gradient(circle_at_85%_55%,color-mix(in_srgb,var(--accent)_75%,transparent),transparent_38%)] p-3 sm:p-5">
+        <div className="select-none rounded-[2rem] bg-[radial-gradient(circle_at_15%_20%,color-mix(in_srgb,var(--primary)_16%,transparent),transparent_34%),radial-gradient(circle_at_85%_55%,color-mix(in_srgb,var(--accent)_75%,transparent),transparent_38%)] p-3 [-webkit-touch-callout:none] sm:p-5">
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {active.map((a) => (
             <li key={a.id} data-account-id={a.id}>
@@ -229,7 +240,6 @@ export function AccountsView({
                       dragElRef.current = el;
                       dragOriginRef.current = { x: startX, y: startY };
                       el.style.zIndex = "50";
-                      el.style.pointerEvents = "none";
                       el.style.touchAction = "none";
                     }
                   };
@@ -262,9 +272,8 @@ export function AccountsView({
                   const dx = event.clientX - dragOriginRef.current.x;
                   const dy = event.clientY - dragOriginRef.current.y;
                   moveDragEl(dx, dy);
-                  const overId = document
-                    .elementFromPoint(event.clientX, event.clientY)
-                    ?.closest<HTMLElement>("[data-account-id]")?.dataset.accountId;
+                  const overId = accountCardAt(event.clientX, event.clientY)
+                    ?.dataset.accountId;
                   const next =
                     overId && overId !== dragRef.current && !arranging
                       ? overId
@@ -287,9 +296,7 @@ export function AccountsView({
                   blockSelectRef.current = false;
 
                   const sourceId = dragRef.current;
-                  const targetEl = document
-                    .elementFromPoint(event.clientX, event.clientY)
-                    ?.closest<HTMLElement>("[data-account-id]");
+                  const targetEl = accountCardAt(event.clientX, event.clientY);
                   const target = targetEl?.dataset.accountId;
                   dragRef.current = null;
                   setDraggingId(null);
