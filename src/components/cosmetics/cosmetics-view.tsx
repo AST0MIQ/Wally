@@ -94,7 +94,10 @@ export function CosmeticsView({
           { slot: i.slot, assetId: i.assetId },
           { successMessage: t("equippedToast") },
         );
-    if (res.ok) router.refresh();
+    if (res.ok) {
+      setPreviewAsset(null);
+      router.refresh();
+    }
   };
 
   const applyDiff = (c: ApplicableCollection) =>
@@ -178,7 +181,7 @@ export function CosmeticsView({
         <Select value={slot} onChange={(e) => setSlot(e.target.value)} className="h-9 w-auto">
           <option value="">{t("allSlots")}</option>
           {EQUIPMENT_SLOTS.filter((s) => usedSlots.includes(s)).map((s) => (
-            <option key={s}>{s}</option>
+            <option key={s} value={s}>{t(`slots.${s}`)}</option>
           ))}
         </Select>
         {usedCollections.length > 0 && (
@@ -208,7 +211,7 @@ export function CosmeticsView({
                   <div className="min-w-0">
                     <p className="truncate font-medium">{i.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {t("slotLabel", { slot: i.slot })}
+                      {t("slotLabel", { slot: t(`slots.${i.slot}`) })}
                       {!isRenderedSlot(i.slot) && ` · ${t("phase2Short")}`}
                     </p>
                   </div>
@@ -255,7 +258,7 @@ export function CosmeticsView({
               <DialogHeader>
                 <DialogTitle>{previewAsset.name}</DialogTitle>
                 <DialogDescription>
-                  {t("slotLabel", { slot: previewAsset.slot })}
+                  {t("slotLabel", { slot: t(`slots.${previewAsset.slot}`) })}
                 </DialogDescription>
               </DialogHeader>
               <CosmeticPreview
@@ -268,6 +271,11 @@ export function CosmeticsView({
                 <DialogClose asChild>
                   <Button variant="ghost">{t("close")}</Button>
                 </DialogClose>
+                {previewAsset.owned && !previewAsset.equipped && (
+                  <Button disabled={busy} onClick={() => doEquip(previewAsset)}>
+                    {t("useThis")}
+                  </Button>
+                )}
               </DialogFooter>
             </>
           )}
@@ -295,7 +303,7 @@ export function CosmeticsView({
                 <ul className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                   {applyDiff(previewCollection).map((s) => (
                     <li key={s.slot}>
-                      {s.slot}: <b>{s.assetName}</b>{" "}
+                      {t(`slots.${s.slot}`)}: <b>{s.assetName}</b>{" "}
                       {t("replaces", {
                         name:
                           nameById.get(equippedBySlot[s.slot]!) ??
@@ -310,7 +318,7 @@ export function CosmeticsView({
                 {previewCollection.slots.map((s) => (
                   <div key={s.slot} className="flex flex-col gap-1">
                     <p className="text-xs font-medium text-muted-foreground">
-                      {s.slot} · {s.assetName}
+                      {t(`slots.${s.slot}`)} · {s.assetName}
                       {!s.owned && ` · ${t("locked")}`}
                       {s.assetStatus !== "PUBLISHED" && ` · ${s.assetStatus}`}
                     </p>

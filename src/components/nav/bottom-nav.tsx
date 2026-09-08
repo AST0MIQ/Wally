@@ -8,11 +8,14 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BOTTOM_NAV } from "@/components/nav/nav-items";
 import { useQuickAdd } from "@/components/transactions/quick-add-provider";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
 
 export function BottomNav({ className }: { className?: string }) {
   const pathname = usePathname();
   const t = useTranslations("nav");
   const { open: openQuickAdd } = useQuickAdd();
+  const theme = useCosmeticCardTheme("NAVIGATION");
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -20,12 +23,15 @@ export function BottomNav({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "glass fixed inset-x-3 bottom-3 z-40 rounded-2xl border border-glass",
+        "fixed inset-x-3 bottom-3 z-40 overflow-hidden rounded-2xl border",
+        theme.active ? theme.className : "glass border-glass",
         "mb-[env(safe-area-inset-bottom)]",
         className,
       )}
+      style={theme.style}
     >
-      <ul className="mx-auto flex max-w-lg items-center justify-around px-2">
+      <CosmeticCardFx slot="NAVIGATION" />
+      <ul className="relative z-[1] mx-auto flex max-w-lg items-center justify-around px-2">
         {BOTTOM_NAV.slice(0, 2).map((item) => (
           <NavCell key={item.href} item={item} active={isActive(item.href)} label={t(item.labelKey)} />
         ))}

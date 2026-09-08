@@ -53,9 +53,22 @@ describe("[2] CosmeticPreview parity with production gate", () => {
   });
 
   it("non-rendered slot shows 'coming in Phase 2', not a card", () => {
-    const html = render({ slot: "NAVIGATION", config: {}, ctx: light });
+    const html = render({ slot: "ICON_SET", config: {}, ctx: light });
     expect(html).toContain("rendererComingPhase2");
     expect(html).not.toContain("ck-fx");
+  });
+
+  it("Phase 2 surface slots have a real preview", () => {
+    for (const slot of ["NAVIGATION", "HEADER", "ACCOUNT_CARD", "TRANSACTION_CARD"] as const) {
+      const html = render({
+        slot,
+        config: { colors: { surface: "#112233" }, shape: "ROUNDED" },
+        ctx: light,
+      });
+      expect(html).toContain("background-color:#112233");
+      expect(html).toContain("ck-card-replaced");
+      expect(html).not.toContain("rendererComingPhase2");
+    }
   });
 
   it("previewUrl thumbnail renders for every slot (same-origin only)", () => {

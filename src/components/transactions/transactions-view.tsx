@@ -22,6 +22,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TransactionRow } from "@/components/transactions/transaction-row";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
 import { EditSheet } from "@/components/transactions/edit-sheet";
 
 export type FeedFilters = {
@@ -51,6 +52,7 @@ export function TransactionsView({
   const t = useTranslations("transactions");
   const tc = useTranslations("common");
   const ui = useTranslations("ui");
+  const transactionTheme = useCosmeticCardTheme("TRANSACTION_CARD");
   const [loadError, setLoadError] = useState(false);
   const hasFilters = !!(filters.search || filters.accountId || filters.categoryId || filters.dateFrom || filters.dateTo || filters.type !== "ALL");
   const tCat = useTranslations("categories");
@@ -190,6 +192,7 @@ export function TransactionsView({
                 <TransactionRow
                   key={`${item.type}-${item.id}`}
                   item={item}
+                  cosmeticTheme={transactionTheme}
                   onClick={() => {
                     setEditing(item);
                     setEditOpen(true);

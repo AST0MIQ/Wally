@@ -9,6 +9,8 @@ import { Drawer, SideDrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { SidebarNav } from "@/components/nav/sidebar-nav";
 import { ProfileChip, type ProfileChipStreak } from "@/components/nav/profile-chip";
 import { APP_VERSION } from "@/lib/version";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
 
 /** Mobile-only top bar: hamburger + Wally on the left, profile chip on the right. */
 export function MobileTopBar({
@@ -29,6 +31,7 @@ export function MobileTopBar({
   const t = useTranslations("nav");
   const [open, setOpen] = useState(false);
   const [hasUnreadPatchNotes, setHasUnreadPatchNotes] = useState(lastSeenVersion !== APP_VERSION);
+  const theme = useCosmeticCardTheme("HEADER");
 
   // Left-edge swipe → open the menu drawer (native-app feel).
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
@@ -62,10 +65,13 @@ export function MobileTopBar({
       />
       <header
         className={cn(
-          "glass mobile-safe-header sticky top-0 z-30 flex items-center gap-2 border-b border-glass px-3",
+          "mobile-safe-header sticky top-0 z-30 flex items-center gap-2 overflow-hidden border-b px-3",
+          theme.active ? theme.className : "glass border-glass",
           className,
         )}
+        style={theme.style}
       >
+        <CosmeticCardFx slot="HEADER" />
         <Drawer direction="left" open={open} onOpenChange={setOpen}>
           <button
             type="button"

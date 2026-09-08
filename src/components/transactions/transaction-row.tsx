@@ -8,25 +8,32 @@ import type { Locale } from "@/i18n/config";
 import { formatMoney } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import type { FeedItem } from "@/server/services/transaction.service";
+import type { CosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
 
 export function TransactionRow({
   item,
   onClick,
+  cosmeticTheme,
 }: {
   item: FeedItem;
   onClick: () => void;
+  cosmeticTheme: CosmeticCardTheme;
 }) {
   const locale = useLocale() as Locale;
   const tCat = useTranslations("categories");
   const tt = useTranslations("transactions");
+  const theme = cosmeticTheme;
 
   if (item.type === "TRANSFER") {
     return (
       <button
         type="button"
         onClick={onClick}
-        className="group flex w-full items-center gap-3 rounded-xl px-3 py-4 text-left transition-all duration-200 hover:bg-muted/70 active:scale-[0.995]"
+        className={cn("group relative flex w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-4 text-left transition-all duration-200 active:scale-[0.995]", theme.active ? theme.className : "hover:bg-muted/70")}
+        style={theme.style}
       >
+        <CosmeticCardFx slot="TRANSACTION_CARD" />
         <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted">
           <ArrowLeftRight className="size-4 text-muted-foreground" />
         </span>
@@ -65,8 +72,10 @@ export function TransactionRow({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-xl px-3 py-4 text-left transition-all duration-200 hover:bg-muted/70 active:scale-[0.995]"
+      className={cn("group relative flex w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-4 text-left transition-all duration-200 active:scale-[0.995]", theme.active ? theme.className : "hover:bg-muted/70")}
+      style={theme.style}
     >
+      <CosmeticCardFx slot="TRANSACTION_CARD" />
       <span
         className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl text-base", isIncome ? "bg-emerald-500/10 text-positive" : "bg-negative/10 text-negative")}
         style={item.categoryColor ? { backgroundColor: `${item.categoryColor}18` } : undefined}

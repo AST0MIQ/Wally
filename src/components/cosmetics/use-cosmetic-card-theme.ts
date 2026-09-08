@@ -24,3 +24,5 @@ export function useCosmeticCardTheme(slot: EquipmentSlot) {
     style: active && asset ? cosmeticCardHostStyle(asset.config) : undefined,
   };
 }
+
+export type CosmeticCardTheme = ReturnType<typeof useCosmeticCardTheme>;

@@ -22,6 +22,12 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AccountForm } from "@/components/accounts/account-form";
 import { useQuickAdd } from "@/components/transactions/quick-add-provider";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
+
+// One-line emergency kill switch. The renderer never changes pointer capture,
+// touch-action, hit testing, selection prevention, or any drag handler below.
+const ACCOUNT_CARD_COSMETICS_ENABLED = true;
 
 export function AccountsView({
   accounts,
@@ -38,6 +44,8 @@ export function AccountsView({
   const tc = useTranslations("common");
   const router = useRouter();
   const { open: openQuickAdd } = useQuickAdd();
+  const accountTheme = useCosmeticCardTheme("ACCOUNT_CARD");
+  const useAccountTheme = ACCOUNT_CARD_COSMETICS_ENABLED && accountTheme.active;
   const [showArchived, setShowArchived] = useState(false);
   const [arranging, setArranging] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -492,7 +500,7 @@ export function AccountsView({
                   setDraggingId(null);
                   resetDragEl(true);
                 }}
-                style={{
+                style={useAccountTheme ? accountTheme.style : {
                   backgroundColor: a.color
                     ? `color-mix(in srgb, ${a.color} 8%, var(--card))`
                     : undefined,
@@ -502,11 +510,13 @@ export function AccountsView({
                 }}
                 className={cn(
                   "interactive-lift relative flex h-full select-none flex-col overflow-hidden p-4 will-change-transform [-webkit-touch-callout:none]",
+                  useAccountTheme && accountTheme.className,
                   draggingId === a.id && "z-10 opacity-95 ring-2 ring-primary shadow-2xl",
                   draggingId === a.id && prefersReducedMotion && "scale-[0.88] opacity-80",
                   dropTargetId === a.id && "scale-[1.05] ring-4 ring-primary/70 shadow-lg transition-transform",
                 )}
               >
+                {useAccountTheme && <CosmeticCardFx slot="ACCOUNT_CARD" />}
                 <div className="flex items-start justify-between gap-2">
                   <span
                     className="flex size-11 shrink-0 items-center justify-center rounded-xl text-lg"

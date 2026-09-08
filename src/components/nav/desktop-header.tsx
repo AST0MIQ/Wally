@@ -1,4 +1,9 @@
+"use client";
+
 import { ProfileChip, type ProfileChipStreak } from "@/components/nav/profile-chip";
+import { cn } from "@/lib/utils";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
 
 /** Desktop-only top bar (md+) holding the profile chip on the right. */
 export function DesktopHeader({
@@ -10,9 +15,19 @@ export function DesktopHeader({
   email?: string | null;
   streak?: ProfileChipStreak;
 }) {
+  const theme = useCosmeticCardTheme("HEADER");
   return (
-    <header className="glass sticky top-0 z-30 hidden h-14 items-center justify-end border-b border-glass px-8 md:flex">
-      <ProfileChip name={name} email={email} streak={streak} />
+    <header
+      className={cn(
+        "sticky top-0 z-30 hidden h-14 items-center justify-end overflow-hidden border-b px-8 md:flex",
+        theme.active ? theme.className : "glass border-glass",
+      )}
+      style={theme.style}
+    >
+      <CosmeticCardFx slot="HEADER" />
+      <div className="relative z-[1]">
+        <ProfileChip name={name} email={email} streak={streak} />
+      </div>
     </header>
   );
 }

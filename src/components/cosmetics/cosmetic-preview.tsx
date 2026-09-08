@@ -143,6 +143,71 @@ export function CosmeticPreview({
         </div>
       </div>
     );
+  } else if (slot === "NAVIGATION") {
+    const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
+    body = (
+      <div
+        style={cardStyle}
+        className={cn(
+          "relative flex h-24 w-full items-end overflow-hidden border p-2",
+          cosmeticCardHostClass(config),
+        )}
+      >
+        <span aria-hidden className={cn("ck-fx", fx)} />
+        <div className="relative z-[1] grid w-full grid-cols-4 gap-1 text-center text-[10px]">
+          {["⌂", "▣", "+", "◯"].map((icon, index) => (
+            <span key={`${icon}-${index}`} className="rounded-lg px-1 py-2">{icon}</span>
+          ))}
+        </div>
+      </div>
+    );
+  } else if (slot === "HEADER") {
+    const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
+    body = (
+      <div
+        style={cardStyle}
+        className={cn(
+          "relative flex h-20 w-full items-center justify-between overflow-hidden border px-4",
+          cosmeticCardHostClass(config),
+        )}
+      >
+        <span aria-hidden className={cn("ck-fx", fx)} />
+        <span className="relative z-[1] font-semibold">Wally<span className="text-primary">.</span></span>
+        <span className="relative z-[1] flex size-8 items-center justify-center rounded-full border">A</span>
+      </div>
+    );
+  } else if (slot === "TRANSACTION_CARD") {
+    const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
+    body = (
+      <div
+        style={cardStyle}
+        className={cn(
+          "relative flex h-24 w-full items-center gap-3 overflow-hidden border p-3",
+          cosmeticCardHostClass(config),
+        )}
+      >
+        <span aria-hidden className={cn("ck-fx", fx)} />
+        <span className="relative z-[1] flex size-10 items-center justify-center rounded-xl bg-negative/10">🛍️</span>
+        <span className="relative z-[1] min-w-0 flex-1"><b className="block text-sm">Shopping</b><small className="text-muted-foreground">Today</small></span>
+        <b className="relative z-[1] text-negative">−฿450</b>
+      </div>
+    );
+  } else if (slot === "ACCOUNT_CARD") {
+    const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
+    body = (
+      <div
+        style={cardStyle}
+        className={cn(
+          "relative flex h-32 w-full flex-col overflow-hidden border p-3",
+          cosmeticCardHostClass(config),
+        )}
+      >
+        <span aria-hidden className={cn("ck-fx", fx)} />
+        <span className="relative z-[1] text-lg">🏦</span>
+        <b className="relative z-[1] mt-2 text-sm">Everyday account</b>
+        <strong className="relative z-[1] mt-auto text-lg">฿12,345</strong>
+      </div>
+    );
   } else {
     const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
     body = (

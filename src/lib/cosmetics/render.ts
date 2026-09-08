@@ -47,14 +47,32 @@ export function cosmeticCardHostStyle(
   config: AssetConfigV1,
 ): Record<string, string> {
   const colors = config.colors ?? {};
+  const fill = colors.surface ?? colors.background ?? colors.primary;
+  const autoText = readableTextColor(fill);
   return {
     ...cosmeticVars(config),
-    backgroundColor:
-      colors.surface ?? colors.background ?? colors.primary ?? "var(--card)",
+    ...(colors.primary ? { "--primary": colors.primary } : {}),
+    ...(colors.text ? { "--foreground": colors.text } : {}),
+    ...(colors.muted ? { "--muted-foreground": colors.muted } : {}),
+    ...(colors.border ? { "--border": colors.border } : {}),
+    "--ck-card-text": colors.text ?? autoText,
+    backgroundColor: fill ?? "var(--card)",
     backgroundImage: "none",
     borderColor: colors.border ?? "transparent",
-    color: colors.text ?? "inherit",
+    color: colors.text ?? autoText,
   };
+}
+
+/** Deterministic black/white fallback for readable text on an asset fill. */
+function readableTextColor(hex?: string): string {
+  if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return "var(--foreground)";
+  const r = Number.parseInt(hex.slice(1, 3), 16) / 255;
+  const g = Number.parseInt(hex.slice(3, 5), 16) / 255;
+  const b = Number.parseInt(hex.slice(5, 7), 16) / 255;
+  const linear = (v: number) =>
+    v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  const luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  return luminance > 0.42 ? "#111827" : "#ffffff";
 }
 
 /** Shape belongs to the replacement card itself, not only its FX overlay. */

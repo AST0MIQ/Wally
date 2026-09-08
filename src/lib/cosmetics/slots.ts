@@ -25,14 +25,18 @@ export const EQUIPMENT_SLOTS = [
 
 export type EquipmentSlot = (typeof EQUIPMENT_SLOTS)[number];
 
-/** Slots with a live renderer in Phase 1. */
+/** Slots with a live renderer. Phase 2 adds app chrome + transaction rows. */
 export const RENDERED_SLOTS = [
   "APP_BACKGROUND",
+  "NAVIGATION",
+  "HEADER",
   "PROFILE_FRAME",
   "PROFILE_BADGE",
   "PROFILE_AURA",
   "OVERVIEW_CARD",
+  "ACCOUNT_CARD",
   "INVESTMENT_CARD",
+  "TRANSACTION_CARD",
 ] as const satisfies readonly EquipmentSlot[];
 
 export type RenderedSlot = (typeof RENDERED_SLOTS)[number];
@@ -73,8 +77,12 @@ export type ConfigField =
 
 export const SLOT_CONFIG_FIELDS: Record<RenderedSlot, readonly ConfigField[]> = {
   APP_BACKGROUND: ["colors", "surface", "texture", "motion", "intensity", "mediaUrl"],
+  NAVIGATION: ["colors", "shape", "surface", "borderEffect", "texture", "intensity"],
+  HEADER: ["colors", "surface", "borderEffect", "texture", "intensity"],
   OVERVIEW_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
+  ACCOUNT_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
   INVESTMENT_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
+  TRANSACTION_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
   PROFILE_FRAME: ["colors", "borderEffect", "motion", "intensity"],
   PROFILE_AURA: ["colors", "motion", "intensity"],
   PROFILE_BADGE: ["colors", "shape"],
@@ -83,8 +91,12 @@ export const SLOT_CONFIG_FIELDS: Record<RenderedSlot, readonly ConfigField[]> = 
 /** Motion presets a given rendered slot's CSS can actually animate. */
 export const SLOT_MOTION: Record<RenderedSlot, readonly string[]> = {
   APP_BACKGROUND: ["NONE", "FLOATING_PARTICLES"],
+  NAVIGATION: ["NONE"],
+  HEADER: ["NONE"],
   OVERVIEW_CARD: ["NONE", "SHIMMER", "PULSE", "FLOATING_PARTICLES"],
+  ACCOUNT_CARD: ["NONE", "SHIMMER", "PULSE"],
   INVESTMENT_CARD: ["NONE", "SHIMMER", "PULSE", "FLOATING_PARTICLES"],
+  TRANSACTION_CARD: ["NONE", "SHIMMER", "PULSE"],
   PROFILE_FRAME: ["NONE", "PULSE"],
   PROFILE_AURA: ["NONE", "PULSE"],
   PROFILE_BADGE: ["NONE"],

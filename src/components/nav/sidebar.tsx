@@ -2,6 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "@/components/nav/sidebar-nav";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
 
 type SidebarProps = {
   role: "USER" | "ADMIN";
@@ -12,14 +14,20 @@ type SidebarProps = {
 
 /** Desktop fixed sidebar (md and up). */
 export function Sidebar({ role, email, lastSeenVersion, className }: SidebarProps) {
+  const theme = useCosmeticCardTheme("NAVIGATION");
   return (
     <aside
       className={cn(
-        "glass h-dvh border-r border-glass",
+        "relative h-dvh overflow-hidden border-r",
+        theme.active ? theme.className : "glass border-glass",
         className,
       )}
+      style={theme.style}
     >
-      <SidebarNav role={role} email={email} lastSeenVersion={lastSeenVersion} />
+      <CosmeticCardFx slot="NAVIGATION" />
+      <div className="relative z-[1] h-full">
+        <SidebarNav role={role} email={email} lastSeenVersion={lastSeenVersion} />
+      </div>
     </aside>
   );
 }

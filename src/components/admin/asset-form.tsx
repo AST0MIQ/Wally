@@ -53,6 +53,7 @@ export function AssetForm({
   const t = useTranslations("admin.assets");
   const tc = useTranslations("admin.common");
   const ts = useTranslations("admin.studio");
+  const tCosmetics = useTranslations("cosmetics");
   const router = useRouter();
   const editing = Boolean(asset);
 
@@ -127,7 +128,9 @@ export function AssetForm({
               disabled={editing}
               onChange={(e) => setSlot(e.target.value as EquipmentSlot)}
             >
-              {EQUIPMENT_SLOTS.map((s) => <option key={s}>{s}</option>)}
+              {EQUIPMENT_SLOTS.map((s) => (
+                <option key={s} value={s}>{tCosmetics(`slots.${s}`)}</option>
+              ))}
             </Select>
           </Field>
           <Field label={tc("rarity")}>

@@ -79,6 +79,10 @@
      This marker documents replacement precedence and gives future card slots
      one stable hook without touching their interaction handlers. */
   background-image: none;
+  color: var(--ck-card-text, var(--foreground));
+}
+.ck-card-replaced [class*="text-white"] {
+  color: var(--ck-card-text, var(--foreground));
 }
 .ck-surface-glass {
   background: color-mix(in srgb, var(--ck-surface, transparent) 40%, transparent);

@@ -1,16 +1,20 @@
 # Cosmetics — Phase 2 backlog
 
+## Completed in the Phase 2 visual/UX slice
+
+- Renderers for `NAVIGATION`, `HEADER`, `ACCOUNT_CARD`, and `TRANSACTION_CARD`.
+- Card replacement precedence for overview, investment, account, and
+  transaction cards (no legacy accent/streak colour bleeding through).
+- Slot-specific live previews and direct equip from the Preview dialog.
+- Plain-language Thai/English slot, colour, and effect labels.
+- iOS-safe account-card overlay behind a one-line emergency flag.
+
 Phase 1 shipped the full vertical slice (author → publish → grant → equip →
 render). Deferred, roughly in priority order:
 
 ## Rendering
-- Renderers for the remaining slots: `NAVIGATION`, `HEADER`, `TRANSACTION_CARD`,
-  `CHART_STYLE`, `ICON_SET`, `TYPOGRAPHY`, `AMBIENT_EFFECT`, `INTERACTION_EFFECT`,
-  `CELEBRATION_EFFECT`.
-- `ACCOUNT_CARD` renderer — must be a `pointer-events: none`, class-only overlay
-  that does **not** touch any handler, pointer capture, `touch-action`, the
-  rect-scan hit test or text-selection logic in `accounts-view.tsx` (1.4.6 iOS
-  drag). Add behind a one-line flag.
+- Renderers that need config v2 semantics: `CHART_STYLE`, `ICON_SET`,
+  `TYPOGRAPHY`, `AMBIENT_EFFECT`, `INTERACTION_EFFECT`, `CELEBRATION_EFFECT`.
 - `mediaUrl` backgrounds once the Media Library exists (CSP `img-src` currently
   blocks external hosts; only same-origin `/…` paths are allowed).
 - Config `v2` (via `parseAssetConfig` version dispatch) if new tokens are needed.

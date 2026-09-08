@@ -1,4 +1,4 @@
-# Wally Cosmetics — Phase 1
+# Wally Cosmetics
 
 A modular, game-inventory-style theming system. A **Collection** bundles
 **Assets**; each Asset is bound to one **EquipmentSlot** and is equipped
@@ -32,12 +32,30 @@ renderers emit nothing → the app looks exactly as it did in 1.4.6. `DEFAULT`
 acquisition assets ("Wally Classic") are implicitly owned by everyone (no
 entitlement rows). `resetToDefaults` deletes the user's equipped rows.
 
-## Rendered slots (Phase 1)
+## Rendered slots (Phase 1–2)
 
-`APP_BACKGROUND`, `PROFILE_FRAME`, `PROFILE_BADGE`, `PROFILE_AURA`,
-`OVERVIEW_CARD`, `INVESTMENT_CARD`. All other slots are data + admin only.
-`ACCOUNT_CARD` has **no renderer** — `accounts-view.tsx` (the 1.4.6 iOS drag
-mechanic) is untouched.
+Phase 1: `APP_BACKGROUND`, `PROFILE_FRAME`, `PROFILE_BADGE`, `PROFILE_AURA`,
+`OVERVIEW_CARD`, `INVESTMENT_CARD`.
+
+Phase 2: `NAVIGATION`, `HEADER`, `ACCOUNT_CARD`, `TRANSACTION_CARD`. Card assets
+replace the old card fill instead of blending over the user's accent/streak
+gradient. The Admin and user previews use the same replacement rule.
+
+The `ACCOUNT_CARD` renderer is a class/style-only layer with
+`pointer-events:none`, guarded by `ACCOUNT_CARD_COSMETICS_ENABLED`. It does not
+change pointer capture, touch action, the rect-scan hit test, selection
+prevention, or any drag handler.
+
+Remaining data/admin-only slots: `CHART_STYLE`, `ICON_SET`, `TYPOGRAPHY`,
+`AMBIENT_EFFECT`, `INTERACTION_EFFECT`, `CELEBRATION_EFFECT`.
+
+## Phase 2 user experience
+
+- Technical slot and preset identifiers are translated into plain labels.
+- Preview is available before equipping and can equip the item directly.
+- Applying a collection still shows the replacement summary before the single
+  confirmation click.
+- Reset remains available from the page header and restores the Wally default.
 
 ## Admin
 

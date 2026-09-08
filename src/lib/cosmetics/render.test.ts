@@ -90,11 +90,18 @@ describe("render helpers", () => {
     ).toMatchObject({
       backgroundColor: "#fff1f2",
       backgroundImage: "none",
+      color: "#111827",
     });
     expect(
       cosmeticCardHostStyle({ colors: { background: "#111111" } }).backgroundColor,
     ).toBe("#111111");
     expect(cosmeticCardHostStyle({}).backgroundColor).toBe("var(--card)");
+    expect(
+      cosmeticCardHostStyle({ colors: { surface: "#111827" } }).color,
+    ).toBe("#ffffff");
+    expect(
+      cosmeticCardHostStyle({ colors: { surface: "#ffffff", text: "#123456" } }).color,
+    ).toBe("#123456");
     expect(cosmeticCardHostClass({ shape: "ROUNDED" })).toContain("ck-shape-rounded");
   });
 });
