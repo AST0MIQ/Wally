@@ -71,6 +71,12 @@ export function AccountsView({
   // ignored on iOS). A fast early swipe still scrolls — see onPointerMove.
   const scrollLockRef = useRef(false);
   const lockTimerRef = useRef<number | null>(null);
+  // auto-scroll the page while a drag hovers near the top/bottom edge, so a
+  // far-away account can still be reached (the touch itself can't scroll —
+  // it's held by the drag)
+  const scrollStartRef = useRef(0);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const autoScrollRef = useRef<number | null>(null);
 
   useEffect(() => {
     const stopSelect = (event: Event) => {
@@ -88,6 +94,8 @@ export function AccountsView({
       document.removeEventListener("touchmove", stopScroll);
       if (longPressRef.current != null) window.clearTimeout(longPressRef.current);
       if (lockTimerRef.current != null) window.clearTimeout(lockTimerRef.current);
+      if (autoScrollRef.current != null)
+        cancelAnimationFrame(autoScrollRef.current);
     };
   }, []);
 
@@ -114,9 +122,65 @@ export function AccountsView({
     }
     scrollLockRef.current = false;
     blockSelectRef.current = false;
+    stopAutoScroll();
     if (el && !armedRef.current) {
       el.style.transition = "transform 140ms ease";
       el.style.transform = "";
+    }
+  }
+
+  function stopAutoScroll() {
+    if (autoScrollRef.current != null) {
+      cancelAnimationFrame(autoScrollRef.current);
+      autoScrollRef.current = null;
+    }
+  }
+
+  // place the dragged card under the last known pointer, compensating for any
+  // page scroll since the grab, and refresh the hovered drop target
+  function renderDrag() {
+    const p = lastPointRef.current;
+    const origin = dragOriginRef.current;
+    if (!p || !origin || !dragRef.current) return;
+    const dx = p.x - origin.x;
+    const dy = p.y - origin.y + (window.scrollY - scrollStartRef.current);
+    moveDragEl(dx, dy);
+    const overId = accountCardAt(p.x, p.y)?.dataset.accountId;
+    const next =
+      overId && overId !== dragRef.current && !arranging ? overId : null;
+    if (next !== dropTargetRef.current) {
+      dropTargetRef.current = next ?? null;
+      setDropTargetId(next ?? null);
+    }
+  }
+
+  function autoScrollTick() {
+    autoScrollRef.current = null;
+    const p = lastPointRef.current;
+    if (!armedRef.current || !p) return;
+    const EDGE_TOP = 70;
+    const EDGE_BOTTOM = 130; // clear the bottom tab bar
+    const MAX = 16;
+    const vh = window.innerHeight;
+    let dv = 0;
+    if (p.y < EDGE_TOP) dv = -MAX * Math.min(1, (EDGE_TOP - p.y) / EDGE_TOP);
+    else if (p.y > vh - EDGE_BOTTOM)
+      dv = MAX * Math.min(1, (p.y - (vh - EDGE_BOTTOM)) / EDGE_BOTTOM);
+    if (dv === 0) return;
+    const before = window.scrollY;
+    window.scrollBy(0, dv);
+    if (window.scrollY === before) return; // reached an end
+    renderDrag();
+    autoScrollRef.current = requestAnimationFrame(autoScrollTick);
+  }
+
+  function maybeAutoScroll() {
+    if (autoScrollRef.current != null) return; // already looping
+    const p = lastPointRef.current;
+    if (!p) return;
+    const vh = window.innerHeight;
+    if (p.y < 70 || p.y > vh - 130) {
+      autoScrollRef.current = requestAnimationFrame(autoScrollTick);
     }
   }
 
@@ -282,6 +346,8 @@ export function AccountsView({
                     if (!prefersReducedMotion) {
                       dragElRef.current = el;
                       dragOriginRef.current = { x: startX, y: startY };
+                      lastPointRef.current = { x: startX, y: startY };
+                      scrollStartRef.current = window.scrollY;
                       el.style.zIndex = "50";
                       el.style.touchAction = "none";
                       // pop from the pressed-in hint to the lifted state
@@ -328,19 +394,9 @@ export function AccountsView({
                     return;
                   }
                   if (!dragRef.current || !dragOriginRef.current) return;
-                  const dx = event.clientX - dragOriginRef.current.x;
-                  const dy = event.clientY - dragOriginRef.current.y;
-                  moveDragEl(dx, dy);
-                  const overId = accountCardAt(event.clientX, event.clientY)
-                    ?.dataset.accountId;
-                  const next =
-                    overId && overId !== dragRef.current && !arranging
-                      ? overId
-                      : null;
-                  if (next !== dropTargetRef.current) {
-                    dropTargetRef.current = next ?? null;
-                    setDropTargetId(next ?? null);
-                  }
+                  lastPointRef.current = { x: event.clientX, y: event.clientY };
+                  renderDrag();
+                  maybeAutoScroll();
                 }}
                 onPointerUp={(event) => {
                   if (!armedRef.current) {
