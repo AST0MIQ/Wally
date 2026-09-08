@@ -101,7 +101,7 @@ export function AccountsView({
     el.style.transition = opts.snap
       ? "transform 180ms cubic-bezier(0.2,0.8,0.3,1)"
       : "none";
-    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${opts.snap ? 0.9 : 1.06}) rotate(2deg)`;
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${opts.snap ? 0.9 : 0.88})`;
   }
 
   function resetDragEl(withTransition: boolean) {
@@ -234,6 +234,12 @@ export function AccountsView({
                     } catch {
                       /* selection API unavailable */
                     }
+                    // a short buzz confirms the grab (Android; iOS Safari ignores it)
+                    try {
+                      navigator.vibrate?.(15);
+                    } catch {
+                      /* vibration unsupported */
+                    }
                     dragRef.current = a.id;
                     setDraggingId(a.id);
                     if (!prefersReducedMotion) {
@@ -250,7 +256,7 @@ export function AccountsView({
                     // hold to grab — a quick swipe scrolls the list instead.
                     // block native selection for the whole hold + drag window.
                     blockSelectRef.current = true;
-                    longPressRef.current = window.setTimeout(beginDrag, 260);
+                    longPressRef.current = window.setTimeout(beginDrag, 500);
                   }
                 }}
                 onPointerMove={(event) => {
@@ -260,7 +266,7 @@ export function AccountsView({
                     if (longPressRef.current != null && pressStartRef.current) {
                       const mx = Math.abs(event.clientX - pressStartRef.current.x);
                       const my = Math.abs(event.clientY - pressStartRef.current.y);
-                      if (mx > 10 || my > 10) {
+                      if (mx > 16 || my > 16) {
                         window.clearTimeout(longPressRef.current);
                         longPressRef.current = null;
                         blockSelectRef.current = false; // it's a scroll, let go
@@ -366,7 +372,7 @@ export function AccountsView({
                 className={cn(
                   "interactive-lift relative flex h-full select-none flex-col overflow-hidden p-4 will-change-transform [-webkit-touch-callout:none]",
                   draggingId === a.id && "z-10 opacity-95 ring-2 ring-primary shadow-2xl",
-                  draggingId === a.id && prefersReducedMotion && "scale-[1.03] rotate-1 opacity-80",
+                  draggingId === a.id && prefersReducedMotion && "scale-[0.88] opacity-80",
                   dropTargetId === a.id && "scale-[1.05] ring-4 ring-primary/70 shadow-lg transition-transform",
                 )}
               >
