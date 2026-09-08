@@ -79,18 +79,6 @@ export function AccountsView({
     };
   }, []);
 
-  // read the element under the pointer without the floating card intercepting;
-  // toggling pointer-events only for this call keeps the touch on the card so
-  // iOS never re-targets the selection to bare text underneath
-  function hitTestAt(x: number, y: number): HTMLElement | null {
-    const el = dragElRef.current;
-    const prev = el?.style.pointerEvents;
-    if (el) el.style.pointerEvents = "none";
-    const found = document.elementFromPoint(x, y) as HTMLElement | null;
-    if (el) el.style.pointerEvents = prev ?? "";
-    return found;
-  }
-
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -224,12 +212,16 @@ export function AccountsView({
                   const beginDrag = () => {
                     longPressRef.current = null;
                     armedRef.current = true;
-                    // drop any selection iOS may have started during the hold
-                    window.getSelection?.()?.removeAllRanges();
                     try {
                       el.setPointerCapture(pointerId);
                     } catch {
                       /* pointer already released */
+                    }
+                    // drop any selection iOS may have started during the hold
+                    try {
+                      window.getSelection?.()?.removeAllRanges();
+                    } catch {
+                      /* selection API unavailable */
                     }
                     dragRef.current = a.id;
                     setDraggingId(a.id);
@@ -237,6 +229,7 @@ export function AccountsView({
                       dragElRef.current = el;
                       dragOriginRef.current = { x: startX, y: startY };
                       el.style.zIndex = "50";
+                      el.style.pointerEvents = "none";
                       el.style.touchAction = "none";
                     }
                   };
@@ -269,7 +262,8 @@ export function AccountsView({
                   const dx = event.clientX - dragOriginRef.current.x;
                   const dy = event.clientY - dragOriginRef.current.y;
                   moveDragEl(dx, dy);
-                  const overId = hitTestAt(event.clientX, event.clientY)
+                  const overId = document
+                    .elementFromPoint(event.clientX, event.clientY)
                     ?.closest<HTMLElement>("[data-account-id]")?.dataset.accountId;
                   const next =
                     overId && overId !== dragRef.current && !arranging
@@ -293,7 +287,8 @@ export function AccountsView({
                   blockSelectRef.current = false;
 
                   const sourceId = dragRef.current;
-                  const targetEl = hitTestAt(event.clientX, event.clientY)
+                  const targetEl = document
+                    .elementFromPoint(event.clientX, event.clientY)
                     ?.closest<HTMLElement>("[data-account-id]");
                   const target = targetEl?.dataset.accountId;
                   dragRef.current = null;
