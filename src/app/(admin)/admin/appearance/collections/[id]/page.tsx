@@ -14,6 +14,7 @@ import { StatusActions } from "@/components/admin/status-actions";
 import { CollectionForm } from "@/components/admin/collection-form";
 import { CollectionAssetsPanel } from "@/components/admin/collection-assets-panel";
 import { DuplicateCollectionButton } from "@/components/admin/duplicate-collection-button";
+import { wasEverPublished } from "@/lib/cosmetics/lifecycle";
 
 export default async function CollectionDetailPage({
   params,
@@ -27,6 +28,7 @@ export default async function CollectionDetailPage({
   const collection = await getCollection(id).catch(() => null);
   if (!collection) notFound();
 
+  const frozen = wasEverPublished(collection);
   const candidates = await listAssets({});
 
   return (
@@ -43,17 +45,17 @@ export default async function CollectionDetailPage({
         id={collection.id}
         status={collection.status}
         setStatus={setCollectionStatusAction}
-        remove={collection.publishedAt === null ? deleteCollectionAction : undefined}
+        remove={frozen ? undefined : deleteCollectionAction}
         extra={
-          collection.publishedAt !== null ? (
+          frozen ? (
             <DuplicateCollectionButton id={collection.id} baseSlug={collection.slug} />
           ) : undefined
         }
       />
-      {collection.publishedAt !== null && (
+      {frozen && (
         <p className="text-xs text-muted-foreground">{t("frozenHint")}</p>
       )}
-      {collection.assets.length === 0 && collection.publishedAt === null && (
+      {collection.assets.length === 0 && !frozen && (
         <p className="text-xs text-warning">{t("publishBlocked")}</p>
       )}
 
@@ -75,7 +77,7 @@ export default async function CollectionDetailPage({
       <Card className="p-5">
         <CollectionAssetsPanel
           collectionId={collection.id}
-          frozen={collection.publishedAt !== null}
+          frozen={frozen}
           attached={collection.assets.map((a) => ({
             assetId: a.assetId,
             slot: a.slot,

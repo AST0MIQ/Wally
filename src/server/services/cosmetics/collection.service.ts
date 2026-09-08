@@ -4,6 +4,7 @@ import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
 import { serializableTx } from "@/server/lib/tx";
+import { wasEverPublished } from "@/lib/cosmetics/lifecycle";
 import type { CollectionCreateInput } from "@/lib/validation/cosmetics";
 
 type Db = Prisma.TransactionClient;
@@ -21,12 +22,30 @@ export async function listCollections(filter: { status?: string } = {}) {
 }
 
 export async function getCollection(id: string) {
+  // Explicit select (not `include`) so `publishedAt` is ALWAYS in the payload.
+  // If a stale Prisma client that predates the column ever runs this, the
+  // query throws a validation error here — loud — instead of silently
+  // returning `undefined` and mis-freezing a fresh DRAFT.
   const c = await prisma.cosmeticCollection.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      coverUrl: true,
+      rarity: true,
+      status: true,
+      isApplicableAsSet: true,
+      publishedAt: true,
+      createdAt: true,
+      updatedAt: true,
       assets: {
         orderBy: { sortOrder: "asc" },
-        include: {
+        select: {
+          assetId: true,
+          slot: true,
+          sortOrder: true,
           asset: {
             select: { id: true, slug: true, name: true, slot: true, status: true, rarity: true },
           },
@@ -128,7 +147,7 @@ export async function setCollectionStatus(
       data: {
         status,
         publishedAt:
-          status === "PUBLISHED" && current.publishedAt === null
+          status === "PUBLISHED" && !wasEverPublished(current)
             ? new Date()
             : current.publishedAt,
       },
@@ -164,7 +183,7 @@ export async function attachAsset(
       ]);
       if (!collection) notFound("collection_not_found");
       if (!asset) notFound("asset_not_found");
-      if (collection.publishedAt !== null) conflict("collection_membership_frozen");
+      if (wasEverPublished(collection)) conflict("collection_membership_frozen");
 
       const link = await tx.collectionAsset.create({
         data: { collectionId, assetId, slot: asset.slot, sortOrder },
@@ -206,7 +225,7 @@ export async function detachAsset(
       select: { publishedAt: true },
     });
     if (!collection) notFound("collection_not_found");
-    if (collection.publishedAt !== null) conflict("collection_membership_frozen");
+    if (wasEverPublished(collection)) conflict("collection_membership_frozen");
 
     const link = await tx.collectionAsset.findUnique({
       where: { collectionId_assetId: { collectionId, assetId } },
@@ -288,7 +307,7 @@ export async function deleteCollection(adminId: string, id: string) {
 
     const refs =
       c._count.assets + c._count.entitlementSources + c._count.rewardRules;
-    if (c.status !== "DRAFT" || c.publishedAt !== null || refs > 0) {
+    if (c.status !== "DRAFT" || wasEverPublished(c) || refs > 0) {
       conflict("collection_has_references");
     }
 

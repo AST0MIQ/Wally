@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { requireCapability } from "@/server/lib/guards";
 import { getAsset } from "@/server/services/cosmetics/asset.service";
 import { parseAssetConfig } from "@/lib/cosmetics/config";
+import { wasEverPublished } from "@/lib/cosmetics/lifecycle";
 import {
   setAssetStatusAction,
   deleteAssetAction,
@@ -27,7 +28,7 @@ export default async function AssetDetailPage({
   const asset = await getAsset(id).catch(() => null);
   if (!asset) notFound();
 
-  const configLocked = asset.status !== "DRAFT" || asset.publishedAt !== null;
+  const configLocked = asset.status !== "DRAFT" || wasEverPublished(asset);
   let config;
   try {
     config = parseAssetConfig(asset.configVersion, asset.config);

@@ -4,6 +4,7 @@ import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
 import { serializableTx } from "@/server/lib/tx";
+import { wasEverPublished } from "@/lib/cosmetics/lifecycle";
 import { parseAssetConfig, LATEST_CONFIG_VERSION } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 import type { AssetCreateInput } from "@/lib/validation/cosmetics";
@@ -168,7 +169,7 @@ export async function setAssetStatus(
         status,
         // stamp the first publish; presence freezes config forever
         publishedAt:
-          status === "PUBLISHED" && current.publishedAt === null
+          status === "PUBLISHED" && !wasEverPublished(current)
             ? new Date()
             : current.publishedAt,
       },

@@ -13,6 +13,7 @@ import {
 } from "@/server/services/cosmetics/asset.service";
 import {
   createCollection,
+  getCollection,
   attachAsset,
   detachAsset,
   setCollectionStatus,
@@ -285,6 +286,35 @@ describeDb("cosmetics integration (DB)", () => {
     const apps = await listApplicableCollections(userId);
     expect(apps.find((a) => a.id === c.id)?.fullyOwned).toBe(false);
     expect(apps.find((a) => a.id === c.id)?.applicable).toBe(false);
+  });
+
+  it("[regression] a brand-new DRAFT collection: status DRAFT, publishedAt null, attach/detach work", async () => {
+    const slug = `test-sakura-${uniq()}`;
+    const c = await createCollection(adminId, {
+      slug, name: "Test Sakura", rarity: "COMMON", isApplicableAsSet: true,
+    });
+    created.collections.push(c.id);
+
+    // createCollection return value
+    expect(c.status).toBe("DRAFT");
+    expect(c.publishedAt).toBeNull();
+
+    // persisted row
+    const row = await prisma.cosmeticCollection.findUniqueOrThrow({
+      where: { id: c.id },
+      select: { status: true, publishedAt: true },
+    });
+    expect(row.status).toBe("DRAFT");
+    expect(row.publishedAt).toBeNull();
+
+    // getCollection (the path the admin page reads) exposes publishedAt: null
+    const read = await getCollection(c.id);
+    expect(read.publishedAt).toBeNull();
+
+    // attach + detach both succeed on a never-published collection
+    const a1 = await makePublishedAsset("PROFILE_FRAME");
+    await expect(attachAsset(adminId, c.id, a1)).resolves.toBeTruthy();
+    await expect(detachAsset(adminId, c.id, a1)).resolves.toBeUndefined();
   });
 
   it("[4] once published, collection membership is frozen forever (even after PUBLISHED->DRAFT)", async () => {
