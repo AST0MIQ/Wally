@@ -62,13 +62,34 @@ export function AccountsView({
   const longPressRef = useRef<number | null>(null);
   const armedRef = useRef(false);
   const pressStartRef = useRef<{ x: number; y: number } | null>(null);
+  // while a touch press is pending/armed, swallow the native text selection so
+  // iOS doesn't pop the "Copy / Look Up / Translate" callout mid-drag
+  const blockSelectRef = useRef(false);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    const stop = (event: Event) => {
+      if (blockSelectRef.current) event.preventDefault();
+    };
+    document.addEventListener("selectstart", stop);
+    document.addEventListener("contextmenu", stop);
+    return () => {
+      document.removeEventListener("selectstart", stop);
+      document.removeEventListener("contextmenu", stop);
       if (longPressRef.current != null) window.clearTimeout(longPressRef.current);
-    },
-    [],
-  );
+    };
+  }, []);
+
+  // read the element under the pointer without the floating card intercepting;
+  // toggling pointer-events only for this call keeps the touch on the card so
+  // iOS never re-targets the selection to bare text underneath
+  function hitTestAt(x: number, y: number): HTMLElement | null {
+    const el = dragElRef.current;
+    const prev = el?.style.pointerEvents;
+    if (el) el.style.pointerEvents = "none";
+    const found = document.elementFromPoint(x, y) as HTMLElement | null;
+    if (el) el.style.pointerEvents = prev ?? "";
+    return found;
+  }
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
@@ -203,6 +224,8 @@ export function AccountsView({
                   const beginDrag = () => {
                     longPressRef.current = null;
                     armedRef.current = true;
+                    // drop any selection iOS may have started during the hold
+                    window.getSelection?.()?.removeAllRanges();
                     try {
                       el.setPointerCapture(pointerId);
                     } catch {
@@ -214,7 +237,6 @@ export function AccountsView({
                       dragElRef.current = el;
                       dragOriginRef.current = { x: startX, y: startY };
                       el.style.zIndex = "50";
-                      el.style.pointerEvents = "none";
                       el.style.touchAction = "none";
                     }
                   };
@@ -222,7 +244,9 @@ export function AccountsView({
                   if (event.pointerType === "mouse") {
                     beginDrag();
                   } else {
-                    // hold to grab — a quick swipe scrolls the list instead
+                    // hold to grab — a quick swipe scrolls the list instead.
+                    // block native selection for the whole hold + drag window.
+                    blockSelectRef.current = true;
                     longPressRef.current = window.setTimeout(beginDrag, 260);
                   }
                 }}
@@ -236,6 +260,7 @@ export function AccountsView({
                       if (mx > 10 || my > 10) {
                         window.clearTimeout(longPressRef.current);
                         longPressRef.current = null;
+                        blockSelectRef.current = false; // it's a scroll, let go
                       }
                     }
                     return;
@@ -244,8 +269,7 @@ export function AccountsView({
                   const dx = event.clientX - dragOriginRef.current.x;
                   const dy = event.clientY - dragOriginRef.current.y;
                   moveDragEl(dx, dy);
-                  const overId = document
-                    .elementFromPoint(event.clientX, event.clientY)
+                  const overId = hitTestAt(event.clientX, event.clientY)
                     ?.closest<HTMLElement>("[data-account-id]")?.dataset.accountId;
                   const next =
                     overId && overId !== dragRef.current && !arranging
@@ -261,12 +285,15 @@ export function AccountsView({
                     window.clearTimeout(longPressRef.current);
                     longPressRef.current = null;
                   }
-                  if (!armedRef.current) return; // was a tap / scroll, not a drag
+                  if (!armedRef.current) {
+                    blockSelectRef.current = false;
+                    return; // was a tap / scroll, not a drag
+                  }
                   armedRef.current = false;
+                  blockSelectRef.current = false;
 
                   const sourceId = dragRef.current;
-                  const targetEl = document
-                    .elementFromPoint(event.clientX, event.clientY)
+                  const targetEl = hitTestAt(event.clientX, event.clientY)
                     ?.closest<HTMLElement>("[data-account-id]");
                   const target = targetEl?.dataset.accountId;
                   dragRef.current = null;
@@ -321,6 +348,7 @@ export function AccountsView({
                     longPressRef.current = null;
                   }
                   armedRef.current = false;
+                  blockSelectRef.current = false;
                   dragRef.current = null;
                   setDraggingId(null);
                   resetDragEl(true);
