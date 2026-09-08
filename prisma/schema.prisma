@@ -59,6 +59,14 @@ model User {
   recurringRules    RecurringRule[]
   auditLogs         AuditLog[]
 
+  // ── Cosmetics (Phase 1) ──
+  cosmeticEntitlements       UserEntitlement[]
+  equippedCosmetics          UserEquippedAsset[]
+  createdCosmeticCollections CosmeticCollection[] @relation("CollectionCreatedBy")
+  createdCosmeticAssets      CosmeticAsset[]      @relation("AssetCreatedBy")
+  grantedEntitlements        UserEntitlement[]    @relation("EntitlementGrantedBy")
+  revokedEntitlements        UserEntitlement[]    @relation("EntitlementRevokedBy")
+
   @@index([createdAt])
 }
 
@@ -420,4 +428,222 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@index([action, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Cosmetics — modular theme/inventory system (Phase 1)
+// A "theme" is a CosmeticCollection of independently equippable
+// CosmeticAssets, each bound to one EquipmentSlot. Ownership
+// (UserEntitlement) is modelled separately from equipped state
+// (UserEquippedAsset). See docs/COSMETICS.md.
+// ─────────────────────────────────────────────────────────────
+
+enum EquipmentSlot {
+  APP_BACKGROUND
+  NAVIGATION
+  HEADER
+  PROFILE_FRAME
+  PROFILE_BADGE
+  PROFILE_AURA
+  OVERVIEW_CARD
+  ACCOUNT_CARD
+  INVESTMENT_CARD
+  TRANSACTION_CARD
+  CHART_STYLE
+  ICON_SET
+  TYPOGRAPHY
+  AMBIENT_EFFECT
+  INTERACTION_EFFECT
+  CELEBRATION_EFFECT
+}
+
+enum CosmeticRarity {
+  COMMON
+  RARE
+  EPIC
+  SPECIAL
+  LIMITED
+}
+
+enum CosmeticStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  ARCHIVED
+}
+
+enum AcquisitionType {
+  DEFAULT
+  STREAK_REWARD
+  RANK_REWARD
+  ACHIEVEMENT
+  PURCHASE
+  LIMITED_EVENT
+  ADMIN_GRANT
+}
+
+enum EntitlementStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum RewardTrigger {
+  STREAK_MILESTONE
+  RANK_MILESTONE
+  ACHIEVEMENT
+  MANUAL
+}
+
+/// The independently equippable item. `slot` is set at creation and never
+/// changes (guarded in the service + relied on by composite FKs). `config`
+/// and `configVersion` are frozen once the asset has been published.
+model CosmeticAsset {
+  id                 String          @id @default(cuid())
+  slug               String          @unique
+  name               String
+  description        String?
+  slot               EquipmentSlot
+  rarity             CosmeticRarity  @default(COMMON)
+  status             CosmeticStatus  @default(DRAFT)
+  acquisitionType    AcquisitionType @default(ADMIN_GRANT)
+  /// exactly one canonical default per slot (partial unique index, see migration)
+  isCanonicalDefault Boolean         @default(false)
+  configVersion      Int             @default(1)
+  /// validated by src/lib/cosmetics/config.ts — never raw CSS/JS
+  config             Json
+  previewUrl         String?
+  /// first time this asset entered PUBLISHED; presence ⇒ config is frozen
+  publishedAt        DateTime?
+  createdByAdmin     User?           @relation("AssetCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  createdByAdminId   String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  collections CollectionAsset[]
+  entitlements UserEntitlement[]
+  equipped    UserEquippedAsset[]
+  rewardRules RewardRule[]         @relation("RewardGrantsAsset")
+
+  // composite target so CollectionAsset / UserEquippedAsset can enforce
+  // "join.slot == asset.slot" via a composite foreign key
+  @@unique([id, slot])
+  @@index([slot, status])
+  @@index([status])
+}
+
+/// A themed bundle of assets. Can be applied as a whole set (isApplicableAsSet).
+model CosmeticCollection {
+  id                String         @id @default(cuid())
+  slug              String         @unique
+  name              String
+  description       String?
+  coverUrl          String?
+  rarity            CosmeticRarity @default(COMMON)
+  status            CosmeticStatus @default(DRAFT)
+  isApplicableAsSet Boolean        @default(true)
+  availableFrom     DateTime?
+  availableTo       DateTime?
+  sortOrder         Int            @default(0)
+  createdByAdmin    User?          @relation("CollectionCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  createdByAdminId  String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  assets             CollectionAsset[]
+  entitlementSources UserEntitlement[] @relation("EntitlementSourceCollection")
+  rewardRules        RewardRule[]      @relation("RewardGrantsCollection")
+
+  @@index([status])
+  @@index([rarity])
+}
+
+/// Join: which assets belong to a collection. At most one asset per slot per
+/// collection (@@unique([collectionId, slot])), so applying a collection is
+/// deterministic. `slot` mirrors the asset's slot and is enforced by the
+/// composite FK below.
+model CollectionAsset {
+  id           String             @id @default(cuid())
+  collectionId String
+  collection   CosmeticCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  assetId      String
+  slot         EquipmentSlot
+  asset        CosmeticAsset      @relation(fields: [assetId, slot], references: [id, slot], onDelete: Cascade)
+  sortOrder    Int                @default(0)
+  createdAt    DateTime           @default(now())
+
+  @@unique([collectionId, assetId])
+  @@unique([collectionId, slot])
+  @@index([assetId])
+}
+
+/// Ownership. Separate from equipped state. Idempotent grants via the
+/// [userId, assetId] unique — re-granting un-revokes and refreshes.
+/// Grant/revoke history lives in AuditLog.
+model UserEntitlement {
+  id                 String              @id @default(cuid())
+  userId             String
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId            String
+  asset              CosmeticAsset       @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  sourceCollection   CosmeticCollection? @relation("EntitlementSourceCollection", fields: [sourceCollectionId], references: [id], onDelete: SetNull)
+  sourceCollectionId String?
+  acquisitionType    AcquisitionType
+  sourceRef          String?
+  status             EntitlementStatus   @default(ACTIVE)
+  firstGrantedAt     DateTime            @default(now())
+  grantedAt          DateTime            @default(now())
+  grantedByAdmin     User?               @relation("EntitlementGrantedBy", fields: [grantedByAdminId], references: [id], onDelete: SetNull)
+  grantedByAdminId   String?
+  expiresAt          DateTime?
+  revokedByAdmin     User?               @relation("EntitlementRevokedBy", fields: [revokedByAdminId], references: [id], onDelete: SetNull)
+  revokedByAdminId   String?
+  revokedAt          DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([userId, assetId])
+  @@index([userId, status])
+  @@index([assetId])
+  @@index([expiresAt])
+}
+
+/// Equipped state — the user's loadout is the set of these rows. One asset
+/// per slot (@@unique([userId, slot])). The composite FK guarantees the
+/// equipped row's slot matches the asset's slot at the DB layer.
+model UserEquippedAsset {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot       EquipmentSlot
+  assetId    String
+  asset      CosmeticAsset @relation(fields: [assetId, slot], references: [id, slot], onDelete: Restrict)
+  equippedAt DateTime      @default(now())
+
+  @@unique([userId, slot])
+  @@index([assetId])
+}
+
+/// Future-facing: streak/rank/achievement reward rules. Phase 1 = admin CRUD
+/// only, no automation engine. Grants exactly one target (collection XOR
+/// asset) — enforced by Zod + a CHECK constraint (see migration).
+model RewardRule {
+  id                 String              @id @default(cuid())
+  key                String              @unique
+  name               String
+  description        String?
+  trigger            RewardTrigger
+  threshold          Int?
+  grantsCollection   CosmeticCollection? @relation("RewardGrantsCollection", fields: [grantsCollectionId], references: [id], onDelete: Restrict)
+  grantsCollectionId String?
+  grantsAsset        CosmeticAsset?      @relation("RewardGrantsAsset", fields: [grantsAssetId], references: [id], onDelete: Restrict)
+  grantsAssetId      String?
+  isActive           Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([trigger, isActive])
 }

@@ -1,20 +1,31 @@
 /**
  * Global seed script (`pnpm db:seed`).
  *
- * Wally has no global reference data to seed yet:
  *  - Per-user default categories are seeded on first sign-in
  *    (see src/server/services/onboarding.ts).
  *  - Securities / FX rates are populated by cron jobs (Phase 2+).
- *
- * This file is kept as a valid entrypoint for future global seed data.
+ *  - Cosmetics: "Wally Classic" canonical defaults are seeded in every
+ *    environment; demo collections only in development or when
+ *    COSMETICS_SEED_DEMO=true.
  */
 import { PrismaClient } from "@prisma/client";
+
+import { seedCosmeticDefaults } from "./data/cosmetics-defaults";
+import { seedCosmeticDemo } from "./data/cosmetics-demo";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("[seed] No global seed data required for Wally at this stage.");
-  console.log("[seed] Default categories are created per-user on first sign-in.");
+  await seedCosmeticDefaults(prisma);
+
+  const wantDemo =
+    process.env.COSMETICS_SEED_DEMO === "true" ||
+    process.env.NODE_ENV === "development";
+  if (wantDemo) {
+    await seedCosmeticDemo(prisma);
+  } else {
+    console.log("[seed] cosmetics demo skipped (set COSMETICS_SEED_DEMO=true to include)");
+  }
 }
 
 main()
