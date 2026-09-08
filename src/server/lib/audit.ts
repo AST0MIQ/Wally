@@ -33,3 +33,24 @@ export async function writeAudit(
     // auditing must not break the mutation
   }
 }
+
+/**
+ * Write an audit record **inside a transaction**. Unlike `writeAudit`, this
+ * THROWS on failure so a material admin action rolls back if it cannot be
+ * recorded — a mutation and its audit row commit together or not at all.
+ * This is the single audit-writing path for admin/cosmetics operations.
+ */
+export async function auditInTx(
+  tx: Prisma.TransactionClient,
+  input: AuditInput,
+): Promise<void> {
+  await tx.auditLog.create({
+    data: {
+      userId: input.userId,
+      action: input.action,
+      entity: input.entity,
+      entityId: input.entityId,
+      metadata: input.metadata,
+    },
+  });
+}
