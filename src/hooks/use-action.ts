@@ -53,6 +53,17 @@ export function useAction<TInput, TData>(
               category_not_found: t("selection"),
               subcategory_not_found: t("selection"),
               security_not_found: t("selection"),
+              // cosmetics
+              not_owned: t("notOwned"),
+              collection_not_fully_owned: t("collectionNotFullyOwned"),
+              collection_has_unpublished_assets: t("collectionUnpublished"),
+              collection_not_published: t("collectionUnpublished"),
+              collection_membership_frozen: t("membershipFrozen"),
+              wrong_slot: t("wrongSlot"),
+              asset_has_references: t("hasReferences"),
+              collection_has_references: t("hasReferences"),
+              published_asset_config_locked: t("configLocked"),
+              slot_taken_in_collection: t("slotTaken"),
             };
             toast.error(known[result.error] ?? t("generic"));
           }

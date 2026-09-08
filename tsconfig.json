@@ -33,11 +33,9 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".next-cos-verify/types/**/*.ts",
-    ".next-polish/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-final/types/**/*.ts"
+    ".next-rev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

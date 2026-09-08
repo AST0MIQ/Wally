@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Check, Lock, RotateCcw } from "lucide-react";
+import { Check, Eye, Lock, RotateCcw } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAction } from "@/hooks/use-action";
@@ -14,15 +14,27 @@ import {
   applyCollectionAction,
   resetCosmeticsAction,
 } from "@/app/actions/cosmetics";
-import type { InventoryAsset } from "@/server/services/cosmetics/entitlement.service";
-import type { ApplicableCollection } from "@/server/services/cosmetics/entitlement.service";
+import type {
+  InventoryAsset,
+  ApplicableCollection,
+} from "@/server/services/cosmetics/entitlement.service";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
-import { EQUIPMENT_SLOTS } from "@/lib/cosmetics/slots";
+import { EQUIPMENT_SLOTS, isRenderedSlot } from "@/lib/cosmetics/slots";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { CosmeticPreview } from "@/components/cosmetics/cosmetic-preview";
 
 type Tab = "owned" | "locked" | "all";
 
@@ -30,18 +42,22 @@ export function CosmeticsView({
   items,
   equippedBySlot,
   collections,
+  collectionNames,
 }: {
   items: InventoryAsset[];
   equippedBySlot: Partial<Record<EquipmentSlot, string>>;
   collections: ApplicableCollection[];
+  collectionNames: { id: string; name: string }[];
 }) {
   const t = useTranslations("cosmetics");
-  const tc = useTranslations("common");
   const router = useRouter();
 
   const [tab, setTab] = useState<Tab>("owned");
-  const [slot, setSlot] = useState<string>("");
-  const [collectionFilter, setCollectionFilter] = useState<string>("");
+  const [slot, setSlot] = useState("");
+  const [collectionFilter, setCollectionFilter] = useState("");
+  const [previewAsset, setPreviewAsset] = useState<InventoryAsset | null>(null);
+  const [previewCollection, setPreviewCollection] =
+    useState<ApplicableCollection | null>(null);
 
   const equip = useAction(equipAssetAction);
   const unequip = useAction(unequipSlotAction);
@@ -53,16 +69,23 @@ export function CosmeticsView({
     () => new Map(items.map((i) => [i.assetId, i.name])),
     [items],
   );
+  const collNameById = useMemo(
+    () => new Map(collectionNames.map((c) => [c.id, c.name])),
+    [collectionNames],
+  );
 
   const visible = items.filter((i) => {
     if (tab === "owned" && !i.owned) return false;
     if (tab === "locked" && i.owned) return false;
     if (slot && i.slot !== slot) return false;
-    if (collectionFilter && i.sourceCollectionId !== collectionFilter) return false;
+    if (collectionFilter && !i.collectionIds.includes(collectionFilter)) return false;
     return true;
   });
 
   const usedSlots = [...new Set(items.map((i) => i.slot))];
+  const usedCollections = [
+    ...new Set(items.flatMap((i) => i.collectionIds)),
+  ].filter((id) => collNameById.has(id));
 
   const doEquip = async (i: InventoryAsset) => {
     const res = i.equipped
@@ -74,27 +97,13 @@ export function CosmeticsView({
     if (res.ok) router.refresh();
   };
 
-  const doApply = async (c: ApplicableCollection) => {
-    const replaced = c.slots.filter(
+  const applyDiff = (c: ApplicableCollection) =>
+    c.slots.filter(
       (s) => equippedBySlot[s.slot] && equippedBySlot[s.slot] !== s.assetId,
     );
-    const body =
-      replaced.length === 0
-        ? t("applyConfirmNoChange")
-        : `${t("applyConfirmBody")}\n` +
-          replaced
-            .map(
-              (s) =>
-                `• ${s.slot}: ${s.assetName} ${t("replaces", {
-                  name: nameById.get(equippedBySlot[s.slot]!) ?? "?",
-                })}`,
-            )
-            .join("\n");
-    const okToApply = await confirm({
-      title: t("applyConfirmTitle", { name: c.name }),
-      description: body,
-    });
-    if (!okToApply) return;
+
+  const doApply = async (c: ApplicableCollection) => {
+    setPreviewCollection(null);
     const res = await apply.run(
       { collectionId: c.id },
       { successMessage: t("appliedToast") },
@@ -133,16 +142,16 @@ export function CosmeticsView({
               <button
                 key={c.id}
                 type="button"
-                disabled={!c.fullyOwned || busy}
-                onClick={() => doApply(c)}
+                disabled={busy}
+                onClick={() => setPreviewCollection(c)}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors",
-                  c.fullyOwned
+                  c.applicable
                     ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
                     : "border-border text-muted-foreground",
                 )}
               >
-                {!c.fullyOwned && <Lock className="size-3.5" />}
+                {!c.applicable && <Lock className="size-3.5" />}
                 {c.name}
               </button>
             ))}
@@ -172,6 +181,20 @@ export function CosmeticsView({
             <option key={s}>{s}</option>
           ))}
         </Select>
+        {usedCollections.length > 0 && (
+          <Select
+            value={collectionFilter}
+            onChange={(e) => setCollectionFilter(e.target.value)}
+            className="h-9 w-auto"
+          >
+            <option value="">{t("allCollections")}</option>
+            {usedCollections.map((id) => (
+              <option key={id} value={id}>
+                {collNameById.get(id)}
+              </option>
+            ))}
+          </Select>
+        )}
       </div>
 
       {visible.length === 0 ? (
@@ -184,13 +207,24 @@ export function CosmeticsView({
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{i.name}</p>
-                    <p className="text-xs text-muted-foreground">{t("slotLabel", { slot: i.slot })}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("slotLabel", { slot: i.slot })}
+                      {!isRenderedSlot(i.slot) && ` · ${t("phase2Short")}`}
+                    </p>
                   </div>
                   <Badge variant={i.rarity === "COMMON" ? "neutral" : "accent"}>
                     {i.rarity}
                   </Badge>
                 </div>
-                <div className="mt-auto flex items-center gap-2">
+                <div className="mt-auto flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setPreviewAsset(i)}
+                  >
+                    <Eye className="size-4" />
+                    {t("preview")}
+                  </Button>
                   {i.equipped ? (
                     <Button size="sm" variant="secondary" onClick={() => doEquip(i)} disabled={busy}>
                       <Check className="size-4" />
@@ -206,15 +240,105 @@ export function CosmeticsView({
                       {t("locked")}
                     </span>
                   )}
-                  {i.equipped && (
-                    <span className="text-xs font-medium text-primary">{t("equipped")}</span>
-                  )}
                 </div>
               </Card>
             </li>
           ))}
         </ul>
       )}
+
+      {/* Single-asset preview — never mutates the loadout */}
+      <Dialog open={!!previewAsset} onOpenChange={(o) => !o && setPreviewAsset(null)}>
+        <DialogContent className="max-w-md">
+          {previewAsset && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{previewAsset.name}</DialogTitle>
+                <DialogDescription>
+                  {t("slotLabel", { slot: previewAsset.slot })}
+                </DialogDescription>
+              </DialogHeader>
+              <CosmeticPreview
+                slot={previewAsset.slot}
+                config={previewAsset.config}
+                previewUrl={previewAsset.previewUrl}
+              />
+              <p className="text-xs text-muted-foreground">{t("previewNoChange")}</p>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="ghost">{t("close")}</Button>
+                </DialogClose>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Collection composite preview — shows every asset + replace diff */}
+      <Dialog
+        open={!!previewCollection}
+        onOpenChange={(o) => !o && setPreviewCollection(null)}
+      >
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+          {previewCollection && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{previewCollection.name}</DialogTitle>
+                <DialogDescription>
+                  {applyDiff(previewCollection).length === 0
+                    ? t("applyConfirmNoChange")
+                    : t("applyConfirmBody")}
+                </DialogDescription>
+              </DialogHeader>
+
+              {applyDiff(previewCollection).length > 0 && (
+                <ul className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+                  {applyDiff(previewCollection).map((s) => (
+                    <li key={s.slot}>
+                      {s.slot}: <b>{s.assetName}</b>{" "}
+                      {t("replaces", {
+                        name:
+                          nameById.get(equippedBySlot[s.slot]!) ??
+                          equippedBySlot[s.slot]!,
+                      })}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {previewCollection.slots.map((s) => (
+                  <div key={s.slot} className="flex flex-col gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {s.slot} · {s.assetName}
+                      {!s.owned && ` · ${t("locked")}`}
+                      {s.assetStatus !== "PUBLISHED" && ` · ${s.assetStatus}`}
+                    </p>
+                    <CosmeticPreview
+                      slot={s.slot}
+                      config={s.config}
+                      previewUrl={s.previewUrl}
+                      className="h-28"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="ghost">{t("close")}</Button>
+                </DialogClose>
+                <Button
+                  disabled={!previewCollection.applicable || busy}
+                  onClick={() => doApply(previewCollection)}
+                >
+                  {t("applyCollection")}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

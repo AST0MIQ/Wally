@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Plus } from "lucide-react";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { listAssets } from "@/server/services/cosmetics/asset.service";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -11,7 +11,7 @@ import { LinkButton } from "@/components/admin/link-button";
 export const metadata = { title: "Assets" };
 
 export default async function AssetsPage() {
-  await requireAdmin();
+  await requireCapability("cosmetics:write");
   const t = await getTranslations("admin.assets");
   const tc = await getTranslations("admin.common");
   const rows = await listAssets({});

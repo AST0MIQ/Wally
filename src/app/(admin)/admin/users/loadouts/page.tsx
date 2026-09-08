@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { listUsersWithLoadout } from "@/server/services/cosmetics/admin-cosmetics.service";
 import { Card } from "@/components/ui/card";
 
 export const metadata = { title: "Loadouts" };
 
 export default async function LoadoutsPage() {
-  await requireAdmin();
+  await requireCapability("user:read");
   const t = await getTranslations("admin.loadouts");
   const tu = await getTranslations("admin.users");
   const rows = await listUsersWithLoadout(120);

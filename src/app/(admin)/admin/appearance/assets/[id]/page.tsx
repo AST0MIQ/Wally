@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { getAsset } from "@/server/services/cosmetics/asset.service";
 import { parseAssetConfig } from "@/lib/cosmetics/config";
 import {
@@ -20,7 +20,7 @@ export default async function AssetDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  await requireCapability("cosmetics:write");
   const { id } = await params;
   const t = await getTranslations("admin.assets");
 

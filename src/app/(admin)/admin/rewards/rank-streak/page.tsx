@@ -1,13 +1,13 @@
 import { getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { STREAK_TIERS } from "@/server/lib/streak";
 import { Card } from "@/components/ui/card";
 
 export const metadata = { title: "Rank & Streak" };
 
 export default async function RankStreakPage() {
-  await requireAdmin();
+  await requireCapability("admin:read");
   const t = await getTranslations("admin.rankStreak");
   const s = await getTranslations("streak");
 

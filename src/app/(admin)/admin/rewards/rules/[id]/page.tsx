@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { getRewardRule } from "@/server/services/cosmetics/reward-rule.service";
 import { listCollections } from "@/server/services/cosmetics/collection.service";
 import { listAssets } from "@/server/services/cosmetics/asset.service";
@@ -14,7 +14,7 @@ export default async function RewardRuleDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  await requireCapability("rewardRule:write");
   const { id } = await params;
   const t = await getTranslations("admin.rewardRules");
 

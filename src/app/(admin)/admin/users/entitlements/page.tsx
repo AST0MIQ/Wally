@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { listRecentEntitlements } from "@/server/services/cosmetics/admin-cosmetics.service";
 import { formatDateTime } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 export const metadata = { title: "Entitlements" };
 
 export default async function EntitlementsFeedPage() {
-  await requireAdmin();
+  await requireCapability("user:read");
   const t = await getTranslations("admin.entitlements");
   const locale = (await getLocale()) as Locale;
   const rows = await listRecentEntitlements(80);

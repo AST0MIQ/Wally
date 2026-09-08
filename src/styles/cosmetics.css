@@ -13,13 +13,38 @@
 .ck-intensity-medium { --ck-intensity: 1; }
 .ck-intensity-high { --ck-intensity: 1.6; }
 
+/* ── Deterministic stacking ──────────────────────────────────
+   [data-cosmetics] is a stacking context that is at least as tall as the
+   viewport. The background layer sits at z-index 0 (ABOVE the body/box
+   background paint, which was the bug with z-index:-10) and content is lifted
+   to z-index 1. The layer is pointer-events:none so it can never intercept a
+   tap, scroll or the accounts drag. */
+[data-cosmetics] {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+}
+[data-cosmetics] > .ck-content {
+  position: relative;
+  z-index: 1;
+}
+
 /* ── Full-bleed app background layer ─────────────────────────── */
 .ck-bg-layer {
   position: fixed;
   inset: 0;
-  z-index: -10;
+  z-index: 0;
   pointer-events: none;
+  overflow: hidden;
   background-color: var(--ck-bg, transparent);
+}
+.ck-bg-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
 }
 .ck-bg-layer.ck-surface-gradient {
   background-image: radial-gradient(

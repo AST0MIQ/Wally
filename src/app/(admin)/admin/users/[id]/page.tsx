@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { getAdminUserDetail } from "@/server/services/cosmetics/admin-cosmetics.service";
 import { listAssets } from "@/server/services/cosmetics/asset.service";
 import { listCollections } from "@/server/services/cosmetics/collection.service";
@@ -17,7 +17,7 @@ export default async function AdminUserDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  await requireCapability("user:read");
   const { id } = await params;
   const t = await getTranslations("admin.users");
   const locale = (await getLocale()) as Locale;

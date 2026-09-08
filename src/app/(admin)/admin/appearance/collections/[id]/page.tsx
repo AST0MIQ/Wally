@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { getCollection } from "@/server/services/cosmetics/collection.service";
 import { listAssets } from "@/server/services/cosmetics/asset.service";
 import {
@@ -19,7 +19,7 @@ export default async function CollectionDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  await requireCapability("cosmetics:write");
   const { id } = await params;
   const t = await getTranslations("admin.collections");
 

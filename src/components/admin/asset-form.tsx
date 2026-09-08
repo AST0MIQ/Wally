@@ -165,6 +165,7 @@ export function AssetForm({
             <p className="text-xs text-warning">{t("configLocked")}</p>
           )}
           <AssetConfigFields
+            slot={slot}
             value={config}
             onChange={setConfig}
             disabled={configLocked}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { requireAdmin } from "@/server/lib/guards";
+import { requireCapability } from "@/server/lib/guards";
 import { listUsersForAdmin } from "@/server/services/cosmetics/admin-cosmetics.service";
 import { formatDate } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
@@ -15,7 +15,7 @@ export default async function UserDirectoryPage({
 }: {
   searchParams: Promise<{ q?: string; cursor?: string }>;
 }) {
-  await requireAdmin();
+  await requireCapability("user:read");
   const t = await getTranslations("admin.users");
   const locale = (await getLocale()) as Locale;
   const { q, cursor } = await searchParams;

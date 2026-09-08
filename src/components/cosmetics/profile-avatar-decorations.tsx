@@ -1,43 +1,46 @@
 "use client";
 
-import { cosmeticVars } from "@/lib/cosmetics/render";
+import { cn } from "@/lib/utils";
+import { cosmeticClasses, cosmeticVars } from "@/lib/cosmetics/render";
+import { shouldRenderLayer, type AssetConfigV1 } from "@/lib/cosmetics/config";
+import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 import { useCosmetic } from "@/components/cosmetics/cosmetic-context";
+import { useRenderCtx, type RenderCtx } from "@/components/cosmetics/use-render-ctx";
 
 /**
- * PROFILE_FRAME / PROFILE_AURA / PROFILE_BADGE decorations. Three independent
- * slots so a frame from one collection can mix with a badge/aura from another.
- * Each layer is `pointer-events: none`. Place inside a `position: relative`,
- * round avatar host.
+ * PROFILE_FRAME / PROFILE_AURA / PROFILE_BADGE — three independent slots so a
+ * frame from one collection mixes with a badge/aura from another. Each layer is
+ * `pointer-events: none`. Preset interpretation (`cosmeticClasses(config, {slot})`)
+ * is identical to CosmeticPreview and to the card renderer. Place inside a
+ * `position: relative`, round avatar host.
  */
-export function ProfileAvatarDecorations() {
-  const frame = useCosmetic("PROFILE_FRAME");
-  const aura = useCosmetic("PROFILE_AURA");
-  const badge = useCosmetic("PROFILE_BADGE");
-  if (!frame && !aura && !badge) return null;
+function Layer({
+  slot,
+  baseClass,
+  ctx,
+}: {
+  slot: EquipmentSlot;
+  baseClass: string;
+  ctx: RenderCtx;
+}) {
+  const asset = useCosmetic(slot);
+  if (!asset || !shouldRenderLayer(asset.config as AssetConfigV1, ctx)) return null;
+  return (
+    <span
+      aria-hidden
+      className={cn(baseClass, cosmeticClasses(asset.config, { slot }))}
+      style={cosmeticVars(asset.config) as React.CSSProperties}
+    />
+  );
+}
 
+export function ProfileAvatarDecorations() {
+  const ctx = useRenderCtx();
   return (
     <>
-      {aura && (
-        <span
-          aria-hidden
-          className="ck-profile-aura"
-          style={cosmeticVars(aura.config) as React.CSSProperties}
-        />
-      )}
-      {frame && (
-        <span
-          aria-hidden
-          className="ck-profile-frame"
-          style={cosmeticVars(frame.config) as React.CSSProperties}
-        />
-      )}
-      {badge && (
-        <span
-          aria-hidden
-          className="ck-profile-badge"
-          style={cosmeticVars(badge.config) as React.CSSProperties}
-        />
-      )}
+      <Layer slot="PROFILE_AURA" baseClass="ck-profile-aura" ctx={ctx} />
+      <Layer slot="PROFILE_FRAME" baseClass="ck-profile-frame" ctx={ctx} />
+      <Layer slot="PROFILE_BADGE" baseClass="ck-profile-badge" ctx={ctx} />
     </>
   );
 }

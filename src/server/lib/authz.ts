@@ -30,6 +30,7 @@ export function roleOf(user: RoleLike): AdminCapabilityRole {
 }
 
 export type Capability =
+  | "admin:read"
   | "cosmetics:write"
   | "cosmetics:publish"
   | "entitlement:grant"
@@ -39,6 +40,7 @@ export type Capability =
   | "user:read";
 
 const CAPABILITY_MIN_ROLE: Record<Capability, AdminCapabilityRole> = {
+  "admin:read": "CONTENT_ADMIN",
   "cosmetics:write": "CONTENT_ADMIN",
   "cosmetics:publish": "CONTENT_ADMIN",
   "entitlement:grant": "CONTENT_ADMIN",
