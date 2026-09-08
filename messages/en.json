@@ -496,8 +496,13 @@
         "rewards": "Rewards",
         "users": "Users",
         "commerce": "Commerce",
-        "operations": "Operations"
-      }
+        "operations": "Operations",
+        "access": "Access Control"
+      },
+      "accessUsers": "Admin Users",
+      "accessRoles": "Roles",
+      "accessPermissions": "Permissions",
+      "accessInvitations": "Invitations"
     },
     "common": {
       "create": "Create",
@@ -697,6 +702,84 @@
       "orders": "Orders — purchase history and fulfilment.",
       "featureFlags": "Feature Flags — toggle features per environment.",
       "appConfig": "App Configuration — non-secret runtime settings."
+    },
+    "access": {
+      "title": "Access Control",
+      "subtitle": "Database-backed roles and permissions.",
+      "forbiddenTitle": "No access",
+      "forbiddenBody": "You don't have permission to view this area.",
+      "users": {
+        "title": "Admin Users",
+        "searchLabel": "Search by email",
+        "searchHint": "Enter part of a registered email address.",
+        "searchPlaceholder": "name@example.com",
+        "search": "Search",
+        "noQuery": "Search for a user by email to see and manage their roles.",
+        "empty": "No users match that email.",
+        "loadMore": "Load more",
+        "roles": "Roles",
+        "noRoles": "No roles",
+        "detailTitle": "User access",
+        "joined": "Joined",
+        "lastLogin": "Last login",
+        "assignedRoles": "Assigned roles",
+        "noAssignedRoles": "No roles assigned.",
+        "assignRole": "Assign a role",
+        "assign": "Assign",
+        "assignConfirm": "Assign the {role} role to {email}?",
+        "revoke": "Revoke",
+        "revokeConfirm": "Revoke the {role} role from {email}?",
+        "assignedToast": "Role assigned",
+        "revokedToast": "Role revoked",
+        "effectivePermissions": "Effective permissions",
+        "noEffectivePermissions": "None",
+        "assignedBy": "by",
+        "superAdminOnly": "Only a SUPER_ADMIN can assign or revoke roles.",
+        "noAssignable": "Every available role is already assigned.",
+        "bootstrapNotice": "This account has emergency SUPER_ADMIN access through the ADMIN_EMAILS environment variable. That is not a database role and is not counted toward the final-SUPER_ADMIN safeguard."
+      },
+      "roles": {
+        "title": "Roles",
+        "newRole": "New role",
+        "newTitle": "New role",
+        "system": "System",
+        "custom": "Custom",
+        "archived": "Archived",
+        "permissionCount": "{count} permissions",
+        "memberCount": "{count} users",
+        "key": "Key",
+        "name": "Name",
+        "description": "Description",
+        "keyHint": "UPPER_SNAKE_CASE. Cannot be changed after creation.",
+        "create": "Create role",
+        "save": "Save",
+        "savedToast": "Saved",
+        "createdToast": "Role created",
+        "systemLocked": "System roles are defined by the platform. Their key and permission set cannot be changed here.",
+        "archivedLocked": "This role is archived. Restore it before editing or assigning it.",
+        "archive": "Archive role",
+        "archiveConfirm": "Archive {role}? It can no longer be assigned; existing assignments keep working until revoked.",
+        "unarchive": "Restore role",
+        "archivedToast": "Role archived",
+        "unarchivedToast": "Role restored",
+        "delete": "Delete role",
+        "deleteConfirm": "Permanently delete {role}? Only possible if it has never been assigned.",
+        "deletedToast": "Role deleted",
+        "permissionsTitle": "Permissions",
+        "permissionsHint": "A user gets the union of the permissions of every role assigned to them.",
+        "empty": "No roles yet.",
+        "backToRoles": "All roles"
+      },
+      "permissions": {
+        "title": "Permissions",
+        "subtitle": "The full permission catalogue, grouped by resource. Identifiers are stable and are never renamed or reused.",
+        "usedBy": "in {count} roles"
+      },
+      "invitations": {
+        "title": "Invitations",
+        "phase2": "Phase 2",
+        "body": "Email invitations that pre-assign roles before a user's first sign-in are planned for Phase 2."
+      }
     }
   },
   "offline": {
@@ -732,7 +815,13 @@
     "hasReferences": "In use — archive it instead of deleting.",
     "collectionNotFullyOwned": "You don't own every item in this collection yet.",
     "collectionUnpublished": "Some items in this collection aren't published.",
-    "membershipFrozen": "Published collections can't change their items."
+    "membershipFrozen": "Published collections can't change their items.",
+    "lastSuperAdmin": "That change would remove the last database-backed SUPER_ADMIN. Assign the role to another account first.",
+    "roleArchived": "That role is archived and cannot be assigned.",
+    "systemRoleLocked": "System roles are defined by the platform and cannot be edited.",
+    "roleKeyTaken": "A role with that key already exists.",
+    "reservedRoleKey": "That key is reserved for a system role.",
+    "roleHasReferences": "This role has been assigned before and can only be archived, not deleted."
   },
   "categories": {
     "food": "Food & Drinks",

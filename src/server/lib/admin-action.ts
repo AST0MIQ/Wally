@@ -4,15 +4,40 @@ import { ok, fail, type ActionResult } from "@/server/lib/action";
 import { AppError } from "@/server/lib/errors";
 import {
   requireAdmin,
+  requireAnyPermission,
   requireCapability,
+  requirePermission,
+  requireSuperAdmin,
   type SessionUser,
 } from "@/server/lib/guards";
 import { type Capability } from "@/server/lib/authz";
+import type { PermissionKey } from "@/lib/rbac/catalogue";
 import { rateLimit, RATE_LIMITS } from "@/server/lib/rate-limit";
+
+type AdminActionOpts = {
+  name?: string;
+  /** Legacy capability (mapped to permission keys in authz.ts). */
+  capability?: Capability;
+  /** One explicit permission key. */
+  permission?: PermissionKey;
+  /** ANY one of these permission keys. */
+  anyPermission?: readonly PermissionKey[];
+  /** Require the narrow SUPER_ADMIN privilege. */
+  superAdmin?: boolean;
+};
+
+async function authorize(opts: AdminActionOpts): Promise<SessionUser> {
+  if (opts.superAdmin) return requireSuperAdmin();
+  if (opts.permission) return requirePermission(opts.permission);
+  if (opts.anyPermission) return requireAnyPermission(opts.anyPermission);
+  if (opts.capability) return requireCapability(opts.capability);
+  return requireAdmin();
+}
 
 /**
  * Server Action wrapper for Admin Console operations. Mirrors `action()` but:
- *  - authenticates as an admin and enforces an optional `capability`;
+ *  - authenticates and enforces DB-backed RBAC (`superAdmin` > `permission` >
+ *    `anyPermission` > `capability` > any-admin, first match wins);
  *  - rate-limits per admin;
  *  - normalises thrown `AppError`s into an `ActionResult`.
  *
@@ -26,14 +51,12 @@ export function adminAction<TSchema extends z.ZodTypeAny, TOut>(
     input: z.infer<TSchema>;
     admin: SessionUser;
   }) => Promise<TOut>,
-  opts: { name?: string; capability?: Capability } = {},
+  opts: AdminActionOpts = {},
 ) {
   return async (rawInput: z.input<TSchema>): Promise<ActionResult<TOut>> => {
     let admin: SessionUser;
     try {
-      admin = opts.capability
-        ? await requireCapability(opts.capability)
-        : await requireAdmin();
+      admin = await authorize(opts);
     } catch (err) {
       if (err instanceof AppError) return fail(err.message);
       throw err; // e.g. redirect() for unauthenticated / non-admin

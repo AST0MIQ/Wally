@@ -10,6 +10,10 @@ import {
   Users,
   Ticket,
   Boxes,
+  ShieldCheck,
+  KeyRound,
+  UserCog,
+  MailPlus,
   ShoppingBag,
   Receipt,
   Flag,
@@ -59,6 +63,15 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { href: "/admin/users", labelKey: "userDirectory", icon: Users },
       { href: "/admin/users/entitlements", labelKey: "entitlements", icon: Ticket },
       { href: "/admin/users/loadouts", labelKey: "loadouts", icon: Boxes },
+    ],
+  },
+  {
+    labelKey: "access",
+    items: [
+      { href: "/admin/access/users", labelKey: "accessUsers", icon: UserCog },
+      { href: "/admin/access/roles", labelKey: "accessRoles", icon: ShieldCheck },
+      { href: "/admin/access/permissions", labelKey: "accessPermissions", icon: KeyRound },
+      { href: "/admin/access/invitations", labelKey: "accessInvitations", icon: MailPlus, placeholder: true },
     ],
   },
   {

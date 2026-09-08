@@ -5,10 +5,19 @@ import { z } from "zod";
 vi.mock("@/server/lib/guards", () => ({
   requireAdmin: vi.fn(),
   requireCapability: vi.fn(),
+  requirePermission: vi.fn(),
+  requireAnyPermission: vi.fn(),
+  requireSuperAdmin: vi.fn(),
 }));
 
 import { adminAction } from "@/server/lib/admin-action";
-import { requireAdmin, requireCapability } from "@/server/lib/guards";
+import {
+  requireAdmin,
+  requireAnyPermission,
+  requireCapability,
+  requirePermission,
+  requireSuperAdmin,
+} from "@/server/lib/guards";
 import { AppError } from "@/server/lib/errors";
 
 const echo = adminAction(
@@ -45,5 +54,32 @@ describe("adminAction", () => {
     vi.mocked(requireAdmin).mockResolvedValueOnce({ id: "admin2" } as never);
     const res = await plain({});
     expect(res).toEqual({ ok: true, data: "admin2" });
+  });
+
+  it("routes { superAdmin: true } through requireSuperAdmin", async () => {
+    const sa = adminAction(z.object({}), async ({ admin }) => admin.id, {
+      superAdmin: true,
+    });
+    vi.mocked(requireSuperAdmin).mockResolvedValueOnce({ id: "root" } as never);
+    expect(await sa({})).toEqual({ ok: true, data: "root" });
+
+    vi.mocked(requireSuperAdmin).mockRejectedValueOnce(
+      new AppError("requires SUPER_ADMIN", "FORBIDDEN"),
+    );
+    expect((await sa({})).ok).toBe(false);
+  });
+
+  it("routes { permission } through requirePermission and { anyPermission } through requireAnyPermission", async () => {
+    const p = adminAction(z.object({}), async ({ admin }) => admin.id, {
+      permission: "roles.write",
+    });
+    vi.mocked(requirePermission).mockResolvedValueOnce({ id: "a" } as never);
+    expect(await p({})).toEqual({ ok: true, data: "a" });
+
+    const anyP = adminAction(z.object({}), async ({ admin }) => admin.id, {
+      anyPermission: ["collections.write", "assets.write"],
+    });
+    vi.mocked(requireAnyPermission).mockResolvedValueOnce({ id: "b" } as never);
+    expect(await anyP({})).toEqual({ ok: true, data: "b" });
   });
 });

@@ -7,15 +7,21 @@
  *  - Cosmetics: "Wally Classic" canonical defaults are seeded in every
  *    environment; demo collections only in development or when
  *    COSMETICS_SEED_DEMO=true.
+ *  - RBAC: the permission catalogue and the six system roles are seeded in
+ *    every environment (idempotent). No role is assigned to any user here —
+ *    day-one access is the ADMIN_EMAILS bootstrap; a bootstrap admin then
+ *    assigns database-backed roles in Admin Console → Access Control.
  */
 import { PrismaClient } from "@prisma/client";
 
 import { seedCosmeticDefaults } from "./data/cosmetics-defaults";
 import { seedCosmeticDemo } from "./data/cosmetics-demo";
+import { seedRbac } from "./data/rbac";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await seedRbac(prisma);
   await seedCosmeticDefaults(prisma);
 
   const wantDemo =
