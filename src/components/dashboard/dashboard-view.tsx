@@ -15,6 +15,7 @@ import type { StreakData } from "@/server/services/streak.service";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
 import { HeroCardFx, heroCardClasses } from "@/components/streak/hero-card-fx";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
 import { PageHeader } from "@/components/ui/page-header";
 import { LineChart } from "@/components/charts/line-chart";
 import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
@@ -71,6 +72,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       "brand-gradient relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7",
       heroCardClasses(heroFxTier),
     )}>
+      <CosmeticCardFx slot="OVERVIEW_CARD" />
       <HeroCardFx tierIndex={heroFxTier} />
       <div className="relative z-[1]">
       <p className="flex items-center gap-1.5 text-xs text-white/70"><Sparkles className="size-3.5" />{t("netWorth")}</p>

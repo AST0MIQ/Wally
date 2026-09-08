@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
 import { HeroCardFx, heroCardClasses } from "@/components/streak/hero-card-fx";
+import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
 
 export function PortfolioList({
   portfolios,
@@ -63,6 +64,7 @@ export function PortfolioList({
       ) : (
         <>
         {canAggregate && <Card className={cn("brand-gradient relative overflow-hidden border-0 p-6 text-white shadow-lg", heroCardClasses(streakTier))}>
+          <CosmeticCardFx slot="INVESTMENT_CARD" />
           <HeroCardFx tierIndex={streakTier} />
           <div className="relative z-[1]">
             <p className="text-sm text-white/60">{t("allPortfolioValue")}</p>

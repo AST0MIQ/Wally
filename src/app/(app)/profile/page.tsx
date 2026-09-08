@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { StreakRing } from "@/components/streak/streak-ring";
 import { StreakLadder } from "@/components/streak/streak-ladder";
+import { ProfileAvatarDecorations } from "@/components/cosmetics/profile-avatar-decorations";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -58,15 +59,18 @@ export default async function ProfilePage() {
       <PageHeader title={nav("profile")} description={t("subtitle")} />
 
       <Card className="flex items-center gap-4 p-5">
-        <StreakRing
-          tierIndex={streak.tierIndex}
-          progressPct={streak.progressPct}
-          dim={64}
-        >
-          <span className="flex size-full items-center justify-center rounded-full bg-primary/15 text-xl font-bold text-primary">
-            {initial}
-          </span>
-        </StreakRing>
+        <span className="relative shrink-0">
+          <StreakRing
+            tierIndex={streak.tierIndex}
+            progressPct={streak.progressPct}
+            dim={64}
+          >
+            <span className="flex size-full items-center justify-center rounded-full bg-primary/15 text-xl font-bold text-primary">
+              {initial}
+            </span>
+          </StreakRing>
+          <ProfileAvatarDecorations />
+        </span>
         <div className="min-w-0">
           <p className="truncate text-lg font-semibold">{name}</p>
           {user.email && (

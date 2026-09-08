@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { StreakRing } from "@/components/streak/streak-ring";
+import { ProfileAvatarDecorations } from "@/components/cosmetics/profile-avatar-decorations";
 
 export type ProfileChipStreak = { tierIndex: number; progressPct: number };
 
@@ -39,19 +40,22 @@ export function ProfileChip({
         className,
       )}
     >
-      {streak ? (
-        <StreakRing
-          tierIndex={streak.tierIndex}
-          progressPct={streak.progressPct}
-          dim={32}
-        >
-          {avatar}
-        </StreakRing>
-      ) : (
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
-          {initial}
-        </span>
-      )}
+      <span className="relative shrink-0">
+        {streak ? (
+          <StreakRing
+            tierIndex={streak.tierIndex}
+            progressPct={streak.progressPct}
+            dim={32}
+          >
+            {avatar}
+          </StreakRing>
+        ) : (
+          <span className="flex size-7 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+            {initial}
+          </span>
+        )}
+        <ProfileAvatarDecorations />
+      </span>
       {!compact && (
         <span className="max-w-[10rem] truncate text-sm font-medium">{label}</span>
       )}
