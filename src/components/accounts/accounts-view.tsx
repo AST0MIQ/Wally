@@ -75,8 +75,12 @@ export function AccountsView({
   // far-away account can still be reached (the touch itself can't scroll —
   // it's held by the drag)
   const scrollStartRef = useRef(0);
+  const maxScrollRef = useRef(0);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const autoScrollRef = useRef<number | null>(null);
+  // account slots captured once per drag so the per-frame hit test doesn't
+  // re-run querySelectorAll
+  const cardsRef = useRef<HTMLElement[]>([]);
 
   useEffect(() => {
     const stopSelect = (event: Event) => {
@@ -103,7 +107,12 @@ export function AccountsView({
   // elementFromPoint, so the dragged card never needs pointer-events:none
   // (which let iOS reach through to the text on the cards underneath)
   function accountCardAt(x: number, y: number): HTMLElement | null {
-    for (const card of document.querySelectorAll<HTMLElement>("[data-account-id]")) {
+    const cards = cardsRef.current.length
+      ? cardsRef.current
+      : Array.from(
+          document.querySelectorAll<HTMLElement>("[data-account-id]"),
+        );
+    for (const card of cards) {
       const r = card.getBoundingClientRect();
       if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return card;
     }
@@ -122,6 +131,7 @@ export function AccountsView({
     }
     scrollLockRef.current = false;
     blockSelectRef.current = false;
+    cardsRef.current = [];
     stopAutoScroll();
     if (el && !armedRef.current) {
       el.style.transition = "transform 140ms ease";
@@ -177,9 +187,11 @@ export function AccountsView({
       dv = MIN + (MAX - MIN) * t;
     }
     if (dv === 0) return;
-    const before = window.scrollY;
-    window.scrollBy(0, dv);
-    if (window.scrollY === before) return; // reached an end
+    const y = window.scrollY;
+    if ((dv < 0 && y <= 0) || (dv > 0 && y >= maxScrollRef.current)) return;
+    // "instant" bypasses the page's `scroll-behavior: smooth`, which would
+    // otherwise start a fresh eased animation every frame and stutter
+    window.scrollTo({ top: y + dv, behavior: "instant" });
     renderDrag();
     autoScrollRef.current = requestAnimationFrame(autoScrollTick);
   }
@@ -358,6 +370,14 @@ export function AccountsView({
                       dragOriginRef.current = { x: startX, y: startY };
                       lastPointRef.current = { x: startX, y: startY };
                       scrollStartRef.current = window.scrollY;
+                      maxScrollRef.current =
+                        document.documentElement.scrollHeight -
+                        window.innerHeight;
+                      cardsRef.current = Array.from(
+                        document.querySelectorAll<HTMLElement>(
+                          "[data-account-id]",
+                        ),
+                      );
                       el.style.zIndex = "50";
                       el.style.touchAction = "none";
                       // pop from the pressed-in hint to the lifted state
