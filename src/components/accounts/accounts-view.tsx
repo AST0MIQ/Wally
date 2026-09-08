@@ -176,8 +176,8 @@ export function AccountsView({
     const p = lastPointRef.current;
     if (!armedRef.current || !p) return;
     const { vh, top, bottom } = edgeBands();
-    const MIN = 16; // px/frame the moment you enter the zone
-    const MAX = 64; // px/frame at the very edge
+    const MIN = 13; // px/frame the moment you enter the zone
+    const MAX = 51; // px/frame at the very edge
     let dv = 0;
     if (p.y < top) {
       const t = (top - p.y) / top; // 0 at zone edge → 1 at screen edge
