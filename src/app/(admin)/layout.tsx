@@ -1,5 +1,9 @@
 import { requireAdmin } from "@/server/lib/guards";
-import { AppShell } from "@/components/nav/app-shell";
+import { AdminShell } from "@/components/admin/admin-shell";
+
+// The Admin Console never renders any user's financial data. It has its own
+// shell (no QuickAdd / bottom nav / streak) and re-checks auth on every page.
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
   children,
@@ -7,11 +11,5 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAdmin();
-
-  // Admins have no financial data surface — Quick Add is intentionally empty.
-  return (
-    <AppShell role={user.role} email={user.email} lastSeenVersion={user.lastSeenVersion} accounts={[]} categories={[]}>
-      {children}
-    </AppShell>
-  );
+  return <AdminShell email={user.email}>{children}</AdminShell>;
 }

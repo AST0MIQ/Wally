@@ -15,6 +15,7 @@ const PROTECTED_PREFIXES = [
   "/analytics",
   "/reports",
   "/settings",
+  "/cosmetics",
   "/admin",
 ];
 

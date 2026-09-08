@@ -97,7 +97,7 @@ export function SidebarNav({
             className={linkClass(isActive("/admin"))}
           >
             <Shield className="size-4 shrink-0" />
-            {t("admin")}
+            {t("adminConsole")}
           </Link>
         )}
         <Link
