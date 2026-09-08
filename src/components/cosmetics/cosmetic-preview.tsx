@@ -11,7 +11,13 @@ import {
   type AssetConfigV1,
 } from "@/lib/cosmetics/config";
 import { isRenderedSlot, type EquipmentSlot } from "@/lib/cosmetics/slots";
-import { cosmeticClasses, cosmeticMediaUrl, cosmeticVars } from "@/lib/cosmetics/render";
+import {
+  cosmeticCardHostClass,
+  cosmeticCardHostStyle,
+  cosmeticClasses,
+  cosmeticMediaUrl,
+  cosmeticVars,
+} from "@/lib/cosmetics/render";
 import { useRenderCtx, type RenderCtx } from "@/components/cosmetics/use-render-ctx";
 
 /**
@@ -138,10 +144,14 @@ export function CosmeticPreview({
       </div>
     );
   } else {
+    const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
     body = (
       <div
-        style={vars}
-        className="relative h-32 w-full overflow-hidden rounded-2xl border border-border bg-card p-3"
+        style={cardStyle}
+        className={cn(
+          "relative h-32 w-full overflow-hidden rounded-2xl border p-3",
+          cosmeticCardHostClass(config),
+        )}
       >
         <span aria-hidden className={cn("ck-fx", fx)} />
         <div className="relative z-[1]">

@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
 import { HeroCardFx, heroCardClasses } from "@/components/streak/hero-card-fx";
 import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
 import { PageHeader } from "@/components/ui/page-header";
 import { LineChart } from "@/components/charts/line-chart";
 import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
@@ -30,6 +31,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
   const ts = useTranslations("streak");
   const tCat = useTranslations("categories");
   const heroFxTier = streak && streak.count > 0 ? streak.tierIndex : -1;
+  const overviewTheme = useCosmeticCardTheme("OVERVIEW_CARD");
   const base = data.baseCurrency;
   const money = (value: number | string, digits = 2) => formatMoney(value, base, locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const moneyC = (value: number | string) => formatMoneyCompact(value, base, locale);
@@ -69,11 +71,13 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
 
     {/* Net worth — the one-glance answer. Streak tiers layer on extra flair. */}
     <section className={cn(
-      "brand-gradient relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7",
-      heroCardClasses(heroFxTier),
-    )}>
+      "relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7",
+      overviewTheme.active
+        ? overviewTheme.className
+        : cn("brand-gradient", heroCardClasses(heroFxTier)),
+    )} style={overviewTheme.style}>
       <CosmeticCardFx slot="OVERVIEW_CARD" />
-      <HeroCardFx tierIndex={heroFxTier} />
+      {!overviewTheme.active && <HeroCardFx tierIndex={heroFxTier} />}
       <div className="relative z-[1]">
       <p className="flex items-center gap-1.5 text-xs text-white/70"><Sparkles className="size-3.5" />{t("netWorth")}</p>
       <p title={money(nw.netWorth, 2)} className="balance-mask mt-1.5 truncate text-[1.75rem] font-semibold leading-none sm:text-[2.6rem]">{moneyC(nw.netWorth)}</p>

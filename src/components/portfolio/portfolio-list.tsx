@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
 import { HeroCardFx, heroCardClasses } from "@/components/streak/hero-card-fx";
 import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
+import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
 
 export function PortfolioList({
   portfolios,
@@ -36,6 +37,7 @@ export function PortfolioList({
   const totalValue = portfolios.reduce((sum, p) => sum + Number(p.totalMarketValue), 0);
   const totalCost = portfolios.reduce((sum, p) => sum + Number(p.totalCost), 0);
   const totalPnl = totalValue - totalCost;
+  const investmentTheme = useCosmeticCardTheme("INVESTMENT_CARD");
 
   const addButton = (
     <PortfolioForm
@@ -63,9 +65,17 @@ export function PortfolioList({
         />
       ) : (
         <>
-        {canAggregate && <Card className={cn("brand-gradient relative overflow-hidden border-0 p-6 text-white shadow-lg", heroCardClasses(streakTier))}>
+        {canAggregate && <Card
+          className={cn(
+            "relative overflow-hidden border-0 p-6 text-white shadow-lg",
+            investmentTheme.active
+              ? investmentTheme.className
+              : cn("brand-gradient", heroCardClasses(streakTier)),
+          )}
+          style={investmentTheme.style}
+        >
           <CosmeticCardFx slot="INVESTMENT_CARD" />
-          <HeroCardFx tierIndex={streakTier} />
+          {!investmentTheme.active && <HeroCardFx tierIndex={streakTier} />}
           <div className="relative z-[1]">
             <p className="text-sm text-white/60">{t("allPortfolioValue")}</p>
             <p

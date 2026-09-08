@@ -74,6 +74,12 @@
   border-radius: inherit;
   overflow: hidden;
 }
+.ck-card-replaced {
+  /* The host receives an opaque inline background from the validated asset.
+     This marker documents replacement precedence and gives future card slots
+     one stable hook without touching their interaction handlers. */
+  background-image: none;
+}
 .ck-surface-glass {
   background: color-mix(in srgb, var(--ck-surface, transparent) 40%, transparent);
   backdrop-filter: blur(6px);

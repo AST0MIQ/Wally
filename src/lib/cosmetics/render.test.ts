@@ -6,7 +6,12 @@ import {
   isSchemeCompatible,
   type AssetConfigV1,
 } from "@/lib/cosmetics/config";
-import { cosmeticClasses, cosmeticMediaUrl } from "@/lib/cosmetics/render";
+import {
+  cosmeticCardHostClass,
+  cosmeticCardHostStyle,
+  cosmeticClasses,
+  cosmeticMediaUrl,
+} from "@/lib/cosmetics/render";
 import {
   RENDERED_SLOTS,
   SLOT_CONFIG_FIELDS,
@@ -75,5 +80,21 @@ describe("render helpers", () => {
         expect(SLOT_CONFIG_FIELDS[s]).toContain("motion");
       }
     }
+  });
+
+  it("card assets replace the existing card background instead of blending", () => {
+    expect(
+      cosmeticCardHostStyle({
+        colors: { background: "#111111", surface: "#fff1f2", primary: "#222222" },
+      }),
+    ).toMatchObject({
+      backgroundColor: "#fff1f2",
+      backgroundImage: "none",
+    });
+    expect(
+      cosmeticCardHostStyle({ colors: { background: "#111111" } }).backgroundColor,
+    ).toBe("#111111");
+    expect(cosmeticCardHostStyle({}).backgroundColor).toBe("var(--card)");
+    expect(cosmeticCardHostClass({ shape: "ROUNDED" })).toContain("ck-shape-rounded");
   });
 });

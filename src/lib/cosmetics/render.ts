@@ -34,6 +34,40 @@ export function cosmeticVars(config: AssetConfigV1): Record<string, string> {
   return vars;
 }
 
+/**
+ * Inline properties for a card host while a card cosmetic is equipped.
+ *
+ * Card cosmetics are replacements, not translucent decorations over Wally's
+ * accent/streak background.  Giving the host its own opaque base prevents the
+ * previous `brand-gradient` from bleeding through GLASS and other surfaces.
+ * `surface` is the card-specific colour; `background` and `primary` are useful
+ * fallbacks for older authored assets.
+ */
+export function cosmeticCardHostStyle(
+  config: AssetConfigV1,
+): Record<string, string> {
+  const colors = config.colors ?? {};
+  return {
+    ...cosmeticVars(config),
+    backgroundColor:
+      colors.surface ?? colors.background ?? colors.primary ?? "var(--card)",
+    backgroundImage: "none",
+    borderColor: colors.border ?? "transparent",
+    color: colors.text ?? "inherit",
+  };
+}
+
+/** Shape belongs to the replacement card itself, not only its FX overlay. */
+export function cosmeticCardHostClass(config: AssetConfigV1): string {
+  switch (config.shape) {
+    case "SOFT": return "ck-card-replaced ck-shape-soft";
+    case "ROUNDED": return "ck-card-replaced ck-shape-rounded";
+    case "SHARP": return "ck-card-replaced ck-shape-sharp";
+    case "PILL": return "ck-card-replaced ck-shape-pill";
+    default: return "ck-card-replaced";
+  }
+}
+
 /** Same-origin decorative image path, or null. Re-checked defensively. */
 export function cosmeticMediaUrl(config: AssetConfigV1): string | null {
   const url = config.mediaUrl;
