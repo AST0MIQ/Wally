@@ -1,0 +1,168 @@
+/* ─────────────────────────────────────────────────────────────
+   Cosmetics preset classes. Static vocabulary only — the renderer
+   (src/lib/cosmetics/render.ts) picks class names from a fixed list and
+   sets #rrggbb values into --ck-* custom properties. No asset ever injects
+   raw CSS. Every decorative layer is pointer-events:none + aria-hidden so it
+   can never interfere with scrolling, pointer capture or the accounts drag.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --ck-intensity: 1;
+}
+.ck-intensity-low { --ck-intensity: 0.55; }
+.ck-intensity-medium { --ck-intensity: 1; }
+.ck-intensity-high { --ck-intensity: 1.6; }
+
+/* ── Full-bleed app background layer ─────────────────────────── */
+.ck-bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background-color: var(--ck-bg, transparent);
+}
+.ck-bg-layer.ck-surface-gradient {
+  background-image: radial-gradient(
+      circle at 15% 15%,
+      color-mix(in srgb, var(--ck-glow, transparent) calc(28% * var(--ck-intensity)), transparent),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 85% 80%,
+      color-mix(in srgb, var(--ck-glow, transparent) calc(20% * var(--ck-intensity)), transparent),
+      transparent 42%
+    );
+}
+.ck-bg-layer.ck-texture-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: calc(0.05 * var(--ck-intensity));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Card / surface decoration (overlay lives inside a positioned host) ── */
+.ck-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.ck-surface-glass {
+  background: color-mix(in srgb, var(--ck-surface, transparent) 40%, transparent);
+  backdrop-filter: blur(6px);
+}
+.ck-surface-gradient {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ck-glow, transparent) calc(14% * var(--ck-intensity)), transparent),
+    transparent 65%
+  );
+}
+.ck-surface-elevated {
+  box-shadow: 0 24px 60px -32px color-mix(in srgb, var(--ck-glow, #000) 55%, transparent);
+}
+
+.ck-border-glow {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ck-border, var(--primary)) 60%, transparent),
+    0 0 22px -4px color-mix(in srgb, var(--ck-glow, var(--primary)) calc(70% * var(--ck-intensity)), transparent);
+}
+.ck-border-gradient {
+  padding: 1px;
+  background: linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--ck-glow, var(--primary)) 80%, transparent),
+      color-mix(in srgb, var(--ck-border, var(--primary)) 30%, transparent)
+    )
+    border-box;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+}
+.ck-border-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--ck-glow, #fff) calc(40% * var(--ck-intensity)), transparent) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+}
+
+.ck-shape-soft { border-radius: 1.5rem; }
+.ck-shape-rounded { border-radius: 1rem; }
+.ck-shape-sharp { border-radius: 0.25rem; }
+.ck-shape-pill { border-radius: 999px; }
+
+/* ── Motion — only under prefers-reduced-motion: no-preference ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .ck-motion-shimmer.ck-border-shine::before,
+  .ck-motion-shimmer::before {
+    animation: ck-shine 3.5s ease-in-out infinite;
+  }
+  .ck-motion-pulse {
+    animation: ck-pulse 3s ease-in-out infinite;
+  }
+  .ck-motion-particles::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 20% 30%, color-mix(in srgb, var(--ck-glow, #fff) 90%, transparent), transparent),
+      radial-gradient(1.5px 1.5px at 70% 60%, color-mix(in srgb, var(--ck-glow, #fff) 80%, transparent), transparent),
+      radial-gradient(1px 1px at 45% 85%, color-mix(in srgb, var(--ck-glow, #fff) 70%, transparent), transparent),
+      radial-gradient(1px 1px at 85% 20%, color-mix(in srgb, var(--ck-glow, #fff) 70%, transparent), transparent);
+    background-repeat: repeat;
+    background-size: 220px 220px;
+    opacity: calc(0.5 * var(--ck-intensity));
+    animation: ck-drift 24s linear infinite;
+  }
+}
+
+@keyframes ck-shine {
+  0%, 20% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(100%); }
+}
+@keyframes ck-pulse {
+  0%, 100% { opacity: calc(0.35 * var(--ck-intensity)); }
+  50% { opacity: calc(0.75 * var(--ck-intensity)); }
+}
+@keyframes ck-drift {
+  from { background-position: 0 0; }
+  to { background-position: 220px 440px; }
+}
+
+/* ── Profile decorations ─────────────────────────────────────── */
+.ck-profile-frame {
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ck-border, var(--primary)) 75%, transparent);
+}
+.ck-profile-aura {
+  position: absolute;
+  inset: -10px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ck-glow, var(--primary)) calc(45% * var(--ck-intensity)), transparent),
+    transparent 70%
+  );
+}
+.ck-profile-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 44%;
+  height: 44%;
+  border-radius: 999px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ck-primary, var(--primary)) 90%, transparent);
+  border: 2px solid var(--card);
+}
