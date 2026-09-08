@@ -24,7 +24,7 @@ const csp = [
   "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net" +
     (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.googleusercontent.com",
+  "img-src 'self' data: blob: https://*.googleusercontent.com https://*.public.blob.vercel-storage.com",
   "font-src 'self' data:",
   "connect-src 'self' https://cdn.jsdelivr.net https://tessdata.projectnaptha.com",
   "worker-src 'self' blob:",

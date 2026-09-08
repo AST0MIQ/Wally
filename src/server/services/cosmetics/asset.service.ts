@@ -185,6 +185,26 @@ export async function setAssetStatus(
   });
 }
 
+export async function bulkSetAssetStatus(
+  adminId: string,
+  ids: string[],
+  status: "PUBLISHED" | "HIDDEN" | "ARCHIVED",
+) {
+  return serializableTx(async (tx) => {
+    const rows = await tx.cosmeticAsset.findMany({ where: { id: { in: ids } }, select: { id: true, publishedAt: true } });
+    if (rows.length !== new Set(ids).size) notFound("asset_not_found");
+    const now = new Date();
+    for (const row of rows) {
+      await tx.cosmeticAsset.update({
+        where: { id: row.id },
+        data: { status, publishedAt: status === "PUBLISHED" ? row.publishedAt ?? now : row.publishedAt },
+      });
+    }
+    await auditInTx(tx, { userId: adminId, action: "cosmeticAsset.bulkStatus", entity: "CosmeticAsset", entityId: "bulk", metadata: { ids, status } });
+    return { updated: rows.length };
+  });
+}
+
 /** Clone a (usually published) asset into a fresh editable DRAFT. [S6] */
 export async function duplicateAsset(adminId: string, id: string, slug: string) {
   return serializableTx(async (tx) => {

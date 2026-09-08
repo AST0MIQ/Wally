@@ -17,6 +17,12 @@ import {
   SHAPE_PRESETS,
   SURFACE_PRESETS,
   TEXTURE_PRESETS,
+  CHART_PRESETS,
+  ICON_PRESETS,
+  TYPOGRAPHY_PRESETS,
+  AMBIENT_PRESETS,
+  INTERACTION_PRESETS,
+  CELEBRATION_PRESETS,
 } from "@/lib/cosmetics/presets";
 
 const colorsSchema = z
@@ -32,7 +38,10 @@ const colorsSchema = z
 const mediaUrlSchema = z
   .string()
   .trim()
-  .regex(/^\/(?!\/)[A-Za-z0-9\-._~/]*$/, "media URL must be a same-origin path")
+  .refine(
+    (v) => /^\/(?!\/)[A-Za-z0-9\-._~/]*$/.test(v) || /^https:\/\/[A-Za-z0-9.-]+\.public\.blob\.vercel-storage\.com\/[A-Za-z0-9%\-._~/]+$/.test(v),
+    "media URL must be a same-origin path or Wally's Vercel Blob URL",
+  )
   .refine((v) => !v.includes(".."), "media URL must not contain '..'");
 
 const semverish = z
@@ -49,7 +58,7 @@ export const assetConfigV1Schema = z
     texture: z.enum(TEXTURE_PRESETS).optional(),
     motion: z.enum(MOTION_PRESETS).optional(),
     intensity: z.enum(INTENSITY_LEVELS).optional(),
-    /** decorative same-origin media (image) for slots that support it */
+    /** decorative Wally media (same-origin or public Vercel Blob) */
     mediaUrl: mediaUrlSchema.optional(),
     /** default true — the renderer drops the layer only on an explicit `false` */
     lightCompatible: z.boolean().optional(),
@@ -62,16 +71,31 @@ export const assetConfigV1Schema = z
 export type AssetConfigV1 = z.infer<typeof assetConfigV1Schema>;
 export type AssetConfigV1Input = z.input<typeof assetConfigV1Schema>;
 
-export const LATEST_CONFIG_VERSION = 1 as const;
+export const assetConfigV2Schema = assetConfigV1Schema.extend({
+  chartStyle: z.enum(CHART_PRESETS).optional(),
+  iconStyle: z.enum(ICON_PRESETS).optional(),
+  typography: z.enum(TYPOGRAPHY_PRESETS).optional(),
+  ambientEffect: z.enum(AMBIENT_PRESETS).optional(),
+  interactionEffect: z.enum(INTERACTION_PRESETS).optional(),
+  celebrationEffect: z.enum(CELEBRATION_PRESETS).optional(),
+}).strict();
+
+export type AssetConfigV2 = z.infer<typeof assetConfigV2Schema>;
+/** Normalized shape consumed by renderers; v1 is a structural subset. */
+export type AssetConfig = AssetConfigV2;
+
+export const LATEST_CONFIG_VERSION = 2 as const;
 
 /**
  * Validate a stored/inbound config against the schema for `version`. Throws a
  * `ZodError` on any violation. Add a v2 branch here without touching v1 rows.
  */
-export function parseAssetConfig(version: number, raw: unknown): AssetConfigV1 {
+export function parseAssetConfig(version: number, raw: unknown): AssetConfig {
   switch (version) {
     case 1:
       return assetConfigV1Schema.parse(raw);
+    case 2:
+      return assetConfigV2Schema.parse(raw);
     default:
       throw new Error(`unsupported cosmetic config version: ${version}`);
   }
@@ -79,24 +103,24 @@ export function parseAssetConfig(version: number, raw: unknown): AssetConfigV1 {
 
 /** Non-throwing variant for callers that want a result object. */
 export function safeParseAssetConfig(version: number, raw: unknown) {
-  if (version !== 1) {
+  if (version !== 1 && version !== 2) {
     return {
       success: false as const,
       error: `unsupported cosmetic config version: ${version}`,
     };
   }
-  const res = assetConfigV1Schema.safeParse(raw);
+  const res = (version === 1 ? assetConfigV1Schema : assetConfigV2Schema).safeParse(raw);
   return res.success
     ? { success: true as const, data: res.data }
     : { success: false as const, error: res.error.flatten() };
 }
 
 /** A no-op config — the neutral default (renders as today's Wally look). */
-export const NEUTRAL_CONFIG: AssetConfigV1 = {};
+export const NEUTRAL_CONFIG: AssetConfig = {};
 
 /** `false` only when the asset explicitly opted out of that scheme. */
 export function isSchemeCompatible(
-  config: AssetConfigV1,
+  config: AssetConfig,
   scheme: "light" | "dark",
 ): boolean {
   return scheme === "light"
@@ -111,7 +135,7 @@ function parseVersion(v: string): [number, number, number] {
 
 /** True when `appVersion` satisfies `config.minComponentVersion` (or none set). */
 export function meetsMinVersion(
-  config: AssetConfigV1,
+  config: AssetConfig,
   appVersion: string,
 ): boolean {
   if (!config.minComponentVersion) return true;
@@ -128,7 +152,7 @@ export function meetsMinVersion(
  * Admin can never publish a config that behaves differently in production.
  */
 export function shouldRenderLayer(
-  config: AssetConfigV1,
+  config: AssetConfig,
   ctx: { scheme: "light" | "dark"; appVersion: string },
 ): boolean {
   return (

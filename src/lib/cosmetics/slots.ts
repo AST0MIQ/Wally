@@ -1,7 +1,7 @@
 /**
  * Equipment slots. Mirrors the Prisma `EquipmentSlot` enum (kept in sync by
- * `src/lib/cosmetics/slots.test.ts`). `RENDERED_SLOTS` is the Phase 1 subset
- * the renderer actually draws — every other slot is data/admin only.
+ * `src/lib/cosmetics/slots.test.ts`). Every declared slot has a Phase 2
+ * renderer and a matching preview.
  */
 
 export const EQUIPMENT_SLOTS = [
@@ -25,7 +25,7 @@ export const EQUIPMENT_SLOTS = [
 
 export type EquipmentSlot = (typeof EQUIPMENT_SLOTS)[number];
 
-/** Slots with a live renderer. Phase 2 adds app chrome + transaction rows. */
+/** Slots with a live renderer. */
 export const RENDERED_SLOTS = [
   "APP_BACKGROUND",
   "NAVIGATION",
@@ -37,6 +37,12 @@ export const RENDERED_SLOTS = [
   "ACCOUNT_CARD",
   "INVESTMENT_CARD",
   "TRANSACTION_CARD",
+  "CHART_STYLE",
+  "ICON_SET",
+  "TYPOGRAPHY",
+  "AMBIENT_EFFECT",
+  "INTERACTION_EFFECT",
+  "CELEBRATION_EFFECT",
 ] as const satisfies readonly EquipmentSlot[];
 
 export type RenderedSlot = (typeof RENDERED_SLOTS)[number];
@@ -73,7 +79,13 @@ export type ConfigField =
   | "texture"
   | "motion"
   | "intensity"
-  | "mediaUrl";
+  | "mediaUrl"
+  | "chartStyle"
+  | "iconStyle"
+  | "typography"
+  | "ambientEffect"
+  | "interactionEffect"
+  | "celebrationEffect";
 
 export const SLOT_CONFIG_FIELDS: Record<RenderedSlot, readonly ConfigField[]> = {
   APP_BACKGROUND: ["colors", "surface", "texture", "motion", "intensity", "mediaUrl"],
@@ -86,6 +98,12 @@ export const SLOT_CONFIG_FIELDS: Record<RenderedSlot, readonly ConfigField[]> = 
   PROFILE_FRAME: ["colors", "borderEffect", "motion", "intensity"],
   PROFILE_AURA: ["colors", "motion", "intensity"],
   PROFILE_BADGE: ["colors", "shape"],
+  CHART_STYLE: ["colors", "chartStyle", "intensity"],
+  ICON_SET: ["colors", "iconStyle"],
+  TYPOGRAPHY: ["colors", "typography"],
+  AMBIENT_EFFECT: ["colors", "ambientEffect", "intensity", "mediaUrl"],
+  INTERACTION_EFFECT: ["colors", "interactionEffect", "intensity"],
+  CELEBRATION_EFFECT: ["colors", "celebrationEffect", "intensity"],
 };
 
 /** Motion presets a given rendered slot's CSS can actually animate. */
@@ -100,6 +118,12 @@ export const SLOT_MOTION: Record<RenderedSlot, readonly string[]> = {
   PROFILE_FRAME: ["NONE", "PULSE"],
   PROFILE_AURA: ["NONE", "PULSE"],
   PROFILE_BADGE: ["NONE"],
+  CHART_STYLE: ["NONE"],
+  ICON_SET: ["NONE"],
+  TYPOGRAPHY: ["NONE"],
+  AMBIENT_EFFECT: ["NONE"],
+  INTERACTION_EFFECT: ["NONE"],
+  CELEBRATION_EFFECT: ["NONE"],
 };
 
 export function slotConfigFields(slot: string): readonly ConfigField[] {

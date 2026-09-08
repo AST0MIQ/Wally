@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Field } from "@/components/ui/label";
-import type { AssetConfigV1 } from "@/lib/cosmetics/config";
+import type { AssetConfig } from "@/lib/cosmetics/config";
 import {
   BORDER_EFFECTS,
   COLOR_TOKENS,
@@ -14,6 +14,12 @@ import {
   SHAPE_PRESETS,
   SURFACE_PRESETS,
   TEXTURE_PRESETS,
+  CHART_PRESETS,
+  ICON_PRESETS,
+  TYPOGRAPHY_PRESETS,
+  AMBIENT_PRESETS,
+  INTERACTION_PRESETS,
+  CELEBRATION_PRESETS,
 } from "@/lib/cosmetics/presets";
 import {
   SLOT_MOTION,
@@ -23,8 +29,8 @@ import {
 
 type Props = {
   slot: string;
-  value: AssetConfigV1;
-  onChange: (next: AssetConfigV1) => void;
+  value: AssetConfig;
+  onChange: (next: AssetConfig) => void;
   disabled?: boolean;
 };
 
@@ -32,7 +38,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
   const t = useTranslations("admin.assets");
-  const set = (patch: Partial<AssetConfigV1>) => onChange({ ...value, ...patch });
+  const set = (patch: Partial<AssetConfig>) => onChange({ ...value, ...patch });
   const setColor = (token: string, hex: string) => {
     const colors = { ...(value.colors ?? {}) };
     if (hex) colors[token as keyof typeof colors] = hex;
@@ -41,9 +47,9 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
   };
 
   const sel =
-    (key: keyof AssetConfigV1) =>
+    (key: keyof AssetConfig) =>
     (e: React.ChangeEvent<HTMLSelectElement>) =>
-      set({ [key]: (e.target.value || undefined) as never } as Partial<AssetConfigV1>);
+      set({ [key]: (e.target.value || undefined) as never } as Partial<AssetConfig>);
 
   // Only fields with a real runtime effect for THIS slot are shown, so a
   // published config can never imply an effect Preview/production don't apply.
@@ -96,6 +102,12 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {show("chartStyle") && <PresetField label={t("chartStyle")} field="chartStyle" options={CHART_PRESETS} value={value} set={set} none={t("none")} translate={(s) => t(`preset_${s}`)} />}
+        {show("iconStyle") && <PresetField label={t("iconStyle")} field="iconStyle" options={ICON_PRESETS} value={value} set={set} none={t("none")} translate={(s) => t(`preset_${s}`)} />}
+        {show("typography") && <PresetField label={t("typography")} field="typography" options={TYPOGRAPHY_PRESETS} value={value} set={set} none={t("none")} translate={(s) => t(`preset_${s}`)} />}
+        {show("ambientEffect") && <PresetField label={t("ambientEffect")} field="ambientEffect" options={AMBIENT_PRESETS} value={value} set={set} none={t("none")} translate={(s) => t(`preset_${s}`)} />}
+        {show("interactionEffect") && <PresetField label={t("interactionEffect")} field="interactionEffect" options={INTERACTION_PRESETS} value={value} set={set} none={t("none")} translate={(s) => t(`preset_${s}`)} />}
+        {show("celebrationEffect") && <PresetField label={t("celebrationEffect")} field="celebrationEffect" options={CELEBRATION_PRESETS} value={value} set={set} none={t("none")} translate={(s) => t(`preset_${s}`)} />}
         {show("shape") && (
           <Field label={t("shape")}>
             <Select value={value.shape ?? ""} onChange={sel("shape")}>
@@ -158,5 +170,24 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
         </Field>
       )}
     </fieldset>
+  );
+}
+
+function PresetField({ label, field, options, value, set, none, translate }: {
+  label: string;
+  field: keyof AssetConfig;
+  options: readonly string[];
+  value: AssetConfig;
+  set: (patch: Partial<AssetConfig>) => void;
+  none: string;
+  translate: (value: string) => string;
+}) {
+  return (
+    <Field label={label}>
+      <Select value={(value[field] as string | undefined) ?? ""} onChange={(e) => set({ [field]: e.target.value || undefined })}>
+        <option value="">{none}</option>
+        {options.filter((x) => x !== "NONE" && x !== "DEFAULT").map((x) => <option key={x} value={x}>{translate(x)}</option>)}
+      </Select>
+    </Field>
   );
 }

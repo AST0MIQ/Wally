@@ -32,7 +32,7 @@ export function CategoryBars({
           <div className="flex items-center gap-3 pl-10">
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full transition-[width] duration-500"
+              className="ck-chart-bar h-full rounded-full transition-[width] duration-500"
               style={{
                 width: `${(r.amount / max) * 100}%`,
                 backgroundColor: r.color ?? "var(--color-primary)",

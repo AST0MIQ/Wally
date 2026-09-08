@@ -25,6 +25,8 @@ type ExistingCollection = {
   rarity: string;
   isApplicableAsSet: boolean;
   coverUrl: string | null;
+  availableFrom?: Date | string | null;
+  availableTo?: Date | string | null;
 };
 
 export function CollectionForm({ collection }: { collection?: ExistingCollection }) {
@@ -39,6 +41,13 @@ export function CollectionForm({ collection }: { collection?: ExistingCollection
   const [rarity, setRarity] = useState(collection?.rarity ?? "COMMON");
   const [asSet, setAsSet] = useState(collection?.isApplicableAsSet ?? true);
   const [coverUrl, setCoverUrl] = useState(collection?.coverUrl ?? "");
+  const dateValue = (v?: Date | string | null) => {
+    if (!v) return "";
+    const date = new Date(v);
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  };
+  const [availableFrom, setAvailableFrom] = useState(dateValue(collection?.availableFrom));
+  const [availableTo, setAvailableTo] = useState(dateValue(collection?.availableTo));
 
   const create = useAction(createCollectionAction);
   const update = useAction(updateCollectionAction);
@@ -54,13 +63,23 @@ export function CollectionForm({ collection }: { collection?: ExistingCollection
     };
     if (editing) {
       const res = await update.run(
-        { id: collection!.id, ...common },
+        {
+          id: collection!.id,
+          ...common,
+          availableFrom: availableFrom ? new Date(availableFrom) : null,
+          availableTo: availableTo ? new Date(availableTo) : null,
+        },
         { successMessage: tc("savedToast") },
       );
       if (res.ok) router.refresh();
     } else {
       const res = await create.run(
-        { slug, ...common },
+        {
+          slug,
+          ...common,
+          availableFrom: availableFrom ? new Date(availableFrom) : undefined,
+          availableTo: availableTo ? new Date(availableTo) : undefined,
+        },
         { successMessage: tc("createdToast") },
       );
       if (res.ok && res.data)
@@ -94,6 +113,8 @@ export function CollectionForm({ collection }: { collection?: ExistingCollection
             placeholder="/cosmetics/…"
           />
         </Field>
+        <Field label="เริ่มให้รับได้"><Input type="datetime-local" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} /></Field>
+        <Field label="หยุดให้รับ"><Input type="datetime-local" value={availableTo} onChange={(e) => setAvailableTo(e.target.value)} /></Field>
       </div>
       <Field label={tc("description")}>
         <Textarea

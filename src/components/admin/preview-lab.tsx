@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import type { AssetConfigV1 } from "@/lib/cosmetics/config";
+import type { AssetConfig } from "@/lib/cosmetics/config";
 import { RENDERED_SLOTS, type RenderedSlot } from "@/lib/cosmetics/slots";
 import { cosmeticVars } from "@/lib/cosmetics/render";
 import { Select } from "@/components/ui/select";
@@ -14,7 +14,7 @@ export type PreviewAsset = {
   id: string;
   name: string;
   slot: string;
-  config: AssetConfigV1;
+  config: AssetConfig;
 };
 
 export function PreviewLab({ assets }: { assets: PreviewAsset[] }) {

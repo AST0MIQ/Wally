@@ -66,6 +66,13 @@ model User {
   createdCosmeticAssets      CosmeticAsset[]      @relation("AssetCreatedBy")
   grantedEntitlements        UserEntitlement[]    @relation("EntitlementGrantedBy")
   revokedEntitlements        UserEntitlement[]    @relation("EntitlementRevokedBy")
+  uploadedCosmeticMedia      CosmeticMedia[]      @relation("MediaUploadedBy")
+  cosmeticOrders             CosmeticOrder[]
+  fulfilledCosmeticOrders    CosmeticOrder[]      @relation("OrderFulfilledBy")
+  rewardGrants               RewardGrant[]
+  rank                       UserRank?
+  updatedFeatureFlags        FeatureFlag[]        @relation("FeatureFlagUpdatedBy")
+  updatedAppSettings         AppSetting[]         @relation("AppSettingUpdatedBy")
 
   // ── Access control (database-backed RBAC) ──
   userRoles              UserRole[]
@@ -532,6 +539,7 @@ model CosmeticAsset {
   entitlements UserEntitlement[]
   equipped     UserEquippedAsset[]
   rewardRules  RewardRule[]        @relation("RewardGrantsAsset")
+  products     CosmeticProduct[]
 
   // composite target so CollectionAsset / UserEquippedAsset can enforce
   // "join.slot == asset.slot" via a composite foreign key
@@ -564,6 +572,7 @@ model CosmeticCollection {
   assets             CollectionAsset[]
   entitlementSources UserEntitlement[] @relation("EntitlementSourceCollection")
   rewardRules        RewardRule[]      @relation("RewardGrantsCollection")
+  products           CosmeticProduct[]
 
   @@index([status])
   @@index([rarity])
@@ -652,8 +661,134 @@ model RewardRule {
   isActive           Boolean             @default(false)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  grants             RewardGrant[]
 
   @@index([trigger, isActive])
+}
+
+/// Idempotency ledger for automatic rewards. A rule can grant a user once.
+model RewardGrant {
+  id        String     @id @default(cuid())
+  ruleId    String
+  rule      RewardRule @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grantedAt DateTime   @default(now())
+
+  @@unique([ruleId, userId])
+  @@index([userId, grantedAt])
+}
+
+model UserRank {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points    Int      @default(0)
+  level     Int      @default(1)
+  updatedAt DateTime @updatedAt
+}
+
+enum MediaStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+/// Public decorative media stored in Vercel Blob and referenced by cosmetics.
+model CosmeticMedia {
+  id           String      @id @default(cuid())
+  name         String
+  url          String      @unique
+  pathname     String      @unique
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  status       MediaStatus @default(ACTIVE)
+  uploadedBy   User?       @relation("MediaUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedById String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([status, createdAt])
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model CosmeticProduct {
+  id                 String              @id @default(cuid())
+  slug               String              @unique
+  name               String
+  description        String?
+  price              Decimal             @db.Decimal(18, 2)
+  currency           String              @default("THB")
+  status             ProductStatus       @default(DRAFT)
+  grantsCollectionId String?
+  grantsCollection   CosmeticCollection? @relation(fields: [grantsCollectionId], references: [id], onDelete: Restrict)
+  grantsAssetId      String?
+  grantsAsset        CosmeticAsset?      @relation(fields: [grantsAssetId], references: [id], onDelete: Restrict)
+  stripeProductId    String?             @unique
+  stripePriceId      String?             @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  orders CosmeticOrder[]
+
+  @@index([status])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  CANCELLED
+  REFUNDED
+}
+
+model CosmeticOrder {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  productId       String
+  product         CosmeticProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  amount          Decimal         @db.Decimal(18, 2)
+  currency        String
+  status          OrderStatus     @default(PENDING)
+  stripeSessionId String?         @unique
+  stripePaymentId String?
+  fulfilledAt     DateTime?
+  fulfilledBy     User?           @relation("OrderFulfilledBy", fields: [fulfilledById], references: [id], onDelete: SetNull)
+  fulfilledById   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model FeatureFlag {
+  key         String   @id
+  name        String
+  description String?
+  enabled     Boolean  @default(false)
+  updatedBy   User?    @relation("FeatureFlagUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AppSetting {
+  key         String   @id
+  name        String
+  description String?
+  value       Json
+  updatedBy   User?    @relation("AppSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // ─────────────────────────────────────────────────────────────

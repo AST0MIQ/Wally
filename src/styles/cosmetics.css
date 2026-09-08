@@ -171,6 +171,61 @@
   to { background-position: 220px 440px; }
 }
 
+/* ── Phase 2 semantic slots ───────────────────────────────── */
+.ck-type-friendly { font-family: ui-rounded, "Nunito", system-ui, sans-serif; }
+.ck-type-compact { font-family: "Arial Narrow", "Roboto Condensed", system-ui, sans-serif; letter-spacing: -0.015em; }
+.ck-type-editorial { font-family: Georgia, "Times New Roman", serif; }
+
+.ck-icons-rounded svg { stroke-linecap: round; stroke-linejoin: round; }
+.ck-icons-bold svg { stroke-width: 2.6; }
+.ck-icons-duotone svg { filter: drop-shadow(1px 1px 0 color-mix(in srgb, var(--ck-primary, var(--primary)) 45%, transparent)); }
+
+.ck-chart-smooth svg polyline { stroke-linecap: round; stroke-linejoin: round; }
+.ck-chart-bold svg polyline { stroke-width: 4 !important; }
+.ck-chart-dotted svg polyline { stroke-dasharray: 2 4; }
+.ck-chart-neon svg polyline { filter: drop-shadow(0 0 5px var(--ck-glow, var(--primary))); }
+.ck-chart-neon svg polygon { opacity: .16; }
+.ck-chart-bold .ck-chart-bar { filter: saturate(1.2); }
+.ck-chart-dotted .ck-chart-bar { background-image: repeating-linear-gradient(90deg, transparent 0 5px, color-mix(in srgb, var(--background) 45%, transparent) 5px 8px); }
+.ck-chart-neon .ck-chart-bar { box-shadow: 0 0 8px var(--ck-glow, var(--primary)); }
+
+.ck-ambient-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ck-ambient-glow_orbs .ck-ambient-layer {
+  background:
+    radial-gradient(circle at 12% 22%, color-mix(in srgb, var(--ck-glow, var(--primary)) 28%, transparent), transparent 28%),
+    radial-gradient(circle at 88% 72%, color-mix(in srgb, var(--ck-primary, var(--primary)) 20%, transparent), transparent 30%);
+}
+.ck-ambient-star_field .ck-ambient-layer { background-image: radial-gradient(circle, var(--ck-glow, #fff) 1px, transparent 1.5px); background-size: 52px 52px; opacity: calc(.22 * var(--ck-intensity)); }
+.ck-ambient-soft_grain .ck-ambient-layer { backdrop-filter: contrast(1.03); opacity: calc(.15 * var(--ck-intensity)); }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ck-interaction-soft_lift :where(button, a, [role="button"]):hover { transform: translateY(-2px); }
+  .ck-interaction-glow_tap :where(button, a, [role="button"]):hover { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--ck-glow, var(--primary)) 55%, transparent)); }
+}
+.ck-interaction-ripple :where(button, a, [role="button"]):active { transform: scale(.97); }
+.ck-interaction-soft_lift :where(button, a, [role="button"]),
+.ck-interaction-glow_tap :where(button, a, [role="button"]),
+.ck-interaction-ripple :where(button, a, [role="button"]) { transition: transform .16s ease, filter .16s ease; }
+
+.ck-celebration-none .ck-celebration-burst { display: none; }
+.ck-celebration-sparkle .ck-celebration-piece {
+  border-radius: 999px !important;
+  box-shadow: 0 0 10px currentColor;
+}
+.ck-celebration-rings .ck-celebration-piece {
+  background: transparent !important;
+  border: 2px solid var(--ck-glow, var(--primary));
+  border-radius: 999px !important;
+  height: 12px !important;
+  width: 12px !important;
+}
+
 /* ── Profile decorations ─────────────────────────────────────── */
 .ck-profile-frame {
   position: absolute;

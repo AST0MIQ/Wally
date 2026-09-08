@@ -35,7 +35,7 @@ export function IncomeExpenseBars({
 function Bar({ height, className }: { height: number; className?: string }) {
   return (
     <div
-      className={cn("w-3 sm:w-5 rounded-t-md", className)}
+      className={cn("ck-chart-bar w-3 sm:w-5 rounded-t-md", className)}
       style={{ height: `${Math.max(height, 1)}%` }}
     />
   );

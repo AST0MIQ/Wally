@@ -63,7 +63,7 @@ export function StreakCelebration({
   if (!burst) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden" aria-hidden>
+    <div className="ck-celebration-burst pointer-events-none fixed inset-0 z-[100] overflow-hidden" aria-hidden>
       {Array.from({ length: 42 }).map((_, i) => {
         const left = Math.random() * 100;
         const delay = Math.random() * 0.35;
@@ -72,7 +72,7 @@ export function StreakCelebration({
         return (
           <span
             key={i}
-            className="absolute top-[-8%] block motion-reduce:hidden"
+            className="ck-celebration-piece absolute top-[-8%] block motion-reduce:hidden"
             style={{
               left: `${left}%`,
               width: size,

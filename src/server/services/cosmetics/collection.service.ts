@@ -37,6 +37,8 @@ export async function getCollection(id: string) {
       rarity: true,
       status: true,
       isApplicableAsSet: true,
+      availableFrom: true,
+      availableTo: true,
       publishedAt: true,
       createdAt: true,
       updatedAt: true,
@@ -70,6 +72,8 @@ export async function createCollection(
         rarity: input.rarity,
         isApplicableAsSet: input.isApplicableAsSet,
         coverUrl: input.coverUrl,
+        availableFrom: input.availableFrom,
+        availableTo: input.availableTo,
         createdByAdminId: adminId,
       },
     });
@@ -86,7 +90,10 @@ export async function createCollection(
 
 export async function updateCollection(
   adminId: string,
-  patch: { id: string } & Partial<CollectionCreateInput>,
+  patch: { id: string } & Omit<Partial<CollectionCreateInput>, "availableFrom" | "availableTo"> & {
+    availableFrom?: Date | null;
+    availableTo?: Date | null;
+  },
 ) {
   return serializableTx(async (tx) => {
     const current = await tx.cosmeticCollection.findUnique({
@@ -102,6 +109,8 @@ export async function updateCollection(
         rarity: patch.rarity,
         isApplicableAsSet: patch.isApplicableAsSet,
         coverUrl: patch.coverUrl,
+        availableFrom: patch.availableFrom,
+        availableTo: patch.availableTo,
       },
     });
     await auditInTx(tx, {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Plus } from "lucide-react";
 
-import { requireCapability } from "@/server/lib/guards";
+import { requirePermission } from "@/server/lib/guards";
 import { listCollections } from "@/server/services/cosmetics/collection.service";
 import { formatDate } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
@@ -13,7 +13,7 @@ import { LinkButton } from "@/components/admin/link-button";
 export const metadata = { title: "Collections" };
 
 export default async function CollectionsPage() {
-  await requireCapability("cosmetics:write");
+  await requirePermission("collections.read");
   const t = await getTranslations("admin.collections");
   const tc = await getTranslations("admin.common");
   const locale = (await getLocale()) as Locale;

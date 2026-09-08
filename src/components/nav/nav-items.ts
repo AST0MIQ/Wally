@@ -7,6 +7,7 @@ import {
   Settings,
   Sparkles,
   UserRound,
+  ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/portfolio", labelKey: "portfolio", icon: LineChart },
   { href: "/analytics", labelKey: "analytics", icon: BarChart3 },
   { href: "/cosmetics", labelKey: "cosmetics", icon: Sparkles },
+  { href: "/shop", labelKey: "shop", icon: ShoppingBag },
   { href: "/profile", labelKey: "profile", icon: UserRound },
   { href: "/settings", labelKey: "settings", icon: Settings },
 ];

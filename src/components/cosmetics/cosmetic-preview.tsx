@@ -8,7 +8,7 @@ import {
   shouldRenderLayer,
   isSchemeCompatible,
   meetsMinVersion,
-  type AssetConfigV1,
+  type AssetConfig,
 } from "@/lib/cosmetics/config";
 import { isRenderedSlot, type EquipmentSlot } from "@/lib/cosmetics/slots";
 import {
@@ -16,6 +16,7 @@ import {
   cosmeticCardHostStyle,
   cosmeticClasses,
   cosmeticMediaUrl,
+  cosmeticSemanticClasses,
   cosmeticVars,
 } from "@/lib/cosmetics/render";
 import { useRenderCtx, type RenderCtx } from "@/components/cosmetics/use-render-ctx";
@@ -42,7 +43,7 @@ export function CosmeticPreview({
   className,
 }: {
   slot: EquipmentSlot;
-  config: AssetConfigV1;
+  config: AssetConfig;
   previewUrl?: string | null;
   /** injectable for tests / Preview Lab; defaults to the live context */
   ctx?: RenderCtx;
@@ -206,6 +207,23 @@ export function CosmeticPreview({
         <span className="relative z-[1] text-lg">🏦</span>
         <b className="relative z-[1] mt-2 text-sm">Everyday account</b>
         <strong className="relative z-[1] mt-auto text-lg">฿12,345</strong>
+      </div>
+    );
+  } else if (["CHART_STYLE", "ICON_SET", "TYPOGRAPHY", "AMBIENT_EFFECT", "INTERACTION_EFFECT", "CELEBRATION_EFFECT"].includes(slot)) {
+    body = (
+      <div style={vars} className={cn("relative h-32 overflow-hidden rounded-xl border border-border p-4", cosmeticSemanticClasses(slot, config))}>
+        {slot === "AMBIENT_EFFECT" && <span aria-hidden className="ck-ambient-layer absolute" />}
+        {slot === "CHART_STYLE" ? (
+          <svg viewBox="0 0 100 40" className="relative z-[1] h-full w-full"><polyline points="0,34 20,24 42,29 63,10 82,18 100,4" fill="none" stroke="var(--ck-primary, var(--primary))" strokeWidth="2.5" /></svg>
+        ) : (
+          <div className="relative z-[1] flex h-full items-center justify-center gap-3 text-center">
+            {slot === "ICON_SET" && <><span className="text-3xl">⌂</span><span className="text-3xl">◎</span><span className="text-3xl">＋</span></>}
+            {slot === "TYPOGRAPHY" && <span className="text-xl font-semibold">Wally · 12,345</span>}
+            {slot === "AMBIENT_EFFECT" && <span className="font-medium">{t("slots.AMBIENT_EFFECT")}</span>}
+            {slot === "INTERACTION_EFFECT" && <button type="button" className="rounded-xl bg-primary px-4 py-2 text-primary-foreground">{t("previewTap")}</button>}
+            {slot === "CELEBRATION_EFFECT" && <span className="text-4xl">🎉 ✨</span>}
+          </div>
+        )}
       </div>
     );
   } else {

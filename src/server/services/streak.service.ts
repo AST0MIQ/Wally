@@ -8,6 +8,7 @@ import {
   tierIndex,
   type StreakState,
 } from "@/server/lib/streak";
+import { evaluateRewardsForUser } from "@/server/services/cosmetics/reward-rule.service";
 
 export type StreakLadderEntry = { key: string; days: number; earned: boolean };
 
@@ -120,6 +121,7 @@ export async function registerStreakActivity(userId: string): Promise<void> {
     if (!u) return;
     const { state } = registerActivity(toState(u), u.timezone, new Date());
     await persist(userId, state);
+    await evaluateRewardsForUser(userId);
   } catch {
     /* never block a write on streak bookkeeping */
   }

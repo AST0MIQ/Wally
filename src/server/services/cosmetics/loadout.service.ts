@@ -5,7 +5,7 @@ import { conflict, forbidden, notFound } from "@/server/lib/errors";
 import { serializableTx } from "@/server/lib/tx";
 import {
   parseAssetConfig,
-  type AssetConfigV1,
+  type AssetConfig,
 } from "@/lib/cosmetics/config";
 import { EQUIPMENT_SLOTS, type EquipmentSlot } from "@/lib/cosmetics/slots";
 import { hasEntitlement } from "@/server/services/cosmetics/entitlement.service";
@@ -17,7 +17,7 @@ export type ResolvedSlotAsset = {
   slug: string;
   slot: EquipmentSlot;
   configVersion: number;
-  config: AssetConfigV1;
+  config: AssetConfig;
 };
 
 export type ResolvedLoadout = Record<EquipmentSlot, ResolvedSlotAsset | null>;
@@ -127,6 +127,9 @@ export async function applyCollection(
     });
     if (!collection) notFound("collection_not_found");
     if (collection.status !== "PUBLISHED") conflict("collection_not_published");
+    const now = new Date();
+    if (collection.availableFrom && collection.availableFrom > now) conflict("collection_not_available_yet");
+    if (collection.availableTo && collection.availableTo <= now) conflict("collection_no_longer_available");
     if (collection.assets.length === 0) conflict("collection_empty");
 
     // every asset must be PUBLISHED *now* and owned *now* — check all first

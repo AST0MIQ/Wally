@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { ADMIN_NAV } from "@/components/admin/admin-nav";
 import { Drawer, SideDrawerContent, DrawerTitle } from "@/components/ui/drawer";
 
-function NavBody({ onNavigate }: { onNavigate?: () => void }) {
+function NavBody({ onNavigate, permissions }: { onNavigate?: () => void; permissions: readonly string[] }) {
   const pathname = usePathname();
   const t = useTranslations("admin.nav");
   const isActive = (href: string) =>
@@ -35,7 +35,10 @@ function NavBody({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
 
       <nav className="flex flex-1 flex-col gap-4">
-        {ADMIN_NAV.map((group) => (
+        {ADMIN_NAV.map((group) => ({
+          ...group,
+          items: group.items.filter((item) => !item.permission || permissions.includes(item.permission)),
+        })).filter((group) => group.items.length > 0).map((group) => (
           <div key={group.labelKey} className="flex flex-col gap-1">
             <p className="px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
               {t(`groups.${group.labelKey}`)}
@@ -86,9 +89,11 @@ function NavBody({ onNavigate }: { onNavigate?: () => void }) {
  *  QuickAdd, no bottom nav, no streak. */
 export function AdminShell({
   email,
+  permissions,
   children,
 }: {
   email?: string | null;
+  permissions: readonly string[];
   children: React.ReactNode;
 }) {
   const t = useTranslations("admin.nav");
@@ -97,7 +102,7 @@ export function AdminShell({
   return (
     <div className="md:grid md:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-dvh border-r border-border bg-card md:block">
-        <NavBody />
+        <NavBody permissions={permissions} />
       </aside>
 
       <div className="flex min-h-dvh flex-col">
@@ -125,7 +130,7 @@ export function AdminShell({
                   <X className="size-4" />
                 </button>
               </div>
-              <NavBody onNavigate={() => setOpen(false)} />
+              <NavBody permissions={permissions} onNavigate={() => setOpen(false)} />
             </SideDrawerContent>
           </Drawer>
 

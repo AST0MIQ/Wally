@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/server/lib/guards";
+import { getRequestPrincipal, requireAdmin } from "@/server/lib/guards";
 import { AdminShell } from "@/components/admin/admin-shell";
 
 // The Admin Console never renders any user's financial data. It has its own
@@ -11,5 +11,6 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAdmin();
-  return <AdminShell email={user.email}>{children}</AdminShell>;
+  const principal = await getRequestPrincipal();
+  return <AdminShell email={user.email} permissions={[...principal.permissions]}>{children}</AdminShell>;
 }

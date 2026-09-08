@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
 import { THEME_COOKIE } from "@/i18n/config";
-import { cosmeticClasses, cosmeticMediaUrl, cosmeticVars } from "@/lib/cosmetics/render";
+import { cosmeticClasses, cosmeticMediaUrl, cosmeticSemanticClasses, cosmeticVars } from "@/lib/cosmetics/render";
 import { shouldRenderLayer } from "@/lib/cosmetics/config";
 import type { ResolvedLoadout } from "@/server/services/cosmetics/loadout.service";
 
@@ -45,12 +45,23 @@ export async function CosmeticRoot({
   for (const asset of Object.values(rendered)) {
     if (asset) Object.assign(vars, cosmeticVars(asset.config));
   }
+  const chart = rendered.CHART_STYLE;
+  if (chart?.config.colors?.primary) vars["--color-primary"] = chart.config.colors.primary;
+  if (chart?.config.colors?.glow) vars["--ck-glow"] = chart.config.colors.glow;
 
   const bg = rendered.APP_BACKGROUND;
   const media = bg ? cosmeticMediaUrl(bg.config) : null;
+  const semantic = ["CHART_STYLE", "ICON_SET", "TYPOGRAPHY", "AMBIENT_EFFECT", "INTERACTION_EFFECT", "CELEBRATION_EFFECT"]
+    .map((slot) => {
+      const asset = rendered[slot as keyof ResolvedLoadout];
+      return asset ? cosmeticSemanticClasses(asset.slot, asset.config) : "";
+    })
+    .filter(Boolean);
+  const ambient = rendered.AMBIENT_EFFECT;
+  const ambientMedia = ambient ? cosmeticMediaUrl(ambient.config) : null;
 
   return (
-    <div data-cosmetics style={vars as React.CSSProperties}>
+    <div data-cosmetics className={cn(semantic)} style={vars as React.CSSProperties}>
       {bg && (
         <div
           aria-hidden
@@ -60,6 +71,16 @@ export async function CosmeticRoot({
             // decorative, same-origin only, cannot intercept interaction
             // eslint-disable-next-line @next/next/no-img-element
             <img src={media} alt="" aria-hidden className="ck-bg-media" />
+          )}
+        </div>
+      )}
+      {ambient && (
+        <div aria-hidden className="ck-ambient-layer">
+          {ambientMedia && (
+            // Decorative user-authored Blob media; preserving the original
+            // asset is preferable to Next/Image transformation here.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={ambientMedia} alt="" className="ck-bg-media" />
           )}
         </div>
       )}

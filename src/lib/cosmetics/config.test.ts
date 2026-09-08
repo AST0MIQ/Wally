@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   assetConfigV1Schema,
+  assetConfigV2Schema,
   parseAssetConfig,
   safeParseAssetConfig,
 } from "@/lib/cosmetics/config";
 
-describe("cosmetic asset config v1", () => {
+describe("cosmetic asset config", () => {
   it("accepts a valid config", () => {
     const cfg = {
       colors: { background: "#0b1026", glow: "#6366f1" },
@@ -58,10 +59,14 @@ describe("cosmetic asset config v1", () => {
     expect(
       assetConfigV1Schema.safeParse({ mediaUrl: "/cosmetics/x.png" }).success,
     ).toBe(true);
+    expect(
+      assetConfigV1Schema.safeParse({ mediaUrl: "https://wally.public.blob.vercel-storage.com/cosmetics/x.webp" }).success,
+    ).toBe(true);
   });
 
-  it("dispatches on version and rejects unknown versions", () => {
-    expect(() => parseAssetConfig(2, {})).toThrow();
+  it("dispatches v1/v2 and rejects unknown versions", () => {
+    expect(parseAssetConfig(2, { chartStyle: "NEON" }).chartStyle).toBe("NEON");
+    expect(assetConfigV2Schema.safeParse({ celebrationEffect: "CONFETTI" }).success).toBe(true);
     expect(safeParseAssetConfig(99, {}).success).toBe(false);
     expect(safeParseAssetConfig(1, { surface: "FLAT" }).success).toBe(true);
   });

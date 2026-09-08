@@ -1,49 +1,40 @@
-# Cosmetics — Phase 2 backlog
+# Cosmetics — Phase 2 delivery checklist
 
-## Completed in the Phase 2 visual/UX slice
+## Implemented
 
-- Renderers for `NAVIGATION`, `HEADER`, `ACCOUNT_CARD`, and `TRANSACTION_CARD`.
-- Card replacement precedence for overview, investment, account, and
-  transaction cards (no legacy accent/streak colour bleeding through).
-- Slot-specific live previews and direct equip from the Preview dialog.
-- Plain-language Thai/English slot, colour, and effect labels.
-- iOS-safe account-card overlay behind a one-line emergency flag.
+- Config v2 plus production/preview renderers for all 16 equipment slots.
+- Replacement precedence for every card slot, including removal of legacy
+  overview-card colours while an asset is equipped.
+- Vercel Blob Media Library with drag-and-drop upload, safe MIME/size checks,
+  archive history and a direct media picker in Asset Studio.
+- Collection availability windows enforced for grants and set application.
+- Bulk asset status changes and multi-asset grants.
+- Reward automation for streak, rank and achievement milestones with an
+  idempotency ledger; rank points and levels are manageable from Admin.
+- Hourly entitlement expiry and automatic unequip.
+- Products, orders, Stripe Checkout and signed-webhook fulfilment.
+- Database-backed feature flags and non-secret runtime configuration.
+- Database-backed RBAC from the parallel Claude implementation, merged into
+  this branch: multiple roles, permission union, bootstrap access, role Admin
+  UI and final-SUPER_ADMIN protection.
 
-Phase 1 shipped the full vertical slice (author → publish → grant → equip →
-render). Deferred, roughly in priority order:
+## Shared UX / Phase 3 integration
 
-## Rendering
-- Renderers that need config v2 semantics: `CHART_STYLE`, `ICON_SET`,
-  `TYPOGRAPHY`, `AMBIENT_EFFECT`, `INTERACTION_EFFECT`, `CELEBRATION_EFFECT`.
-- `mediaUrl` backgrounds once the Media Library exists (CSP `img-src` currently
-  blocks external hosts; only same-origin `/…` paths are allowed).
-- Config `v2` (via `parseAssetConfig` version dispatch) if new tokens are needed.
+- Cosmetic typography, icon and chart presets are applied from the shared app
+  root, so Dashboard and Analytics reuse the existing chart/layout components.
+- All asset types share the same preview and renderer functions.
+- Admin workflows use existing Button, Card, Field, PageHeader and action/toast
+  conventions; mobile controls remain at least 44 px and immutable published
+  records are preserved through “Duplicate as draft”.
 
-## Admin
-- **Media Library**: upload + manage images (S3/Blob), reference by asset id.
-- Drag-and-drop **Asset Studio** (Phase 1 is form + live preview).
-- Per-collection **availability windows** enforced (`availableFrom` / `availableTo`
-  are stored but not gated yet).
-- Bulk operations (multi-grant, multi-publish).
-- **DB-backed roles**: add an `adminRole` column and populate
-  `roleOf()` / `CAPABILITIES` in `src/server/lib/authz.ts` from it
-  (`USER` / `CONTENT_ADMIN` / `SUPER_ADMIN`). The capability layer is already in
-  place; only the mapping changes.
+## Enable in staging
 
-## Rewards
-- Automation engine that consumes `RewardRule` (streak/rank/achievement
-  triggers → `grantAsset` / `grantCollection`). Phase 1 is schema + CRUD only.
-- Rank system (there is no rank model yet — only streak).
+1. Apply `20260909120000_cosmetics_phase2` to the staging Neon branch.
+2. Seed RBAC/system data.
+3. Add `BLOB_READ_WRITE_TOKEN`, `STRIPE_SECRET_KEY`,
+   `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET` and the staging
+   `NEXT_PUBLIC_APP_URL` in Vercel.
+4. Register the staging Stripe webhook at `/api/stripe/webhook`.
 
-## Entitlements
-- Expiry cron: flip `ACTIVE` → `EXPIRED` for `expiresAt <= now` and unequip.
-- `LIMITED` rarity / `LIMITED_EVENT` acquisition event tooling.
-
-## Commerce
-- Products (package cosmetics), Orders, Stripe checkout, fulfilment →
-  `grantCollection` / `grantAsset` with `acquisitionType: PURCHASE`.
-  **Not in Phase 1 — no payment code.**
-
-## Operations
-- Feature Flags + App Configuration (non-secret runtime settings) — currently
-  placeholder pages.
+Do not use production Stripe keys or the production Neon branch for this
+verification.

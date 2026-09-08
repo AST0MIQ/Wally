@@ -58,3 +58,13 @@ export const deleteRewardRuleAction = adminAction(
   },
   { name: "rewardRule.delete", capability: "rewardRule:write" },
 );
+
+export const setUserRankAction = adminAction(
+  z.object({ userId: z.string().cuid(), points: z.coerce.number().int().min(0).max(10_000_000) }),
+  async ({ input, admin }) => {
+    const result = await rules.setUserRankPoints(admin.id, input.userId, input.points);
+    revalidatePath("/admin/rewards/rank-streak");
+    return result;
+  },
+  { name: "userRank.update", permission: "rewards.write" },
+);

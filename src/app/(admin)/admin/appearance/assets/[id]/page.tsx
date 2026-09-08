@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { requireCapability } from "@/server/lib/guards";
+import { requirePermission } from "@/server/lib/guards";
 import { getAsset } from "@/server/services/cosmetics/asset.service";
 import { parseAssetConfig } from "@/lib/cosmetics/config";
 import { wasEverPublished } from "@/lib/cosmetics/lifecycle";
@@ -15,17 +15,21 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { StatusActions } from "@/components/admin/status-actions";
 import { AssetForm } from "@/components/admin/asset-form";
 import { DuplicateAssetButton } from "@/components/admin/duplicate-asset-button";
+import { listMedia } from "@/server/services/cosmetics/media.service";
 
 export default async function AssetDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireCapability("cosmetics:write");
+  await requirePermission("assets.write");
   const { id } = await params;
   const t = await getTranslations("admin.assets");
 
-  const asset = await getAsset(id).catch(() => null);
+  const [asset, media] = await Promise.all([
+    getAsset(id).catch(() => null),
+    listMedia(true),
+  ]);
   if (!asset) notFound();
 
   const configLocked = asset.status !== "DRAFT" || wasEverPublished(asset);
@@ -77,6 +81,7 @@ export default async function AssetDetailPage({
         <h2 className="mb-4 text-sm font-semibold">{t("editTitle")}</h2>
         <AssetForm
           configLocked={configLocked}
+          media={media.map(({ id: mediaId, name, url }) => ({ id: mediaId, name, url }))}
           asset={{
             id: asset.id,
             slug: asset.slug,

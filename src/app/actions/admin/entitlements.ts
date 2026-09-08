@@ -6,11 +6,13 @@ import { adminAction } from "@/server/lib/admin-action";
 import {
   grantAssetSchema,
   grantCollectionSchema,
+  bulkGrantAssetsSchema,
   revokeEntitlementSchema,
 } from "@/lib/validation/cosmetics";
 import {
   grantAsset,
   grantCollection,
+  bulkGrantAssets,
   revokeEntitlement,
 } from "@/server/services/cosmetics/entitlement.service";
 
@@ -44,6 +46,19 @@ export const grantCollectionAction = adminAction(
     revalidateUser(input.userId);
   },
   { name: "entitlement.grantCollection", capability: "entitlement:grant" },
+);
+
+export const bulkGrantAssetsAction = adminAction(
+  bulkGrantAssetsSchema,
+  async ({ input, admin }) => {
+    await bulkGrantAssets(admin.id, input.userId, input.assetIds, {
+      acquisitionType: input.acquisitionType,
+      sourceRef: input.sourceRef,
+      expiresAt: input.expiresAt,
+    });
+    revalidateUser(input.userId);
+  },
+  { name: "entitlement.bulkGrant", capability: "entitlement:grant" },
 );
 
 export const revokeEntitlementAction = adminAction(

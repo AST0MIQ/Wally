@@ -9,7 +9,7 @@ import {
   createAssetAction,
   updateAssetAction,
 } from "@/app/actions/admin/cosmetics";
-import type { AssetConfigV1 } from "@/lib/cosmetics/config";
+import type { AssetConfig } from "@/lib/cosmetics/config";
 import { EQUIPMENT_SLOTS, type EquipmentSlot } from "@/lib/cosmetics/slots";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,15 +40,17 @@ type ExistingAsset = {
   rarity: string;
   acquisitionType: string;
   previewUrl: string | null;
-  config: AssetConfigV1;
+  config: AssetConfig;
 };
 
 export function AssetForm({
   asset,
   configLocked = false,
+  media = [],
 }: {
   asset?: ExistingAsset;
   configLocked?: boolean;
+  media?: { id: string; name: string; url: string }[];
 }) {
   const t = useTranslations("admin.assets");
   const tc = useTranslations("admin.common");
@@ -68,7 +70,7 @@ export function AssetForm({
     asset?.acquisitionType ?? "ADMIN_GRANT",
   );
   const [previewUrl, setPreviewUrl] = useState(asset?.previewUrl ?? "");
-  const [config, setConfig] = useState<AssetConfigV1>(asset?.config ?? {});
+  const [config, setConfig] = useState<AssetConfig>(asset?.config ?? {});
 
   const create = useAction(createAssetAction);
   const update = useAction(updateAssetAction);
@@ -153,6 +155,22 @@ export function AssetForm({
               placeholder="/cosmetics/…"
             />
           </Field>
+          {media.length > 0 && !configLocked && (
+            <Field label="เลือกรูปจากคลัง" hint="เลือกแล้วระบบจะใช้เป็นทั้งรูปตัวอย่างและรูปตกแต่ง">
+              <Select
+                value=""
+                onChange={(event) => {
+                  const url = event.target.value;
+                  if (!url) return;
+                  setPreviewUrl(url);
+                  setConfig((current) => ({ ...current, mediaUrl: url }));
+                }}
+              >
+                <option value="">เลือกรูป…</option>
+                {media.map((item) => <option key={item.id} value={item.url}>{item.name}</option>)}
+              </Select>
+            </Field>
+          )}
         </div>
         <Field label={tc("description")}>
           <Textarea

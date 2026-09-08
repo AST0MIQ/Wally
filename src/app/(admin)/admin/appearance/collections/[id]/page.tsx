@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { requireCapability } from "@/server/lib/guards";
+import { requirePermission } from "@/server/lib/guards";
 import { getCollection } from "@/server/services/cosmetics/collection.service";
 import { listAssets } from "@/server/services/cosmetics/asset.service";
 import {
@@ -21,7 +21,7 @@ export default async function CollectionDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireCapability("cosmetics:write");
+  await requirePermission("collections.write");
   const { id } = await params;
   const t = await getTranslations("admin.collections");
 
@@ -70,6 +70,8 @@ export default async function CollectionDetailPage({
             rarity: collection.rarity,
             isApplicableAsSet: collection.isApplicableAsSet,
             coverUrl: collection.coverUrl,
+            availableFrom: collection.availableFrom,
+            availableTo: collection.availableTo,
           }}
         />
       </Card>

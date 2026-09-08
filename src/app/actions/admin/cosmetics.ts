@@ -8,6 +8,7 @@ import {
   assetUpdateSchema,
   assetIdSchema,
   setAssetStatusSchema,
+  bulkSetAssetStatusSchema,
   duplicateAssetSchema,
   collectionCreateSchema,
   collectionUpdateSchema,
@@ -34,7 +35,7 @@ export const createAssetAction = adminAction(
     revalidateAppearance();
     return { id: a.id };
   },
-  { name: "asset.create", capability: "cosmetics:write" },
+  { name: "asset.create", permission: "assets.write" },
 );
 
 export const updateAssetAction = adminAction(
@@ -44,7 +45,7 @@ export const updateAssetAction = adminAction(
     revalidateAppearance();
     revalidatePath(`/admin/appearance/assets/${input.id}`);
   },
-  { name: "asset.update", capability: "cosmetics:write" },
+  { name: "asset.update", permission: "assets.write" },
 );
 
 export const setAssetStatusAction = adminAction(
@@ -54,7 +55,16 @@ export const setAssetStatusAction = adminAction(
     revalidateAppearance();
     revalidatePath(`/admin/appearance/assets/${input.id}`);
   },
-  { name: "asset.status", capability: "cosmetics:publish" },
+  { name: "asset.status", permission: "assets.publish" },
+);
+
+export const bulkSetAssetStatusAction = adminAction(
+  bulkSetAssetStatusSchema,
+  async ({ input, admin }) => {
+    await assets.bulkSetAssetStatus(admin.id, input.ids, input.status);
+    revalidateAppearance();
+  },
+  { name: "asset.bulkStatus", permission: "assets.publish" },
 );
 
 export const duplicateAssetAction = adminAction(
@@ -64,7 +74,7 @@ export const duplicateAssetAction = adminAction(
     revalidateAppearance();
     return { id: a.id };
   },
-  { name: "asset.duplicate", capability: "cosmetics:write" },
+  { name: "asset.duplicate", permission: "assets.write" },
 );
 
 export const deleteAssetAction = adminAction(
@@ -73,7 +83,7 @@ export const deleteAssetAction = adminAction(
     await assets.deleteAsset(admin.id, input.id);
     revalidateAppearance();
   },
-  { name: "asset.delete", capability: "cosmetics:write" },
+  { name: "asset.delete", permission: "assets.delete" },
 );
 
 // ── Collections ──────────────────────────────────────────────
@@ -84,7 +94,7 @@ export const createCollectionAction = adminAction(
     revalidateAppearance();
     return { id: c.id };
   },
-  { name: "collection.create", capability: "cosmetics:write" },
+  { name: "collection.create", permission: "collections.write" },
 );
 
 export const updateCollectionAction = adminAction(
@@ -94,7 +104,7 @@ export const updateCollectionAction = adminAction(
     revalidateAppearance();
     revalidatePath(`/admin/appearance/collections/${input.id}`);
   },
-  { name: "collection.update", capability: "cosmetics:write" },
+  { name: "collection.update", permission: "collections.write" },
 );
 
 export const setCollectionStatusAction = adminAction(
@@ -104,7 +114,7 @@ export const setCollectionStatusAction = adminAction(
     revalidateAppearance();
     revalidatePath(`/admin/appearance/collections/${input.id}`);
   },
-  { name: "collection.status", capability: "cosmetics:publish" },
+  { name: "collection.status", permission: "collections.publish" },
 );
 
 export const deleteCollectionAction = adminAction(
@@ -113,7 +123,7 @@ export const deleteCollectionAction = adminAction(
     await collections.deleteCollection(admin.id, input.id);
     revalidateAppearance();
   },
-  { name: "collection.delete", capability: "cosmetics:write" },
+  { name: "collection.delete", permission: "collections.delete" },
 );
 
 export const duplicateCollectionAction = adminAction(
@@ -123,7 +133,7 @@ export const duplicateCollectionAction = adminAction(
     revalidateAppearance();
     return { id: c.id };
   },
-  { name: "collection.duplicate", capability: "cosmetics:write" },
+  { name: "collection.duplicate", permission: "collections.write" },
 );
 
 export const attachAssetAction = adminAction(
@@ -137,7 +147,7 @@ export const attachAssetAction = adminAction(
     );
     revalidatePath(`/admin/appearance/collections/${input.collectionId}`);
   },
-  { name: "collection.attach", capability: "cosmetics:write" },
+  { name: "collection.attach", permission: "collections.write" },
 );
 
 export const detachAssetAction = adminAction(
@@ -146,5 +156,5 @@ export const detachAssetAction = adminAction(
     await collections.detachAsset(admin.id, input.collectionId, input.assetId);
     revalidatePath(`/admin/appearance/collections/${input.collectionId}`);
   },
-  { name: "collection.detach", capability: "cosmetics:write" },
+  { name: "collection.detach", permission: "collections.write" },
 );

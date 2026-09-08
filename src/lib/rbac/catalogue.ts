@@ -88,6 +88,7 @@ const CONTENT: PermissionKey[] = K([
 
 const REWARD: PermissionKey[] = K([
   "admin.access",
+  "users.read",
   "rewards.read", "rewards.write",
   "entitlements.read", "entitlements.grant", "entitlements.revoke",
   "collections.read", "assets.read",

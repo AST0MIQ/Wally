@@ -21,11 +21,13 @@ import {
   ScrollText,
   type LucideIcon,
 } from "lucide-react";
+import type { PermissionKey } from "@/lib/rbac/catalogue";
 
 export type AdminNavItem = {
   href: string;
   labelKey: string; // under the `admin.nav` namespace
   icon: LucideIcon;
+  permission?: PermissionKey;
   /** show a "Phase 2" pill */
   placeholder?: boolean;
 };
@@ -43,50 +45,50 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     labelKey: "appearance",
     items: [
-      { href: "/admin/appearance/collections", labelKey: "collections", icon: Layers },
-      { href: "/admin/appearance/assets", labelKey: "assets", icon: Box },
-      { href: "/admin/appearance/studio", labelKey: "studio", icon: Palette },
-      { href: "/admin/appearance/preview", labelKey: "previewLab", icon: FlaskConical },
-      { href: "/admin/appearance/media", labelKey: "media", icon: ImageIcon, placeholder: true },
+      { href: "/admin/appearance/collections", labelKey: "collections", icon: Layers, permission: "collections.read" },
+      { href: "/admin/appearance/assets", labelKey: "assets", icon: Box, permission: "assets.read" },
+      { href: "/admin/appearance/studio", labelKey: "studio", icon: Palette, permission: "assets.write" },
+      { href: "/admin/appearance/preview", labelKey: "previewLab", icon: FlaskConical, permission: "assets.read" },
+      { href: "/admin/appearance/media", labelKey: "media", icon: ImageIcon, permission: "assets.write" },
     ],
   },
   {
     labelKey: "rewards",
     items: [
-      { href: "/admin/rewards/rules", labelKey: "rewardRules", icon: Gift },
-      { href: "/admin/rewards/rank-streak", labelKey: "rankStreak", icon: Flame },
+      { href: "/admin/rewards/rules", labelKey: "rewardRules", icon: Gift, permission: "rewards.read" },
+      { href: "/admin/rewards/rank-streak", labelKey: "rankStreak", icon: Flame, permission: "users.read" },
     ],
   },
   {
     labelKey: "users",
     items: [
-      { href: "/admin/users", labelKey: "userDirectory", icon: Users },
-      { href: "/admin/users/entitlements", labelKey: "entitlements", icon: Ticket },
-      { href: "/admin/users/loadouts", labelKey: "loadouts", icon: Boxes },
+      { href: "/admin/users", labelKey: "userDirectory", icon: Users, permission: "users.read" },
+      { href: "/admin/users/entitlements", labelKey: "entitlements", icon: Ticket, permission: "entitlements.read" },
+      { href: "/admin/users/loadouts", labelKey: "loadouts", icon: Boxes, permission: "entitlements.read" },
     ],
   },
   {
     labelKey: "access",
     items: [
-      { href: "/admin/access/users", labelKey: "accessUsers", icon: UserCog },
-      { href: "/admin/access/roles", labelKey: "accessRoles", icon: ShieldCheck },
-      { href: "/admin/access/permissions", labelKey: "accessPermissions", icon: KeyRound },
-      { href: "/admin/access/invitations", labelKey: "accessInvitations", icon: MailPlus, placeholder: true },
+      { href: "/admin/access/users", labelKey: "accessUsers", icon: UserCog, permission: "roles.read" },
+      { href: "/admin/access/roles", labelKey: "accessRoles", icon: ShieldCheck, permission: "roles.read" },
+      { href: "/admin/access/permissions", labelKey: "accessPermissions", icon: KeyRound, permission: "roles.read" },
+      { href: "/admin/access/invitations", labelKey: "accessInvitations", icon: MailPlus, permission: "roles.read", placeholder: true },
     ],
   },
   {
     labelKey: "commerce",
     items: [
-      { href: "/admin/commerce/products", labelKey: "products", icon: ShoppingBag, placeholder: true },
-      { href: "/admin/commerce/orders", labelKey: "orders", icon: Receipt, placeholder: true },
+      { href: "/admin/commerce/products", labelKey: "products", icon: ShoppingBag, permission: "commerce.read" },
+      { href: "/admin/commerce/orders", labelKey: "orders", icon: Receipt, permission: "commerce.read" },
     ],
   },
   {
     labelKey: "operations",
     items: [
-      { href: "/admin/operations/flags", labelKey: "featureFlags", icon: Flag, placeholder: true },
-      { href: "/admin/operations/config", labelKey: "appConfig", icon: Settings2, placeholder: true },
-      { href: "/admin/operations/audit", labelKey: "auditLogs", icon: ScrollText },
+      { href: "/admin/operations/flags", labelKey: "featureFlags", icon: Flag, permission: "settings.read" },
+      { href: "/admin/operations/config", labelKey: "appConfig", icon: Settings2, permission: "settings.read" },
+      { href: "/admin/operations/audit", labelKey: "auditLogs", icon: ScrollText, permission: "audit.read" },
     ],
   },
 ];

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { requireCapability } from "@/server/lib/guards";
+import { requirePermission } from "@/server/lib/guards";
 import { listAssets } from "@/server/services/cosmetics/asset.service";
 import { parseAssetConfig } from "@/lib/cosmetics/config";
 import { RENDERED_SLOTS } from "@/lib/cosmetics/slots";
@@ -9,7 +9,7 @@ import { PreviewLab, type PreviewAsset } from "@/components/admin/preview-lab";
 export const metadata = { title: "Preview Lab" };
 
 export default async function PreviewLabPage() {
-  await requireCapability("cosmetics:write");
+  await requirePermission("assets.read");
   const t = await getTranslations("admin.previewLab");
   const rows = await listAssets({ status: "PUBLISHED" });
 

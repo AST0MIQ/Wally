@@ -13,13 +13,16 @@ independently. Users mix assets across collections or apply a whole collection.
 | `CollectionAsset` | join; **one asset per slot per collection** (`@@unique([collectionId, slot])`); composite FK `[assetId, slot] → CosmeticAsset[id, slot]` keeps `slot` honest |
 | `UserEntitlement` | **ownership**, separate from equipped; idempotent via `@@unique([userId, assetId])`; expiry + revocation; history in `AuditLog` |
 | `UserEquippedAsset` | **the loadout** — one row per equipped slot (`@@unique([userId, slot])`); composite FK enforces `slot == asset.slot` |
-| `RewardRule` | schema + admin CRUD only in Phase 1; grants exactly one target (collection XOR asset) — DB `CHECK` + Zod |
+| `RewardRule` | automatic streak/rank/achievement grants; grants exactly one target (collection XOR asset) — DB `CHECK` + Zod |
+| `RewardGrant` / `UserRank` | idempotent reward history and rank level derived from points |
+| `CosmeticMedia` | public artwork uploaded to Vercel Blob and selected from the Asset form |
+| `CosmeticProduct` / `CosmeticOrder` | Stripe Checkout catalogue, order snapshot and idempotent fulfilment |
 
 ## Safety
 
 - `config` is a validated bag of tokens + named presets — **never** raw CSS or JS.
-  `src/lib/cosmetics/config.ts` (`assetConfigV1Schema`, `.strict()`) rejects unknown
-  keys; `mediaUrl` must be a same-origin `/…` path.
+  `src/lib/cosmetics/config.ts` dispatches v1/v2 with `.strict()` and rejects unknown
+  keys; `mediaUrl` must be a same-origin `/…` path or Wally's Vercel Blob URL.
 - Preset whitelists: `src/lib/cosmetics/presets.ts`. Each axis (shape / surface /
   borderEffect / texture / motion / intensity) is its own enum.
 - Renderer layers are always `pointer-events: none` + `aria-hidden`, gated by
@@ -37,7 +40,9 @@ entitlement rows). `resetToDefaults` deletes the user's equipped rows.
 Phase 1: `APP_BACKGROUND`, `PROFILE_FRAME`, `PROFILE_BADGE`, `PROFILE_AURA`,
 `OVERVIEW_CARD`, `INVESTMENT_CARD`.
 
-Phase 2: `NAVIGATION`, `HEADER`, `ACCOUNT_CARD`, `TRANSACTION_CARD`. Card assets
+Phase 2: `NAVIGATION`, `HEADER`, `ACCOUNT_CARD`, `TRANSACTION_CARD`, `CHART_STYLE`,
+`ICON_SET`, `TYPOGRAPHY`, `AMBIENT_EFFECT`, `INTERACTION_EFFECT`, and
+`CELEBRATION_EFFECT`. Card assets
 replace the old card fill instead of blending over the user's accent/streak
 gradient. The Admin and user previews use the same replacement rule.
 
@@ -46,8 +51,7 @@ The `ACCOUNT_CARD` renderer is a class/style-only layer with
 change pointer capture, touch action, the rect-scan hit test, selection
 prevention, or any drag handler.
 
-Remaining data/admin-only slots: `CHART_STYLE`, `ICON_SET`, `TYPOGRAPHY`,
-`AMBIENT_EFFECT`, `INTERACTION_EFFECT`, `CELEBRATION_EFFECT`.
+All declared slots now have matching production and Admin preview behaviour.
 
 ## Phase 2 user experience
 
@@ -56,6 +60,11 @@ Remaining data/admin-only slots: `CHART_STYLE`, `ICON_SET`, `TYPOGRAPHY`,
 - Applying a collection still shows the replacement summary before the single
   confirmation click.
 - Reset remains available from the page header and restores the Wally default.
+- The Media Library accepts drag-and-drop; Asset forms can select uploaded art
+  directly without copying a URL.
+- Availability windows, automatic rewards/ranks, entitlement expiry, bulk
+  publishing/grants, runtime flags/config and the optional Stripe theme shop
+  are implemented server-side and audited.
 
 ## Admin
 
@@ -65,4 +74,5 @@ capability-based so DB-backed roles (`CONTENT_ADMIN` / `SUPER_ADMIN`) slot in
 later. Material admin actions are audited **inside the same transaction** as the
 mutation via `auditInTx()` — a single audit-writing path.
 
-See `docs/backlog-cosmetics-phase2.md` for what's deferred.
+See `docs/backlog-cosmetics-phase2.md` for the completed checklist and staging
+enablement notes.

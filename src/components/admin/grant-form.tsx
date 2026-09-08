@@ -8,6 +8,7 @@ import { useAction } from "@/hooks/use-action";
 import {
   grantAssetAction,
   grantCollectionAction,
+  bulkGrantAssetsAction,
 } from "@/app/actions/admin/entitlements";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -29,10 +30,12 @@ export function GrantForm({
   const router = useRouter();
   const [assetId, setAssetId] = useState("");
   const [collectionId, setCollectionId] = useState("");
+  const [assetIds, setAssetIds] = useState<string[]>([]);
   const [ref, setRef] = useState("");
 
   const grantA = useAction(grantAssetAction);
   const grantC = useAction(grantCollectionAction);
+  const grantMany = useAction(bulkGrantAssetsAction);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -89,6 +92,17 @@ export function GrantForm({
         >
           {t("grant")}
         </Button>
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:col-span-2">
+        <p className="text-sm font-medium">ให้หลายไอเทมพร้อมกัน</p>
+        <div className="grid max-h-52 gap-2 overflow-auto rounded-md bg-muted/40 p-2 sm:grid-cols-2">
+          {assets.map((asset) => <label key={asset.id} className="flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm hover:bg-muted"><input type="checkbox" checked={assetIds.includes(asset.id)} onChange={() => setAssetIds((current) => current.includes(asset.id) ? current.filter((id) => id !== asset.id) : [...current, asset.id])} className="size-4 accent-[var(--primary)]" />{asset.label}</label>)}
+        </div>
+        <Button size="sm" disabled={assetIds.length === 0 || grantMany.pending} onClick={async () => {
+          const result = await grantMany.run({ userId, assetIds, sourceRef: ref || undefined, acquisitionType: "ADMIN_GRANT" }, { successMessage: `ให้ ${assetIds.length} ไอเทมแล้ว` });
+          if (result.ok) { setAssetIds([]); router.refresh(); }
+        }}>ให้ {assetIds.length || "หลาย"} ไอเทม</Button>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { prisma } from "@/server/db";
 import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
 import { serializableTx } from "@/server/lib/tx";
-import { parseAssetConfig, type AssetConfigV1 } from "@/lib/cosmetics/config";
+import { parseAssetConfig, type AssetConfig } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 
 type Db = Prisma.TransactionClient;
@@ -48,7 +48,7 @@ export async function hasEntitlement(
 }
 
 /** Idempotent single-asset grant. Re-granting un-revokes and refreshes. */
-async function grantAssetInTx(
+export async function grantAssetInTx(
   tx: Db,
   userId: string,
   assetId: string,
@@ -111,6 +111,23 @@ export async function grantAsset(
   });
 }
 
+export async function bulkGrantAssets(
+  adminId: string,
+  userId: string,
+  assetIds: string[],
+  opts: GrantOpts = {},
+) {
+  return serializableTx(async (tx) => {
+    const uniqueIds = [...new Set(assetIds)];
+    const entitlements = [];
+    for (const assetId of uniqueIds) {
+      entitlements.push(await grantAssetInTx(tx, userId, assetId, { ...opts, grantedByAdminId: adminId }));
+    }
+    await auditInTx(tx, { userId: adminId, action: "entitlement.bulkGrant", entity: "User", entityId: userId, metadata: { assetIds: uniqueIds, acquisitionType: opts.acquisitionType ?? "ADMIN_GRANT" } });
+    return { granted: entitlements.length };
+  });
+}
+
 /**
  * Grant every asset in a published collection. Collection status, membership
  * and each asset's status are re-read INSIDE the serializable transaction that
@@ -129,6 +146,9 @@ export async function grantCollection(
     });
     if (!collection) notFound("collection_not_found");
     if (collection.status !== "PUBLISHED") conflict("collection_not_published");
+    const now = new Date();
+    if (collection.availableFrom && collection.availableFrom > now) conflict("collection_not_available_yet");
+    if (collection.availableTo && collection.availableTo <= now) conflict("collection_no_longer_available");
     if (collection.assets.length === 0) conflict("collection_empty");
 
     for (const { assetId } of collection.assets) {
@@ -200,7 +220,7 @@ export type InventoryAsset = {
   expiresAt: Date | null;
   /** validated on the server — the client never sees raw stored config */
   configVersion: number;
-  config: AssetConfigV1;
+  config: AssetConfig;
   previewUrl: string | null;
 };
 
@@ -255,7 +275,7 @@ export async function listUserInventory(userId: string): Promise<{
     const isOwned =
       a.acquisitionType === "DEFAULT" ||
       (ent ? entitlementOwns(ent, now) : false);
-    let config: AssetConfigV1 = {};
+    let config: AssetConfig = {};
     try {
       config = parseAssetConfig(a.configVersion, a.config);
     } catch {
@@ -289,7 +309,7 @@ export type ApplicableCollectionSlot = {
   assetStatus: string;
   owned: boolean;
   configVersion: number;
-  config: AssetConfigV1;
+  config: AssetConfig;
   previewUrl: string | null;
 };
 
@@ -316,7 +336,14 @@ export async function listApplicableCollections(
   const now = Date.now();
   const [collections, entitlements] = await Promise.all([
     prisma.cosmeticCollection.findMany({
-      where: { status: "PUBLISHED", isApplicableAsSet: true },
+      where: {
+        status: "PUBLISHED",
+        isApplicableAsSet: true,
+        AND: [
+          { OR: [{ availableFrom: null }, { availableFrom: { lte: new Date(now) } }] },
+          { OR: [{ availableTo: null }, { availableTo: { gt: new Date(now) } }] },
+        ],
+      },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       include: {
         assets: {
@@ -355,7 +382,7 @@ export async function listApplicableCollections(
     .filter((c) => c.assets.length > 0)
     .map((c) => {
       const slots: ApplicableCollectionSlot[] = c.assets.map((a) => {
-        let config: AssetConfigV1 = {};
+        let config: AssetConfig = {};
         try {
           config = parseAssetConfig(a.asset.configVersion, a.asset.config);
         } catch {

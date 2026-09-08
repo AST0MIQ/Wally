@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { zCuid, zOptionalText, zShortText } from "@/lib/validation/common";
-import { assetConfigV1Schema } from "@/lib/cosmetics/config";
+import { assetConfigV2Schema } from "@/lib/cosmetics/config";
 import { EQUIPMENT_SLOTS } from "@/lib/cosmetics/slots";
 
 export const zSlug = z
@@ -32,18 +32,28 @@ export const zRewardTrigger = z.enum([
 ]);
 
 // ── Collections ──────────────────────────────────────────────
-export const collectionCreateSchema = z.object({
+const collectionFields = z.object({
   slug: zSlug,
   name: zShortText.min(2),
   description: zOptionalText(500),
   rarity: zRarity.default("COMMON"),
   isApplicableAsSet: z.boolean().default(true),
   coverUrl: zOptionalText(300),
+  availableFrom: z.coerce.date().optional(),
+  availableTo: z.coerce.date().optional(),
 });
+const validWindow = <T extends { availableFrom?: Date | null; availableTo?: Date | null }>(v: T) =>
+  !v.availableFrom || !v.availableTo || v.availableFrom < v.availableTo;
+export const collectionCreateSchema = collectionFields.refine(validWindow, { message: "end_must_be_after_start", path: ["availableTo"] });
 
-export const collectionUpdateSchema = collectionCreateSchema
+export const collectionUpdateSchema = collectionFields
   .partial()
-  .extend({ id: zCuid });
+  .extend({
+    id: zCuid,
+    availableFrom: z.coerce.date().nullable().optional(),
+    availableTo: z.coerce.date().nullable().optional(),
+  })
+  .refine(validWindow, { message: "end_must_be_after_start", path: ["availableTo"] });
 
 export const collectionIdSchema = z.object({ id: zCuid });
 export const setCollectionStatusSchema = z.object({
@@ -69,7 +79,7 @@ export const assetCreateSchema = z.object({
   rarity: zRarity.default("COMMON"),
   acquisitionType: zAcquisitionType.default("ADMIN_GRANT"),
   previewUrl: zOptionalText(300),
-  config: assetConfigV1Schema,
+  config: assetConfigV2Schema,
 });
 
 /** No `slot`; `config` only honoured while the asset is still DRAFT. */
@@ -80,11 +90,15 @@ export const assetUpdateSchema = z.object({
   rarity: zRarity.optional(),
   acquisitionType: zAcquisitionType.optional(),
   previewUrl: zOptionalText(300),
-  config: assetConfigV1Schema.optional(),
+  config: assetConfigV2Schema.optional(),
 });
 
 export const assetIdSchema = z.object({ id: zCuid });
 export const setAssetStatusSchema = z.object({ id: zCuid, status: zStatus });
+export const bulkSetAssetStatusSchema = z.object({
+  ids: z.array(zCuid).min(1).max(100),
+  status: z.enum(["PUBLISHED", "HIDDEN", "ARCHIVED"]),
+});
 export const duplicateAssetSchema = z.object({ id: zCuid, slug: zSlug });
 
 // ── Entitlements (admin) ─────────────────────────────────────
@@ -98,6 +112,13 @@ export const grantAssetSchema = z.object({
 export const grantCollectionSchema = z.object({
   userId: zCuid,
   collectionId: zCuid,
+  acquisitionType: zAcquisitionType.default("ADMIN_GRANT"),
+  sourceRef: zOptionalText(200),
+  expiresAt: z.coerce.date().optional(),
+});
+export const bulkGrantAssetsSchema = z.object({
+  userId: zCuid,
+  assetIds: z.array(zCuid).min(1).max(100),
   acquisitionType: zAcquisitionType.default("ADMIN_GRANT"),
   sourceRef: zOptionalText(200),
   expiresAt: z.coerce.date().optional(),

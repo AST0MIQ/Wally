@@ -52,9 +52,9 @@ describe("[2] CosmeticPreview parity with production gate", () => {
     ).toContain("ck-surface-flat");
   });
 
-  it("non-rendered slot shows 'coming in Phase 2', not a card", () => {
+  it("semantic Phase 2 slots have a purpose-built preview", () => {
     const html = render({ slot: "ICON_SET", config: {}, ctx: light });
-    expect(html).toContain("rendererComingPhase2");
+    expect(html).toContain("⌂");
     expect(html).not.toContain("ck-fx");
   });
 

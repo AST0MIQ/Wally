@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { cosmeticClasses, cosmeticVars } from "@/lib/cosmetics/render";
-import { shouldRenderLayer, type AssetConfigV1 } from "@/lib/cosmetics/config";
+import { shouldRenderLayer } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 import { useCosmetic } from "@/components/cosmetics/cosmetic-context";
 import { useRenderCtx, type RenderCtx } from "@/components/cosmetics/use-render-ctx";
@@ -24,7 +24,7 @@ function Layer({
   ctx: RenderCtx;
 }) {
   const asset = useCosmetic(slot);
-  if (!asset || !shouldRenderLayer(asset.config as AssetConfigV1, ctx)) return null;
+  if (!asset || !shouldRenderLayer(asset.config, ctx)) return null;
   return (
     <span
       aria-hidden

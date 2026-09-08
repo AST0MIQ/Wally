@@ -11,7 +11,7 @@
  * admin/user Preview interpret a config identically (no "publishes different
  * from production").
  */
-import type { AssetConfigV1 } from "@/lib/cosmetics/config";
+import type { AssetConfig } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 import { SLOT_MOTION, slotConfigFields } from "@/lib/cosmetics/slots";
 
@@ -25,7 +25,7 @@ const COLOR_VAR: Record<string, string> = {
   glow: "--ck-glow",
 };
 
-export function cosmeticVars(config: AssetConfigV1): Record<string, string> {
+export function cosmeticVars(config: AssetConfig): Record<string, string> {
   const vars: Record<string, string> = {};
   for (const [token, value] of Object.entries(config.colors ?? {})) {
     const name = COLOR_VAR[token];
@@ -44,7 +44,7 @@ export function cosmeticVars(config: AssetConfigV1): Record<string, string> {
  * fallbacks for older authored assets.
  */
 export function cosmeticCardHostStyle(
-  config: AssetConfigV1,
+  config: AssetConfig,
 ): Record<string, string> {
   const colors = config.colors ?? {};
   const fill = colors.surface ?? colors.background ?? colors.primary;
@@ -76,7 +76,7 @@ function readableTextColor(hex?: string): string {
 }
 
 /** Shape belongs to the replacement card itself, not only its FX overlay. */
-export function cosmeticCardHostClass(config: AssetConfigV1): string {
+export function cosmeticCardHostClass(config: AssetConfig): string {
   switch (config.shape) {
     case "SOFT": return "ck-card-replaced ck-shape-soft";
     case "ROUNDED": return "ck-card-replaced ck-shape-rounded";
@@ -87,10 +87,10 @@ export function cosmeticCardHostClass(config: AssetConfigV1): string {
 }
 
 /** Same-origin decorative image path, or null. Re-checked defensively. */
-export function cosmeticMediaUrl(config: AssetConfigV1): string | null {
+export function cosmeticMediaUrl(config: AssetConfig): string | null {
   const url = config.mediaUrl;
   if (!url) return null;
-  return /^\/(?!\/)[A-Za-z0-9\-._~/]*$/.test(url) && !url.includes("..")
+  return ((/^\/(?!\/)[A-Za-z0-9\-._~/]*$/.test(url)) || (/^https:\/\/[A-Za-z0-9.-]+\.public\.blob\.vercel-storage\.com\/[A-Za-z0-9%\-._~/]+$/.test(url))) && !url.includes("..")
     ? url
     : null;
 }
@@ -100,7 +100,7 @@ export function cosmeticMediaUrl(config: AssetConfigV1): string | null {
  * cosmetics.css — no JS branch here, so the renderer and Preview always agree.
  */
 export function cosmeticClasses(
-  config: AssetConfigV1,
+  config: AssetConfig,
   opts: { slot?: EquipmentSlot } = {},
 ): string {
   const allowed = opts.slot ? slotConfigFields(opts.slot) : null;
@@ -155,7 +155,7 @@ export function cosmeticClasses(
 
 /** True when this asset config draws anything at all for `slot`. */
 export function configIsDecorative(
-  config: AssetConfigV1,
+  config: AssetConfig,
   slot?: EquipmentSlot,
 ): boolean {
   return Boolean(
@@ -167,3 +167,19 @@ export function configIsDecorative(
 
 /** Slots whose renderer paints a full-bleed layer rather than decorating a card. */
 export const BACKGROUND_SLOTS: readonly EquipmentSlot[] = ["APP_BACKGROUND"];
+
+/** Static root classes for the six semantic Phase 2 slots. */
+export function cosmeticSemanticClasses(
+  slot: EquipmentSlot,
+  config: AssetConfig,
+): string {
+  switch (slot) {
+    case "CHART_STYLE": return config.chartStyle ? `ck-chart-${config.chartStyle.toLowerCase()}` : "";
+    case "ICON_SET": return config.iconStyle ? `ck-icons-${config.iconStyle.toLowerCase()}` : "";
+    case "TYPOGRAPHY": return config.typography ? `ck-type-${config.typography.toLowerCase()}` : "";
+    case "AMBIENT_EFFECT": return config.ambientEffect ? `ck-ambient-${config.ambientEffect.toLowerCase()}` : "";
+    case "INTERACTION_EFFECT": return config.interactionEffect ? `ck-interaction-${config.interactionEffect.toLowerCase()}` : "";
+    case "CELEBRATION_EFFECT": return config.celebrationEffect ? `ck-celebration-${config.celebrationEffect.toLowerCase()}` : "";
+    default: return "";
+  }
+}

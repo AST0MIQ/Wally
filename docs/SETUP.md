@@ -72,6 +72,22 @@ Set that cookie in your browser (DevTools → Application → Cookies) for
 | --- | --- | --- |
 | `FINNHUB_API_KEY` | Phase 2 stock prices | free tier at https://finnhub.io (60 req/min) |
 | `CRON_SECRET` | `/api/cron/*` | any random string; required on Vercel |
+| `BLOB_READ_WRITE_TOKEN` | Admin cosmetic media library | Vercel Blob read/write token; store as Secret |
+| `STRIPE_SECRET_KEY` | Cosmetic shop checkout | use `sk_test_…` on staging and keep it Secret |
+| `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` | signing secret for that exact staging webhook endpoint |
 
 FX rates need no key (frankfurter.app). Backfill history once with
 `pnpm fx:backfill 420`.
+
+After pulling Cosmetics Phase 2, apply the additive Prisma migration before
+opening the new Admin pages:
+
+```bash
+pnpm db:deploy
+pnpm db:seed
+```
+
+For Stripe staging, create a webhook for
+`https://<staging-domain>/api/stripe/webhook` and subscribe to
+`checkout.session.completed`. Never reuse production Stripe or database
+credentials in Preview/Staging.

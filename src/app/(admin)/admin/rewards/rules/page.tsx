@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Plus } from "lucide-react";
 
-import { requireCapability } from "@/server/lib/guards";
+import { requirePermission } from "@/server/lib/guards";
 import { listRewardRules } from "@/server/services/cosmetics/reward-rule.service";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { LinkButton } from "@/components/admin/link-button";
 export const metadata = { title: "Reward Rules" };
 
 export default async function RewardRulesPage() {
-  await requireCapability("rewardRule:write");
+  await requirePermission("rewards.read");
   const t = await getTranslations("admin.rewardRules");
   const tc = await getTranslations("admin.common");
   const rows = await listRewardRules();
