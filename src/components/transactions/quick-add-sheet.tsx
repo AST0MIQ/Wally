@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 import type { Locale } from "@/i18n/config";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import { parseFxSlip, type ParsedFxSlip } from "@/lib/fx-slip";
 import type { AccountLite } from "@/server/services/account.service";
@@ -18,6 +18,7 @@ import { useAction } from "@/hooks/use-action";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Field } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
@@ -577,17 +578,11 @@ export function QuickAddSheet({
         {showMore && (
           <div className="mb-3 flex flex-col gap-3">
             <Field label={t("date")}>
-              <div className="relative flex h-11 w-full items-center justify-between rounded-md border border-input bg-card px-3 text-sm focus-within:ring-2 focus-within:ring-ring">
-                <span>{formatDate(date, locale)}</span>
-                <Calendar className="size-4 shrink-0 text-muted-foreground" />
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  aria-label={t("date")}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-              </div>
+              <DateInput
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                aria-label={t("date")}
+              />
             </Field>
             {mode === "TRANSFER" && (
               <Field label={t("fee")}>

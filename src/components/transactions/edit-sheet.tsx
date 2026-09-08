@@ -23,6 +23,7 @@ import { useAction } from "@/hooks/use-action";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Field } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
@@ -227,8 +228,7 @@ function TxnEdit({
           </div>
 
           <Field label={t("dateFrom")}>
-            <Input
-              type="date"
+            <DateInput
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
@@ -416,8 +416,7 @@ function TransferEdit({
             />
           </Field>
           <Field label={t("dateFrom")}>
-            <Input
-              type="date"
+            <DateInput
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />

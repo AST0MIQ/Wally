@@ -16,6 +16,7 @@ import { useAction } from "@/hooks/use-action";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Field } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
@@ -287,8 +288,7 @@ export function TradeSheet({
               />
             </Field>
             <Field label={t("tradeDate")}>
-              <Input
-                type="date"
+              <DateInput
                 value={tradeDate}
                 onChange={(e) => setTradeDate(e.target.value)}
               />
