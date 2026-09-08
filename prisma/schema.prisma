@@ -24,21 +24,21 @@ datasource db {
 // ─────────────────────────────────────────────────────────────
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  emailVerified DateTime?
-  name         String?
-  image        String?
-  role         Role      @default(USER)
-  locale       Locale    @default(TH)
-  baseCurrency String    @default("THB") // ISO 4217
-  timezone     String    @default("Asia/Bangkok")
-  theme        Theme     @default(SYSTEM)
-  accent       String    @default("blue")
-  lastSeenVersion String  @default("1.0.0")
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  emailVerified   DateTime?
+  name            String?
+  image           String?
+  role            Role      @default(USER)
+  locale          Locale    @default(TH)
+  baseCurrency    String    @default("THB") // ISO 4217
+  timezone        String    @default("Asia/Bangkok")
+  theme           Theme     @default(SYSTEM)
+  accent          String    @default("blue")
+  lastSeenVersion String    @default("1.0.0")
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // ── Logging streak (consecutive days the user recorded something) ──
   streakCount      Int       @default(0)
@@ -66,6 +66,11 @@ model User {
   createdCosmeticAssets      CosmeticAsset[]      @relation("AssetCreatedBy")
   grantedEntitlements        UserEntitlement[]    @relation("EntitlementGrantedBy")
   revokedEntitlements        UserEntitlement[]    @relation("EntitlementRevokedBy")
+
+  // ── Access control (database-backed RBAC) ──
+  userRoles              UserRole[]
+  assignedUserRoles      UserRole[]       @relation("UserRoleAssignedBy")
+  grantedRolePermissions RolePermission[] @relation("RolePermissionGrantedBy")
 
   @@index([createdAt])
 }
@@ -219,26 +224,26 @@ enum TxnKind {
 // ─────────────────────────────────────────────────────────────
 
 model Transaction {
-  id             String       @id @default(cuid())
+  id             String         @id @default(cuid())
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind           TxnKind
-  amount         Decimal      @db.Decimal(18, 4) // always > 0
+  amount         Decimal        @db.Decimal(18, 4) // always > 0
   currency       String // = account.currency at creation time
   accountId      String
   account        FinanceAccount @relation(fields: [accountId], references: [id])
   categoryId     String?
-  category       Category?    @relation(fields: [categoryId], references: [id])
+  category       Category?      @relation(fields: [categoryId], references: [id])
   subcategoryId  String?
-  subcategory    Subcategory? @relation(fields: [subcategoryId], references: [id])
+  subcategory    Subcategory?   @relation(fields: [subcategoryId], references: [id])
   date           DateTime
   description    String?
   note           String?
-  source         TxnSource    @default(MANUAL)
-  idempotencyKey String?      @unique
+  source         TxnSource      @default(MANUAL)
+  idempotencyKey String?        @unique
   deletedAt      DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([userId, date])
   @@index([userId, accountId, date])
@@ -258,26 +263,26 @@ enum TxnSource {
 // ─────────────────────────────────────────────────────────────
 
 model Transfer {
-  id            String          @id @default(cuid())
-  userId        String
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fromAccountId String
-  fromAccount   FinanceAccount  @relation("TransferFrom", fields: [fromAccountId], references: [id])
-  toAccountId   String
-  toAccount     FinanceAccount  @relation("TransferTo", fields: [toAccountId], references: [id])
-  fromAmount    Decimal         @db.Decimal(18, 4)
-  toAmount      Decimal         @db.Decimal(18, 4)
-  fromCurrency  String
-  toCurrency    String
-  fee           Decimal         @default(0) @db.Decimal(18, 4)
-  feeAccountId  String?
-  feeAccount    FinanceAccount? @relation("TransferFee", fields: [feeAccountId], references: [id])
-  date          DateTime
-  note          String?
-  idempotencyKey String?        @unique
-  deletedAt     DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromAccountId  String
+  fromAccount    FinanceAccount  @relation("TransferFrom", fields: [fromAccountId], references: [id])
+  toAccountId    String
+  toAccount      FinanceAccount  @relation("TransferTo", fields: [toAccountId], references: [id])
+  fromAmount     Decimal         @db.Decimal(18, 4)
+  toAmount       Decimal         @db.Decimal(18, 4)
+  fromCurrency   String
+  toCurrency     String
+  fee            Decimal         @default(0) @db.Decimal(18, 4)
+  feeAccountId   String?
+  feeAccount     FinanceAccount? @relation("TransferFee", fields: [feeAccountId], references: [id])
+  date           DateTime
+  note           String?
+  idempotencyKey String?         @unique
+  deletedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([userId, date])
 }
@@ -287,15 +292,15 @@ model Transfer {
 // ─────────────────────────────────────────────────────────────
 
 model Portfolio {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountId    String
   account      FinanceAccount @relation(fields: [accountId], references: [id])
-  name         String   @default("Investment Portfolio")
-  baseCurrency String   @default("USD")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  name         String         @default("Investment Portfolio")
+  baseCurrency String         @default("USD")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   transactions InvestmentTransaction[]
 
@@ -378,12 +383,12 @@ enum InvTxnType {
 // ─────────────────────────────────────────────────────────────
 
 model FxRate {
-  id     String   @id @default(cuid())
-  base   String
-  quote  String
-  rate   Decimal  @db.Decimal(18, 8)
-  asOf   DateTime // date-only (00:00 UTC)
-  source String
+  id        String   @id @default(cuid())
+  base      String
+  quote     String
+  rate      Decimal  @db.Decimal(18, 8)
+  asOf      DateTime // date-only (00:00 UTC)
+  source    String
   fetchedAt DateTime @updatedAt
 
   @@unique([base, quote, asOf])
@@ -523,10 +528,10 @@ model CosmeticAsset {
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
-  collections CollectionAsset[]
+  collections  CollectionAsset[]
   entitlements UserEntitlement[]
-  equipped    UserEquippedAsset[]
-  rewardRules RewardRule[]         @relation("RewardGrantsAsset")
+  equipped     UserEquippedAsset[]
+  rewardRules  RewardRule[]        @relation("RewardGrantsAsset")
 
   // composite target so CollectionAsset / UserEquippedAsset can enforce
   // "join.slot == asset.slot" via a composite foreign key
@@ -649,4 +654,92 @@ model RewardRule {
   updatedAt          DateTime            @updatedAt
 
   @@index([trigger, isActive])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Access control — database-backed RBAC
+// A user holds many roles (UserRole); each role grants many
+// permissions (RolePermission). Authorization is the UNION of every
+// permission from every non-archived role the user holds. `resource.action`
+// permission keys are the only authorization primitive — role NAMES are
+// never checked, except the single narrowly-defined SUPER_ADMIN bypass and
+// the ADMIN_EMAILS bootstrap. The model is named AccessRole (not Role)
+// because the legacy `Role` enum (USER | ADMIN) still lives on User.role.
+// See src/server/lib/rbac.ts.
+// ─────────────────────────────────────────────────────────────
+
+/// A named bundle of permissions. System roles are seeded; their `key` is
+/// immutable and their permission set is locked. Custom roles are fully
+/// editable. A role that has ever been assigned or referenced in the audit
+/// log is archived (archivedAt), never hard-deleted. Archived roles cannot
+/// be assigned.
+model AccessRole {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  name        String
+  description String?
+  isSystem    Boolean   @default(false)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@index([archivedAt])
+  @@index([isSystem])
+}
+
+/// The permission catalogue. Keys are stable `resource.action` strings and
+/// are never renamed or deleted once shipped (that would silently rewrite
+/// authorization history). Seeded from prisma/data/rbac.ts.
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  resource    String
+  action      String
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@unique([resource, action])
+  @@index([resource])
+}
+
+/// Join: the permissions a role grants. Cascade-deletes with either side (a
+/// custom role that is still hard-deletable has no assignments, so dropping
+/// its RolePermission rows with it is safe).
+model RolePermission {
+  roleId          String
+  permissionId    String
+  grantedByUserId String?
+  createdAt       DateTime @default(now())
+
+  role       AccessRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  grantedBy  User?      @relation("RolePermissionGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+/// A role assignment, always keyed by userId (never email). Revocation hard-
+/// deletes the row; the append-only AuditLog is the history. `role` uses
+/// onDelete: Restrict so a role with live assignments cannot be deleted — it
+/// must be archived instead.
+model UserRole {
+  id               String   @id @default(cuid())
+  userId           String
+  roleId           String
+  assignedByUserId String?
+  assignedAt       DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       AccessRole @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assignedBy User?      @relation("UserRoleAssignedBy", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, roleId])
+  @@index([roleId])
+  @@index([userId])
 }

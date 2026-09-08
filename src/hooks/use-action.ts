@@ -64,6 +64,17 @@ export function useAction<TInput, TData>(
               collection_has_references: t("hasReferences"),
               published_asset_config_locked: t("configLocked"),
               slot_taken_in_collection: t("slotTaken"),
+              // access control (RBAC)
+              last_super_admin: t("lastSuperAdmin"),
+              role_archived: t("roleArchived"),
+              system_role_locked: t("systemRoleLocked"),
+              role_key_taken: t("roleKeyTaken"),
+              reserved_role_key: t("reservedRoleKey"),
+              role_has_references: t("roleHasReferences"),
+              unknown_permission_key: t("validation"),
+              role_not_found: t("selection"),
+              user_not_found: t("selection"),
+              assignment_not_found: t("selection"),
             };
             toast.error(known[result.error] ?? t("generic"));
           }
