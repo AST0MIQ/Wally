@@ -65,17 +65,29 @@ export function AccountsView({
   // while a touch press is pending/armed, swallow the native text selection so
   // iOS doesn't pop the "Copy / Look Up / Translate" callout mid-drag
   const blockSelectRef = useRef(false);
+  // once a touch has been held still briefly we "claim" the gesture: a
+  // non-passive touchmove preventDefault stops Safari from scrolling the page
+  // out from under a diagonal drag (touch-action:none set mid-gesture is
+  // ignored on iOS). A fast early swipe still scrolls — see onPointerMove.
+  const scrollLockRef = useRef(false);
+  const lockTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const stop = (event: Event) => {
+    const stopSelect = (event: Event) => {
       if (blockSelectRef.current) event.preventDefault();
     };
-    document.addEventListener("selectstart", stop);
-    document.addEventListener("contextmenu", stop);
+    const stopScroll = (event: TouchEvent) => {
+      if (scrollLockRef.current || armedRef.current) event.preventDefault();
+    };
+    document.addEventListener("selectstart", stopSelect);
+    document.addEventListener("contextmenu", stopSelect);
+    document.addEventListener("touchmove", stopScroll, { passive: false });
     return () => {
-      document.removeEventListener("selectstart", stop);
-      document.removeEventListener("contextmenu", stop);
+      document.removeEventListener("selectstart", stopSelect);
+      document.removeEventListener("contextmenu", stopSelect);
+      document.removeEventListener("touchmove", stopScroll);
       if (longPressRef.current != null) window.clearTimeout(longPressRef.current);
+      if (lockTimerRef.current != null) window.clearTimeout(lockTimerRef.current);
     };
   }, []);
 
@@ -88,6 +100,24 @@ export function AccountsView({
       if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return card;
     }
     return null;
+  }
+
+  // tear down a pending press that never became a drag (tap or scroll)
+  function endPress(el?: HTMLElement | null) {
+    if (longPressRef.current != null) {
+      window.clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+    if (lockTimerRef.current != null) {
+      window.clearTimeout(lockTimerRef.current);
+      lockTimerRef.current = null;
+    }
+    scrollLockRef.current = false;
+    blockSelectRef.current = false;
+    if (el && !armedRef.current) {
+      el.style.transition = "transform 140ms ease";
+      el.style.transform = "";
+    }
   }
 
   const prefersReducedMotion =
@@ -219,6 +249,7 @@ export function AccountsView({
                   const startY = event.clientY;
                   pressStartRef.current = { x: startX, y: startY };
                   armedRef.current = false;
+                  scrollLockRef.current = false; // safety: never start pre-locked
 
                   const beginDrag = () => {
                     longPressRef.current = null;
@@ -240,6 +271,12 @@ export function AccountsView({
                     } catch {
                       /* vibration unsupported */
                     }
+                    // gesture is ours now — stop the page scrolling under it
+                    scrollLockRef.current = true;
+                    if (lockTimerRef.current != null) {
+                      window.clearTimeout(lockTimerRef.current);
+                      lockTimerRef.current = null;
+                    }
                     dragRef.current = a.id;
                     setDraggingId(a.id);
                     if (!prefersReducedMotion) {
@@ -247,6 +284,10 @@ export function AccountsView({
                       dragOriginRef.current = { x: startX, y: startY };
                       el.style.zIndex = "50";
                       el.style.touchAction = "none";
+                      // pop from the pressed-in hint to the lifted state
+                      el.style.transition =
+                        "transform 160ms cubic-bezier(0.2,0.8,0.3,1)";
+                      el.style.transform = "scale(0.88)";
                     }
                   };
 
@@ -256,20 +297,32 @@ export function AccountsView({
                     // hold to grab — a quick swipe scrolls the list instead.
                     // block native selection for the whole hold + drag window.
                     blockSelectRef.current = true;
+                    if (!prefersReducedMotion) {
+                      // immediate "pressed-in" feedback so the hold feels registered
+                      el.style.transition = "transform 140ms ease";
+                      el.style.transform = "scale(0.97)";
+                    }
+                    // after a brief still hold, claim the gesture (lock scroll)
+                    lockTimerRef.current = window.setTimeout(() => {
+                      scrollLockRef.current = true;
+                    }, 120);
                     longPressRef.current = window.setTimeout(beginDrag, 500);
                   }
                 }}
                 onPointerMove={(event) => {
                   if (!armedRef.current) {
-                    // still waiting on the long press — a real drag means the
-                    // user wants to scroll, so drop the pending grab
-                    if (longPressRef.current != null && pressStartRef.current) {
+                    // before the gesture is claimed, a real move = scroll intent,
+                    // so drop the pending grab and let the page scroll. Once
+                    // scrollLockRef is set the hold sticks through finger drift.
+                    if (
+                      longPressRef.current != null &&
+                      pressStartRef.current &&
+                      !scrollLockRef.current
+                    ) {
                       const mx = Math.abs(event.clientX - pressStartRef.current.x);
                       const my = Math.abs(event.clientY - pressStartRef.current.y);
                       if (mx > 16 || my > 16) {
-                        window.clearTimeout(longPressRef.current);
-                        longPressRef.current = null;
-                        blockSelectRef.current = false; // it's a scroll, let go
+                        endPress(event.currentTarget as HTMLElement);
                       }
                     }
                     return;
@@ -290,16 +343,12 @@ export function AccountsView({
                   }
                 }}
                 onPointerUp={(event) => {
-                  if (longPressRef.current != null) {
-                    window.clearTimeout(longPressRef.current);
-                    longPressRef.current = null;
-                  }
                   if (!armedRef.current) {
-                    blockSelectRef.current = false;
+                    endPress(event.currentTarget as HTMLElement);
                     return; // was a tap / scroll, not a drag
                   }
                   armedRef.current = false;
-                  blockSelectRef.current = false;
+                  endPress();
 
                   const sourceId = dragRef.current;
                   const targetEl = accountCardAt(event.clientX, event.clientY);
@@ -351,12 +400,8 @@ export function AccountsView({
                   }
                 }}
                 onPointerCancel={() => {
-                  if (longPressRef.current != null) {
-                    window.clearTimeout(longPressRef.current);
-                    longPressRef.current = null;
-                  }
                   armedRef.current = false;
-                  blockSelectRef.current = false;
+                  endPress();
                   dragRef.current = null;
                   setDraggingId(null);
                   resetDragEl(true);
