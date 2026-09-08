@@ -154,18 +154,28 @@ export function AccountsView({
     }
   }
 
+  // generous trigger zones — roughly the top quarter / bottom third of the
+  // viewport — so you don't have to drag right to the bezel
+  function edgeBands() {
+    const vh = window.innerHeight;
+    return { vh, top: Math.max(110, vh * 0.24), bottom: Math.max(160, vh * 0.3) };
+  }
+
   function autoScrollTick() {
     autoScrollRef.current = null;
     const p = lastPointRef.current;
     if (!armedRef.current || !p) return;
-    const EDGE_TOP = 70;
-    const EDGE_BOTTOM = 130; // clear the bottom tab bar
-    const MAX = 16;
-    const vh = window.innerHeight;
+    const { vh, top, bottom } = edgeBands();
+    const MIN = 7; // px/frame the moment you enter the zone
+    const MAX = 36; // px/frame at the very edge
     let dv = 0;
-    if (p.y < EDGE_TOP) dv = -MAX * Math.min(1, (EDGE_TOP - p.y) / EDGE_TOP);
-    else if (p.y > vh - EDGE_BOTTOM)
-      dv = MAX * Math.min(1, (p.y - (vh - EDGE_BOTTOM)) / EDGE_BOTTOM);
+    if (p.y < top) {
+      const t = (top - p.y) / top; // 0 at zone edge → 1 at screen edge
+      dv = -(MIN + (MAX - MIN) * t * t);
+    } else if (p.y > vh - bottom) {
+      const t = (p.y - (vh - bottom)) / bottom;
+      dv = MIN + (MAX - MIN) * t * t;
+    }
     if (dv === 0) return;
     const before = window.scrollY;
     window.scrollBy(0, dv);
@@ -178,8 +188,8 @@ export function AccountsView({
     if (autoScrollRef.current != null) return; // already looping
     const p = lastPointRef.current;
     if (!p) return;
-    const vh = window.innerHeight;
-    if (p.y < 70 || p.y > vh - 130) {
+    const { vh, top, bottom } = edgeBands();
+    if (p.y < top || p.y > vh - bottom) {
       autoScrollRef.current = requestAnimationFrame(autoScrollTick);
     }
   }
