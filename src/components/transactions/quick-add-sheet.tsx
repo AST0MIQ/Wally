@@ -18,6 +18,7 @@ import { useAction } from "@/hooks/use-action";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Field } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
@@ -577,10 +578,10 @@ export function QuickAddSheet({
         {showMore && (
           <div className="mb-3 flex flex-col gap-3">
             <Field label={t("date")}>
-              <Input
-                type="date"
+              <DateInput
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                aria-label={t("date")}
               />
             </Field>
             {mode === "TRANSFER" && (

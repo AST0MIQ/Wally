@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Select } from "@/components/ui/select";
 import { ColorPicker, IconPicker } from "@/components/ui/icon-color-picker";
 
@@ -179,10 +180,8 @@ export function AccountForm({
             />
           </Field>
           <Field label={t("openingBalanceDate")} htmlFor="acc-obd">
-            <Input
+            <DateInput
               id="acc-obd"
-              type="date"
-              className="w-full"
               value={openingBalanceDate}
               onChange={(e) => setOpeningBalanceDate(e.target.value)}
             />

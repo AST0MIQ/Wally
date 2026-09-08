@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
 import { TradeSheet } from "@/components/portfolio/trade-sheet";
@@ -437,8 +438,7 @@ function SetPriceDialog({
             />
           </Field>
           <Field label={t("tradeDate")}>
-            <Input
-              type="date"
+            <DateInput
               value={asOf}
               onChange={(e) => setAsOf(e.target.value)}
             />

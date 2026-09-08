@@ -18,6 +18,7 @@ import { loadTransactionsAction } from "@/app/actions/transactions-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TransactionRow } from "@/components/transactions/transaction-row";
@@ -161,14 +162,12 @@ export function TransactionsView({
             </Select></Field>
           )}
 
-          <Field label={t("dateFrom")}>          <Input
-            type="date"
+          <Field label={t("dateFrom")}>          <DateInput
             value={filters.dateFrom ?? ""}
             onChange={(e) => setParam("dateFrom", e.target.value)}
             aria-label={t("dateFrom")}
           /></Field>
-          <Field label={t("dateTo")}>          <Input
-            type="date"
+          <Field label={t("dateTo")}>          <DateInput
             value={filters.dateTo ?? ""}
             onChange={(e) => setParam("dateTo", e.target.value)}
             aria-label={t("dateTo")}

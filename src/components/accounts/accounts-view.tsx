@@ -65,19 +65,146 @@ export function AccountsView({
   // while a touch press is pending/armed, swallow the native text selection so
   // iOS doesn't pop the "Copy / Look Up / Translate" callout mid-drag
   const blockSelectRef = useRef(false);
+  // once a touch has been held still briefly we "claim" the gesture: a
+  // non-passive touchmove preventDefault stops Safari from scrolling the page
+  // out from under a diagonal drag (touch-action:none set mid-gesture is
+  // ignored on iOS). A fast early swipe still scrolls — see onPointerMove.
+  const scrollLockRef = useRef(false);
+  const lockTimerRef = useRef<number | null>(null);
+  // auto-scroll the page while a drag hovers near the top/bottom edge, so a
+  // far-away account can still be reached (the touch itself can't scroll —
+  // it's held by the drag)
+  const scrollStartRef = useRef(0);
+  const maxScrollRef = useRef(0);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const autoScrollRef = useRef<number | null>(null);
+  // account slots captured once per drag so the per-frame hit test doesn't
+  // re-run querySelectorAll
+  const cardsRef = useRef<HTMLElement[]>([]);
 
   useEffect(() => {
-    const stop = (event: Event) => {
+    const stopSelect = (event: Event) => {
       if (blockSelectRef.current) event.preventDefault();
     };
-    document.addEventListener("selectstart", stop);
-    document.addEventListener("contextmenu", stop);
+    const stopScroll = (event: TouchEvent) => {
+      if (scrollLockRef.current || armedRef.current) event.preventDefault();
+    };
+    document.addEventListener("selectstart", stopSelect);
+    document.addEventListener("contextmenu", stopSelect);
+    document.addEventListener("touchmove", stopScroll, { passive: false });
     return () => {
-      document.removeEventListener("selectstart", stop);
-      document.removeEventListener("contextmenu", stop);
+      document.removeEventListener("selectstart", stopSelect);
+      document.removeEventListener("contextmenu", stopSelect);
+      document.removeEventListener("touchmove", stopScroll);
       if (longPressRef.current != null) window.clearTimeout(longPressRef.current);
+      if (lockTimerRef.current != null) window.clearTimeout(lockTimerRef.current);
+      if (autoScrollRef.current != null)
+        cancelAnimationFrame(autoScrollRef.current);
     };
   }, []);
+
+  // which account slot the pointer is over — a rect scan instead of
+  // elementFromPoint, so the dragged card never needs pointer-events:none
+  // (which let iOS reach through to the text on the cards underneath)
+  function accountCardAt(x: number, y: number): HTMLElement | null {
+    const cards = cardsRef.current.length
+      ? cardsRef.current
+      : Array.from(
+          document.querySelectorAll<HTMLElement>("[data-account-id]"),
+        );
+    for (const card of cards) {
+      const r = card.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return card;
+    }
+    return null;
+  }
+
+  // tear down a pending press that never became a drag (tap or scroll)
+  function endPress(el?: HTMLElement | null) {
+    if (longPressRef.current != null) {
+      window.clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+    if (lockTimerRef.current != null) {
+      window.clearTimeout(lockTimerRef.current);
+      lockTimerRef.current = null;
+    }
+    scrollLockRef.current = false;
+    blockSelectRef.current = false;
+    cardsRef.current = [];
+    stopAutoScroll();
+    if (el && !armedRef.current) {
+      el.style.transition = "transform 140ms ease";
+      el.style.transform = "";
+    }
+  }
+
+  function stopAutoScroll() {
+    if (autoScrollRef.current != null) {
+      cancelAnimationFrame(autoScrollRef.current);
+      autoScrollRef.current = null;
+    }
+  }
+
+  // place the dragged card under the last known pointer, compensating for any
+  // page scroll since the grab, and refresh the hovered drop target
+  function renderDrag() {
+    const p = lastPointRef.current;
+    const origin = dragOriginRef.current;
+    if (!p || !origin || !dragRef.current) return;
+    const dx = p.x - origin.x;
+    const dy = p.y - origin.y + (window.scrollY - scrollStartRef.current);
+    moveDragEl(dx, dy);
+    const overId = accountCardAt(p.x, p.y)?.dataset.accountId;
+    const next =
+      overId && overId !== dragRef.current && !arranging ? overId : null;
+    if (next !== dropTargetRef.current) {
+      dropTargetRef.current = next ?? null;
+      setDropTargetId(next ?? null);
+    }
+  }
+
+  // generous trigger zones — roughly the top quarter / bottom third of the
+  // viewport — so you don't have to drag right to the bezel
+  function edgeBands() {
+    const vh = window.innerHeight;
+    return { vh, top: Math.max(130, vh * 0.32), bottom: Math.max(190, vh * 0.4) };
+  }
+
+  function autoScrollTick() {
+    autoScrollRef.current = null;
+    const p = lastPointRef.current;
+    if (!armedRef.current || !p) return;
+    const { vh, top, bottom } = edgeBands();
+    const MIN = 13; // px/frame the moment you enter the zone
+    const MAX = 51; // px/frame at the very edge
+    let dv = 0;
+    if (p.y < top) {
+      const t = (top - p.y) / top; // 0 at zone edge → 1 at screen edge
+      dv = -(MIN + (MAX - MIN) * t);
+    } else if (p.y > vh - bottom) {
+      const t = (p.y - (vh - bottom)) / bottom;
+      dv = MIN + (MAX - MIN) * t;
+    }
+    if (dv === 0) return;
+    const y = window.scrollY;
+    if ((dv < 0 && y <= 0) || (dv > 0 && y >= maxScrollRef.current)) return;
+    // "instant" bypasses the page's `scroll-behavior: smooth`, which would
+    // otherwise start a fresh eased animation every frame and stutter
+    window.scrollTo({ top: y + dv, behavior: "instant" });
+    renderDrag();
+    autoScrollRef.current = requestAnimationFrame(autoScrollTick);
+  }
+
+  function maybeAutoScroll() {
+    if (autoScrollRef.current != null) return; // already looping
+    const p = lastPointRef.current;
+    if (!p) return;
+    const { vh, top, bottom } = edgeBands();
+    if (p.y < top || p.y > vh - bottom) {
+      autoScrollRef.current = requestAnimationFrame(autoScrollTick);
+    }
+  }
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
@@ -90,7 +217,7 @@ export function AccountsView({
     el.style.transition = opts.snap
       ? "transform 180ms cubic-bezier(0.2,0.8,0.3,1)"
       : "none";
-    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${opts.snap ? 0.9 : 1.06}) rotate(2deg)`;
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${opts.snap ? 0.9 : 0.88})`;
   }
 
   function resetDragEl(withTransition: boolean) {
@@ -186,7 +313,7 @@ export function AccountsView({
           }
         />
       ) : (
-        <div className="rounded-[2rem] bg-[radial-gradient(circle_at_15%_20%,color-mix(in_srgb,var(--primary)_16%,transparent),transparent_34%),radial-gradient(circle_at_85%_55%,color-mix(in_srgb,var(--accent)_75%,transparent),transparent_38%)] p-3 sm:p-5">
+        <div className="select-none rounded-[2rem] bg-[radial-gradient(circle_at_15%_20%,color-mix(in_srgb,var(--primary)_16%,transparent),transparent_34%),radial-gradient(circle_at_85%_55%,color-mix(in_srgb,var(--accent)_75%,transparent),transparent_38%)] p-3 [-webkit-touch-callout:none] sm:p-5">
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {active.map((a) => (
             <li key={a.id} data-account-id={a.id}>
@@ -208,6 +335,7 @@ export function AccountsView({
                   const startY = event.clientY;
                   pressStartRef.current = { x: startX, y: startY };
                   armedRef.current = false;
+                  scrollLockRef.current = false; // safety: never start pre-locked
 
                   const beginDrag = () => {
                     longPressRef.current = null;
@@ -223,14 +351,39 @@ export function AccountsView({
                     } catch {
                       /* selection API unavailable */
                     }
+                    // a short buzz confirms the grab (Android; iOS Safari ignores it)
+                    try {
+                      navigator.vibrate?.(15);
+                    } catch {
+                      /* vibration unsupported */
+                    }
+                    // gesture is ours now — stop the page scrolling under it
+                    scrollLockRef.current = true;
+                    if (lockTimerRef.current != null) {
+                      window.clearTimeout(lockTimerRef.current);
+                      lockTimerRef.current = null;
+                    }
                     dragRef.current = a.id;
                     setDraggingId(a.id);
                     if (!prefersReducedMotion) {
                       dragElRef.current = el;
                       dragOriginRef.current = { x: startX, y: startY };
+                      lastPointRef.current = { x: startX, y: startY };
+                      scrollStartRef.current = window.scrollY;
+                      maxScrollRef.current =
+                        document.documentElement.scrollHeight -
+                        window.innerHeight;
+                      cardsRef.current = Array.from(
+                        document.querySelectorAll<HTMLElement>(
+                          "[data-account-id]",
+                        ),
+                      );
                       el.style.zIndex = "50";
-                      el.style.pointerEvents = "none";
                       el.style.touchAction = "none";
+                      // pop from the pressed-in hint to the lifted state
+                      el.style.transition =
+                        "transform 160ms cubic-bezier(0.2,0.8,0.3,1)";
+                      el.style.transform = "scale(0.88)";
                     }
                   };
 
@@ -240,56 +393,51 @@ export function AccountsView({
                     // hold to grab — a quick swipe scrolls the list instead.
                     // block native selection for the whole hold + drag window.
                     blockSelectRef.current = true;
-                    longPressRef.current = window.setTimeout(beginDrag, 260);
+                    if (!prefersReducedMotion) {
+                      // immediate "pressed-in" feedback so the hold feels registered
+                      el.style.transition = "transform 140ms ease";
+                      el.style.transform = "scale(0.97)";
+                    }
+                    // after a brief still hold, claim the gesture (lock scroll)
+                    lockTimerRef.current = window.setTimeout(() => {
+                      scrollLockRef.current = true;
+                    }, 120);
+                    longPressRef.current = window.setTimeout(beginDrag, 500);
                   }
                 }}
                 onPointerMove={(event) => {
                   if (!armedRef.current) {
-                    // still waiting on the long press — a real drag means the
-                    // user wants to scroll, so drop the pending grab
-                    if (longPressRef.current != null && pressStartRef.current) {
+                    // before the gesture is claimed, a real move = scroll intent,
+                    // so drop the pending grab and let the page scroll. Once
+                    // scrollLockRef is set the hold sticks through finger drift.
+                    if (
+                      longPressRef.current != null &&
+                      pressStartRef.current &&
+                      !scrollLockRef.current
+                    ) {
                       const mx = Math.abs(event.clientX - pressStartRef.current.x);
                       const my = Math.abs(event.clientY - pressStartRef.current.y);
-                      if (mx > 10 || my > 10) {
-                        window.clearTimeout(longPressRef.current);
-                        longPressRef.current = null;
-                        blockSelectRef.current = false; // it's a scroll, let go
+                      if (mx > 16 || my > 16) {
+                        endPress(event.currentTarget as HTMLElement);
                       }
                     }
                     return;
                   }
                   if (!dragRef.current || !dragOriginRef.current) return;
-                  const dx = event.clientX - dragOriginRef.current.x;
-                  const dy = event.clientY - dragOriginRef.current.y;
-                  moveDragEl(dx, dy);
-                  const overId = document
-                    .elementFromPoint(event.clientX, event.clientY)
-                    ?.closest<HTMLElement>("[data-account-id]")?.dataset.accountId;
-                  const next =
-                    overId && overId !== dragRef.current && !arranging
-                      ? overId
-                      : null;
-                  if (next !== dropTargetRef.current) {
-                    dropTargetRef.current = next ?? null;
-                    setDropTargetId(next ?? null);
-                  }
+                  lastPointRef.current = { x: event.clientX, y: event.clientY };
+                  renderDrag();
+                  maybeAutoScroll();
                 }}
                 onPointerUp={(event) => {
-                  if (longPressRef.current != null) {
-                    window.clearTimeout(longPressRef.current);
-                    longPressRef.current = null;
-                  }
                   if (!armedRef.current) {
-                    blockSelectRef.current = false;
+                    endPress(event.currentTarget as HTMLElement);
                     return; // was a tap / scroll, not a drag
                   }
                   armedRef.current = false;
-                  blockSelectRef.current = false;
+                  endPress();
 
                   const sourceId = dragRef.current;
-                  const targetEl = document
-                    .elementFromPoint(event.clientX, event.clientY)
-                    ?.closest<HTMLElement>("[data-account-id]");
+                  const targetEl = accountCardAt(event.clientX, event.clientY);
                   const target = targetEl?.dataset.accountId;
                   dragRef.current = null;
                   setDraggingId(null);
@@ -338,12 +486,8 @@ export function AccountsView({
                   }
                 }}
                 onPointerCancel={() => {
-                  if (longPressRef.current != null) {
-                    window.clearTimeout(longPressRef.current);
-                    longPressRef.current = null;
-                  }
                   armedRef.current = false;
-                  blockSelectRef.current = false;
+                  endPress();
                   dragRef.current = null;
                   setDraggingId(null);
                   resetDragEl(true);
@@ -359,7 +503,7 @@ export function AccountsView({
                 className={cn(
                   "interactive-lift relative flex h-full select-none flex-col overflow-hidden p-4 will-change-transform [-webkit-touch-callout:none]",
                   draggingId === a.id && "z-10 opacity-95 ring-2 ring-primary shadow-2xl",
-                  draggingId === a.id && prefersReducedMotion && "scale-[1.03] rotate-1 opacity-80",
+                  draggingId === a.id && prefersReducedMotion && "scale-[0.88] opacity-80",
                   dropTargetId === a.id && "scale-[1.05] ring-4 ring-primary/70 shadow-lg transition-transform",
                 )}
               >
