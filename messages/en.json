@@ -43,7 +43,9 @@
     "skipContent": "Skip to content",
     "adminConsole": "Admin Console",
     "cosmetics": "Cosmetics",
-    "shop": "Theme shop"
+    "shop": "Theme shop",
+    "hideAmounts": "Hide amounts",
+    "showAmounts": "Show amounts"
   },
   "patchNotes": {
     "title": "Patch notes",

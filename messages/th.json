@@ -43,7 +43,9 @@
     "skipContent": "ข้ามไปยังเนื้อหา",
     "adminConsole": "แผงผู้ดูแล",
     "cosmetics": "ไอเทมแต่งแอป",
-    "shop": "ร้านธีม"
+    "shop": "ร้านธีม",
+    "hideAmounts": "ซ่อนจำนวนเงิน",
+    "showAmounts": "แสดงจำนวนเงิน"
   },
   "patchNotes": {
     "title": "มีอะไรใหม่",

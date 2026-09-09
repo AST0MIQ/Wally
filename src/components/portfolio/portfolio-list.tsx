@@ -86,7 +86,7 @@ export function PortfolioList({
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <span className={cn("min-w-0 truncate rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold", totalPnl >= 0 ? "text-emerald-400" : "text-red-400")}>
-                {totalPnl >= 0 ? "+" : ""}{formatMoneyCompact(totalPnl, commonCurrency, locale)} ({totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : "0.00"}%)
+                <span className="balance-mask">{totalPnl >= 0 ? "+" : ""}{formatMoneyCompact(totalPnl, commonCurrency, locale)}</span> ({totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : "0.00"}%)
               </span>
               <span className="text-sm text-white/55">{t("unrealized")}</span>
             </div>

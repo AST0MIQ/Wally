@@ -284,7 +284,18 @@ body {
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .interactive-lift { transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease; }
 .interactive-lift:hover { transform: translateY(-2px); box-shadow: 0 16px 36px -24px rgb(15 23 42 / 0.38); }
-.balance-mask { font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.035em; }
+.balance-mask { font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.035em; transition: filter 160ms ease; }
+/* Privacy mode: one global toggle blurs every monetary figure app-wide.
+   Blur (not replacement) keeps layout stable; pointer-events: none stops
+   `title` tooltips from leaking the exact amount on hover / long-press. */
+:root[data-balances="hidden"] .balance-mask {
+  filter: blur(0.42em);
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) { .balance-mask { transition: none; } }
 .soft-divider > * + * { border-top: 1px solid color-mix(in srgb, var(--border) 78%, transparent); }
 button:not(:disabled), summary { cursor: pointer; }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--negative); }

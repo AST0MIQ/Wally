@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileChip, type ProfileChipStreak } from "@/components/nav/profile-chip";
+import { BalanceVisibilityToggle } from "@/components/nav/balance-visibility-toggle";
 import { cn } from "@/lib/utils";
 import { useCosmeticCardTheme } from "@/components/cosmetics/use-cosmetic-card-theme";
 import { CosmeticCardFx } from "@/components/cosmetics/cosmetic-card-fx";
@@ -25,7 +26,8 @@ export function DesktopHeader({
       style={theme.style}
     >
       <CosmeticCardFx slot="HEADER" />
-      <div className="relative z-[1]">
+      <div className="relative z-[1] flex items-center gap-1">
+        <BalanceVisibilityToggle />
         <ProfileChip name={name} email={email} streak={streak} />
       </div>
     </header>

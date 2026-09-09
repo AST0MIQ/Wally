@@ -6,7 +6,16 @@ export const defaultLocale: Locale = "th";
 export const LOCALE_COOKIE = "NEXT_LOCALE";
 export const THEME_COOKIE = "wally-theme";
 export const ACCENT_COOKIE = "wally-accent";
+export const BALANCES_COOKIE = "wally-balances";
 export type ThemeChoice = "light" | "dark" | "system";
+
+/** Whether monetary amounts are shown or masked across the app. */
+export type BalancesChoice = "shown" | "hidden";
+export function isBalancesChoice(
+  v: string | undefined | null,
+): v is BalancesChoice {
+  return v === "shown" || v === "hidden";
+}
 export const accentChoices = [
   "red",
   "orange",
