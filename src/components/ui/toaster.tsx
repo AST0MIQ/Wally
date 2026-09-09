@@ -50,7 +50,7 @@ export function Toaster() {
           toast:
             "glass rounded-xl border border-glass text-popover-foreground text-sm",
           description: "text-muted-foreground",
-          actionButton: "bg-primary text-primary-foreground",
+          actionButton: "bg-primary !text-white",
           cancelButton: "bg-muted text-muted-foreground",
           success: "[&_[data-icon]]:text-positive",
           error: "[&_[data-icon]]:text-negative",

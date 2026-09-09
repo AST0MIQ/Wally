@@ -149,7 +149,7 @@ export function AdminShell({
       </aside>
 
       <div className="flex min-h-dvh flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-card/80 px-3 py-2.5 backdrop-blur md:px-8">
+        <header className="admin-mobile-safe-header sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-card/80 px-3 py-2.5 backdrop-blur md:px-8">
           <Drawer direction="left" open={open} onOpenChange={setOpen}>
             <button
               type="button"
@@ -159,7 +159,7 @@ export function AdminShell({
             >
               <Menu className="size-5" />
             </button>
-            <SideDrawerContent side="left" className="w-[min(22rem,calc(100vw-1rem))] p-0">
+            <SideDrawerContent side="left" className="mobile-safe-drawer w-[min(22rem,calc(100vw-1rem))] p-0">
               <div className="flex items-center justify-between px-4 pt-4">
                 <DrawerTitle className="text-sm font-semibold">
                   {t("consoleTag")}

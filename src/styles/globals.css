@@ -264,6 +264,17 @@ body {
   padding-left: env(safe-area-inset-left, 0px);
 }
 
+/* The Admin Console keeps its header visible on desktop, so apply the same
+   iPhone safe-area treatment as the user header only at mobile widths. */
+@media (max-width: 767px) {
+  .admin-mobile-safe-header {
+    height: calc(3.5rem + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+}
+
 ::selection {
   background-color: color-mix(in oklab, var(--color-primary) 25%, transparent);
 }
