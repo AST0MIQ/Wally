@@ -57,7 +57,7 @@ export async function AdminOverview() {
           value={momPct === null ? "—" : `${momPct >= 0 ? "+" : ""}${momPct}%`}
           tone={momPct === null ? "neutral" : momPct >= 0 ? "positive" : "negative"}
         />
-        <StatCard label={t("admins")} value={n(stats.adminCount)} />
+        <StatCard label={t("activeToday")} value={n(stats.activeToday)} sub={pct(stats.activeToday, stats.totalUsers)} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -105,6 +105,7 @@ export async function AdminOverview() {
             label: formatDate(s.date, locale, { month: "short", day: "numeric" }),
             value: s.count,
           }))}
+          valueLocale={locale}
         />
       </Card>
 
