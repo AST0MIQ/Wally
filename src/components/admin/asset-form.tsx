@@ -10,7 +10,7 @@ import {
   updateAssetAction,
 } from "@/app/actions/admin/cosmetics";
 import type { AssetConfig } from "@/lib/cosmetics/config";
-import { EQUIPMENT_SLOTS, type EquipmentSlot } from "@/lib/cosmetics/slots";
+import { EQUIPMENT_SLOTS, slotConfigFields, type EquipmentSlot } from "@/lib/cosmetics/slots";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,6 +75,7 @@ export function AssetForm({
   const create = useAction(createAssetAction);
   const update = useAction(updateAssetAction);
   const pending = create.pending || update.pending;
+  const supportsThemeImage = slotConfigFields(slot).includes("mediaUrl");
 
   const submit = async () => {
     if (editing) {
@@ -128,7 +129,10 @@ export function AssetForm({
             <Select
               value={slot}
               disabled={editing}
-              onChange={(e) => setSlot(e.target.value as EquipmentSlot)}
+              onChange={(e) => {
+                setSlot(e.target.value as EquipmentSlot);
+                setConfig({});
+              }}
             >
               {EQUIPMENT_SLOTS.filter((s) => s !== "TYPOGRAPHY").map((s) => (
                 <option key={s} value={s}>{tCosmetics(`slots.${s}`)}</option>
@@ -156,8 +160,8 @@ export function AssetForm({
             />
           </Field>
         </div>
-        {!configLocked && (
-          <Field label="รูปที่ใช้กับไอเทม" hint="เลือกจากภาพจริงได้ทันที รูปเดียวกันจะใช้ทั้งบนหน้าร้านและในธีม">
+        {!configLocked && supportsThemeImage && (
+          <Field label="รูปตกแต่งที่ใช้จริง" hint="ช่องนี้รองรับรูปภาพ เลือกแล้วจะเห็นผลในธีมและใช้เป็นรูปตัวอย่างด้วย">
             {media.length > 0 ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {media.map((item) => {

@@ -24,6 +24,7 @@ import {
 } from "@/lib/cosmetics/presets";
 import {
   SLOT_MOTION,
+  SLOT_COLOR_TOKENS,
   slotConfigFields,
   isRenderedSlot,
 } from "@/lib/cosmetics/slots";
@@ -36,6 +37,10 @@ type Props = {
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
+const normalizeHex = (raw: string) => {
+  const digits = raw.replace(/#/g, "").replace(/[^0-9a-f]/gi, "").slice(0, 6);
+  return digits ? `#${digits.toLowerCase()}` : "";
+};
 const PALETTES = [
   { name: "Ocean", colors: { surface: "#0f2a44", primary: "#38bdf8", text: "#f8fafc", muted: "#bae6fd", border: "#38bdf8", glow: "#0ea5e9", cash: "#67e8f9", investment: "#818cf8" } },
   { name: "Sakura", colors: { surface: "#fff1f5", primary: "#db2777", text: "#831843", muted: "#be185d", border: "#f9a8d4", glow: "#f472b6", cash: "#fb7185", investment: "#c084fc" } },
@@ -65,6 +70,7 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
   const motionOptions = isRenderedSlot(slot)
     ? (SLOT_MOTION[slot as keyof typeof SLOT_MOTION] ?? ["NONE"])
     : ["NONE"];
+  const colorTokens = isRenderedSlot(slot) ? SLOT_COLOR_TOKENS[slot] : [];
 
   if (!isRenderedSlot(slot)) {
     return (
@@ -88,7 +94,7 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
                 size="sm"
                 variant="ghost"
                 className="gap-2 border border-border"
-                onClick={() => set({ colors: { ...palette.colors } })}
+                onClick={() => set({ colors: Object.fromEntries(colorTokens.map((token) => [token, palette.colors[token as keyof typeof palette.colors]]).filter((entry) => entry[1])) })}
               >
                 <span className="flex -space-x-1">
                   {[palette.colors.primary, palette.colors.cash, palette.colors.investment].map((color) => (
@@ -101,7 +107,7 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
             <Button type="button" size="sm" variant="ghost" onClick={() => set({ colors: undefined })}>{t("resetColors")}</Button>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {COLOR_TOKENS.map((token) => {
+            {COLOR_TOKENS.filter((token) => colorTokens.includes(token)).map((token) => {
               const v = value.colors?.[token] ?? "";
               const bad = v !== "" && !HEX.test(v);
               return (
@@ -116,8 +122,11 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
                     />
                     <Input
                       value={v}
-                      placeholder="#rrggbb"
-                      onChange={(e) => setColor(token, e.target.value.trim())}
+                      placeholder="rrggbb"
+                      maxLength={7}
+                      spellCheck={false}
+                      inputMode="text"
+                      onChange={(e) => setColor(token, normalizeHex(e.target.value))}
                       className={cn("h-8 px-2 text-xs", bad && "border-negative")}
                     />
                   </span>
@@ -187,15 +196,6 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
         )}
       </div>
 
-      {show("mediaUrl") && (
-        <Field label={t("mediaUrl")} hint="/cosmetics/…">
-          <Input
-            value={value.mediaUrl ?? ""}
-            placeholder="/cosmetics/bg/example.webp"
-            onChange={(e) => set({ mediaUrl: e.target.value.trim() || undefined })}
-          />
-        </Field>
-      )}
     </fieldset>
   );
 }

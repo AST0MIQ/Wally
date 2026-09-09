@@ -37,8 +37,8 @@ export function PreviewLab({ assets }: { assets: PreviewAsset[] }) {
     <div className="grid gap-6 xl:grid-cols-[300px_1fr]">
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
-          <Button type="button" size="sm" variant={scheme === "light" ? "primary" : "ghost"} onClick={() => setScheme("light")}>สว่าง</Button>
-          <Button type="button" size="sm" variant={scheme === "dark" ? "primary" : "ghost"} onClick={() => setScheme("dark")}>มืด</Button>
+          <Button type="button" size="sm" variant="secondary" className={scheme === "light" ? "border-foreground bg-foreground text-background hover:bg-foreground/90" : ""} onClick={() => setScheme("light")}>สว่าง</Button>
+          <Button type="button" size="sm" variant="secondary" className={scheme === "dark" ? "border-foreground bg-foreground text-background hover:bg-foreground/90" : ""} onClick={() => setScheme("dark")}>มืด</Button>
           <Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={() => setPicks({})}>ล้างทั้งหมด</Button>
         </div>
         {RENDERED_SLOTS.map((slot) => (

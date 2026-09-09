@@ -131,3 +131,23 @@ export const SLOT_MOTION: Record<RenderedSlot, readonly string[]> = {
 export function slotConfigFields(slot: string): readonly ConfigField[] {
   return (SLOT_CONFIG_FIELDS as Record<string, readonly ConfigField[]>)[slot] ?? [];
 }
+
+/** Colour controls that have a visible effect for each slot. */
+export const SLOT_COLOR_TOKENS: Record<RenderedSlot, readonly string[]> = {
+  APP_BACKGROUND: ["background", "primary", "glow"],
+  NAVIGATION: ["surface", "primary", "text", "muted", "border", "glow"],
+  HEADER: ["surface", "primary", "text", "muted", "border", "glow"],
+  PROFILE_FRAME: ["primary", "border", "glow"],
+  PROFILE_BADGE: ["primary", "text", "border"],
+  PROFILE_AURA: ["primary", "glow"],
+  OVERVIEW_CARD: ["surface", "primary", "text", "muted", "border", "glow", "cash", "investment"],
+  ACCOUNT_CARD: ["surface", "primary", "text", "muted", "border", "glow"],
+  INVESTMENT_CARD: ["surface", "primary", "text", "muted", "border", "glow"],
+  TRANSACTION_CARD: ["surface", "primary", "text", "muted", "border", "glow"],
+  CHART_STYLE: ["primary", "muted", "glow"],
+  ICON_SET: ["primary"],
+  TYPOGRAPHY: [],
+  AMBIENT_EFFECT: ["background", "primary", "glow"],
+  INTERACTION_EFFECT: ["primary", "glow"],
+  CELEBRATION_EFFECT: ["primary", "glow"],
+};
