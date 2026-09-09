@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, BarChart3, Check, ChevronRight, Flame, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, BarChart3, Check, ChevronRight, Flame, Landmark, PieChart, Sparkles, TrendingUp, WalletCards } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LineChart } from "@/components/charts/line-chart";
 import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
 import { CategoryBars } from "@/components/charts/category-bars";
+import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
 
 const CATEGORY_ROWS = 5;
 
@@ -67,7 +68,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
   </section>;
 
   return <section className="flex flex-col gap-9 pb-4">
-    <PageHeader title={t("title")} description={ui("overview")} eyebrow={<>{t("greeting")}{firstName ? `, ${firstName}` : ""}</>} />
+    <PageHeader title={t("title")} description={ui("overview")} eyebrow={<>{t("greeting")}{firstName ? `, ${firstName}` : ""}</>} action={<AddTransactionButton />} />
 
     {/* Net worth — the one-glance answer. Streak tiers layer on extra flair. */}
     <section className={cn(
@@ -215,11 +216,57 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       })()}
     </DashSection>
 
+    <DashSection title={t("accountBreakdown")} href="/accounts" label={t("allAccounts", { count: nw.accounts.length })}>
+      {nw.accounts.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {nw.accounts.slice(0, 6).map((account) => (
+            <Link key={account.id} href={`/accounts/${account.id}`} className="group min-w-0 rounded-2xl border border-border/80 bg-card p-4 shadow-[0_10px_30px_-26px_rgb(15_23_42_/_0.35)] transition-transform hover:-translate-y-0.5">
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-lg" style={account.color ? { color: account.color } : undefined}>{account.icon || <Landmark className="size-4" />}</span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{account.name}</span><span className="text-xs text-muted-foreground">{account.currency}</span></span>
+                <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <p title={money(account.balanceBase)} className="balance-mask mt-4 truncate text-xl font-semibold tabular-nums">{moneyC(account.balanceBase)}</p>
+              {account.currency !== base && <p className="mt-1 truncate text-xs text-muted-foreground">{formatMoney(account.balanceNative, account.currency, locale)}</p>}
+            </Link>
+          ))}
+        </div>
+      ) : <DashboardEmpty icon={<WalletCards className="size-5" />} text={t("noAccounts")} href="/accounts" action={t("addAccount")} />}
+    </DashSection>
+
     <DashSection title={t("expenseByCategory")} href="/analytics" label={t("viewAll")}>
       {data.expenseByCategory.length > 0
         ? <CategoryBars rows={data.expenseByCategory.slice(0, CATEGORY_ROWS).map((category) => ({ key: category.categoryId ?? "none", label: category.name ? categoryLabel(tCat, { systemKey: category.systemKey, name: category.name }) : t("uncategorized"), icon: category.icon, color: category.color, amount: Number(category.amount), pct: category.pct }))} formatValue={(value) => money(value)} />
         : <p className="rounded-2xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">{ui("noSpending")}</p>}
     </DashSection>
+
+    <div className="grid items-start gap-7 lg:grid-cols-2">
+      <DashSection title={t("recent")} href="/transactions" label={t("viewAll")}>
+        {data.recentTransactions.length > 0 ? <Card className="divide-y divide-border/70 overflow-hidden p-1">
+          {data.recentTransactions.map((item) => {
+            const income = item.type === "INCOME";
+            const transfer = item.type === "TRANSFER";
+            const label = transfer ? `${item.fromAccountName} → ${item.toAccountName}` : item.description || item.categoryName || t("uncategorized");
+            const amount = transfer ? formatMoney(item.fromAmount, item.fromCurrency, locale) : formatMoney(item.amount, item.currency, locale);
+            return <Link key={`${item.type}-${item.id}`} href="/transactions" className="flex min-h-16 items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/70">
+              <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", transfer ? "bg-muted text-muted-foreground" : income ? "bg-positive/10 text-positive" : "bg-negative/10 text-negative")}>{transfer ? <ArrowLeftRight className="size-4" /> : income ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}</span>
+              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{label}</span><span className="block truncate text-xs text-muted-foreground">{formatDate(item.date, locale, { month: "short", day: "numeric" })}</span></span>
+              <span className={cn("shrink-0 text-sm font-semibold tabular-nums", transfer ? "text-muted-foreground" : income ? "text-positive" : "text-negative")}>{income ? "+" : transfer ? "" : "−"}{amount}</span>
+            </Link>;
+          })}
+        </Card> : <DashboardEmpty icon={<WalletCards className="size-5" />} text={t("noRecent")} href="/transactions" action={t("addTransaction")} />}
+      </DashSection>
+
+      <DashSection title={t("investmentBreakdown")} href="/portfolio" label={t("viewAll")}>
+        {nw.portfolios.length > 0 ? <Card className="p-4">
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-investment/10 p-3"><span className="flex items-center gap-2 text-sm font-medium"><PieChart className="size-4 text-investment" />{t("portfolioValue")}</span><strong className="balance-mask truncate text-lg tabular-nums">{moneyC(nw.totalInvestment)}</strong></div>
+          <div className="space-y-1">{nw.portfolios.slice(0, 5).map((portfolio) => {
+            const gain = Number(portfolio.unrealizedBase);
+            return <Link key={portfolio.id} href={`/portfolio/${portfolio.id}`} className="flex min-h-14 items-center gap-3 rounded-xl px-2 transition-colors hover:bg-muted/70"><span className="min-w-0 flex-1 truncate text-sm font-medium">{portfolio.name}</span><span className="shrink-0 text-right"><span className="balance-mask block text-sm font-semibold tabular-nums">{moneyC(portfolio.marketValueBase)}</span><span className={cn("block text-[11px]", gain >= 0 ? "text-positive" : "text-negative")}>{gain >= 0 ? "+" : ""}{moneyC(gain)}</span></span><ChevronRight className="size-4 text-muted-foreground" /></Link>;
+          })}</div>
+        </Card> : <DashboardEmpty icon={<PieChart className="size-5" />} text={t("noPortfolio")} href="/portfolio" action={t("addPortfolio")} />}
+      </DashSection>
+    </div>
 
     {/* Trends — one tab visible at a time, no hidden disclosure */}
     <TrendTabs
@@ -245,6 +292,10 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       <ChevronRight className="size-4 text-muted-foreground" />
     </Link>
   </section>;
+}
+
+function DashboardEmpty({ icon, text, href, action }: { icon: React.ReactNode; text: string; href: string; action: string }) {
+  return <div className="flex min-h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-5 text-center"><span className="mb-2 flex size-10 items-center justify-center rounded-xl bg-muted text-primary">{icon}</span><p className="text-sm text-muted-foreground">{text}</p><Link href={href} className="mt-3 inline-flex min-h-10 items-center text-sm font-medium text-primary">{action}<ChevronRight className="ml-1 size-4" /></Link></div>;
 }
 
 function DashSection({ title, href, label, children }: { title: string; href?: string; label?: string; children: React.ReactNode }) {
