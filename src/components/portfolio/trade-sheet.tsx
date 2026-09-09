@@ -184,7 +184,6 @@ export function TradeSheet({
           <input
             type="file"
             accept="image/*"
-            capture="environment"
             className="sr-only"
             disabled={ocrState === "READING"}
             onChange={(event) => {
