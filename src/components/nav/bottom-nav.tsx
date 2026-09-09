@@ -23,14 +23,21 @@ export function BottomNav({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "fixed inset-x-3 bottom-3 z-40 overflow-hidden rounded-2xl border",
-        theme.active ? theme.className : "glass border-glass",
-        "mb-[env(safe-area-inset-bottom)]",
+        "fixed inset-x-3 bottom-3 z-40 mb-[env(safe-area-inset-bottom)]",
         className,
       )}
-      style={theme.style}
     >
-      <CosmeticCardFx slot="NAVIGATION" />
+      {/* Clipping layer: rounds the corners and contains the cosmetic FX so the
+          raised centre button can still poke out above the bar. */}
+      <div
+        className={cn(
+          "absolute inset-0 overflow-hidden rounded-2xl border",
+          theme.active ? theme.className : "glass border-glass",
+        )}
+        style={theme.style}
+      >
+        <CosmeticCardFx slot="NAVIGATION" />
+      </div>
       <ul className="relative z-[1] mx-auto flex max-w-lg items-center justify-around px-2">
         {BOTTOM_NAV.slice(0, 2).map((item) => (
           <NavCell key={item.href} item={item} active={isActive(item.href)} label={t(item.labelKey)} />
