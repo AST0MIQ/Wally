@@ -40,7 +40,9 @@
     "addTransaction": "เพิ่มรายการ",
     "menu": "เมนู",
     "profile": "ข้อมูลส่วนตัว",
-    "skipContent": "ข้ามไปยังเนื้อหา"
+    "skipContent": "ข้ามไปยังเนื้อหา",
+    "hideAmounts": "ซ่อนจำนวนเงิน",
+    "showAmounts": "แสดงจำนวนเงิน"
   },
   "patchNotes": {
     "title": "มีอะไรใหม่",

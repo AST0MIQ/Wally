@@ -164,17 +164,17 @@ export function PortfolioDetailView({
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className={cn("font-semibold", unrealized > 0 && "text-positive", unrealized < 0 && "text-negative")}>
-            {unrealized >= 0 ? "+" : ""}{formatCurrency(detail.totalUnrealizedPnL, ccy, locale)}
+            <span className="balance-mask">{unrealized >= 0 ? "+" : ""}{formatCurrency(detail.totalUnrealizedPnL, ccy, locale)}</span>
             {" "}({Number(detail.totalUnrealizedPnLPct).toFixed(2)}%)
           </span>
           <span className="text-sm text-muted-foreground">
-            {t("cost")} {formatCurrency(detail.totalCost, ccy, locale)}
+            {t("cost")} <span className="balance-mask">{formatCurrency(detail.totalCost, ccy, locale)}</span>
           </span>
         </div>
         {realized !== 0 && (
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-sm">
             <span className="text-muted-foreground">{t("realized")}</span>
-            <span className={cn("font-semibold", realized > 0 && "text-positive", realized < 0 && "text-negative")}>
+            <span className={cn("balance-mask font-semibold", realized > 0 && "text-positive", realized < 0 && "text-negative")}>
               {realized >= 0 ? "+" : ""}{formatCurrency(detail.totalRealizedPnL, ccy, locale)}
             </span>
           </div>
@@ -234,11 +234,11 @@ export function PortfolioDetailView({
                       </div>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {Number(h.quantity).toLocaleString(undefined, { maximumFractionDigits: 4 })} {t("shares")}
-                        {" · avg "}{formatCurrency(h.avgCost, h.currency, locale)}
+                        {" · avg "}<span className="balance-mask">{formatCurrency(h.avgCost, h.currency, locale)}</span>
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="font-bold">{formatCurrency(h.marketValue, h.currency, locale)}</p>
+                      <p className="balance-mask font-bold">{formatCurrency(h.marketValue, h.currency, locale)}</p>
                       <p className={cn("mt-0.5 text-sm font-semibold", pnl > 0 && "text-positive", pnl < 0 && "text-negative")}>
                         {pnl >= 0 ? "+" : ""}{Number(h.unrealizedPnLPct).toFixed(2)}%
                       </p>
@@ -254,17 +254,17 @@ export function PortfolioDetailView({
                       <div>
                         <p className="text-xs text-muted-foreground">{t("price")}</p>
                         <div className="mt-1 flex items-center font-medium">
-                          {h.currentPrice ? formatCurrency(h.currentPrice, h.currency, locale) : "—"}
+                          <span className="balance-mask">{h.currentPrice ? formatCurrency(h.currentPrice, h.currency, locale) : "—"}</span>
                           <SetPriceDialog securityId={h.securityId} symbol={h.symbol} />
                         </div>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">{t("costPerShare")}</p>
-                        <p className="mt-1 font-medium">{formatCurrency(h.avgCost, h.currency, locale)}</p>
+                        <p className="balance-mask mt-1 font-medium">{formatCurrency(h.avgCost, h.currency, locale)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">{t("cost")}</p>
-                        <p className="mt-1 font-medium">{formatCurrency(h.costBasis, h.currency, locale)}</p>
+                        <p className="balance-mask mt-1 font-medium">{formatCurrency(h.costBasis, h.currency, locale)}</p>
                       </div>
                     </div>
                   )}
@@ -291,11 +291,11 @@ export function PortfolioDetailView({
                     {Number(x.quantity).toLocaleString(undefined, {
                       maximumFractionDigits: 4,
                     })}{" "}
-                    @ {formatCurrency(x.price, x.currency, locale)} ·{" "}
+                    @ <span className="balance-mask">{formatCurrency(x.price, x.currency, locale)}</span> ·{" "}
                     {formatDate(x.tradeDate, locale)}
                   </p>
                 </div>
-                <span className="text-sm tabular-nums">
+                <span className="balance-mask text-sm tabular-nums">
                   {formatCurrency(x.amount, x.currency, locale)}
                 </span>
                 <button

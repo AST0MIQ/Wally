@@ -40,7 +40,9 @@
     "addTransaction": "Add transaction",
     "menu": "Menu",
     "profile": "Profile",
-    "skipContent": "Skip to content"
+    "skipContent": "Skip to content",
+    "hideAmounts": "Hide amounts",
+    "showAmounts": "Show amounts"
   },
   "patchNotes": {
     "title": "Patch notes",

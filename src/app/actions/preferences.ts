@@ -9,6 +9,7 @@ import {
   isLocale,
   isAccentChoice,
   ACCENT_COOKIE,
+  BALANCES_COOKIE,
   isThemeChoice,
   LOCALE_COOKIE,
   THEME_COOKIE,
@@ -96,6 +97,22 @@ export async function setTheme(next: ThemeChoice): Promise<void> {
   }
 
   revalidatePath("/", "layout");
+}
+
+/**
+ * Show or hide every monetary amount across the app. Cookie-only (per browser):
+ * drives the SSR `data-balances` attribute so there is no flash of visible
+ * balances on reload.
+ */
+export async function setBalancesHidden(hidden: boolean): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(BALANCES_COOKIE, hidden ? "hidden" : "shown", {
+    path: "/",
+    maxAge: ONE_YEAR,
+    sameSite: "lax",
+  });
+  // No revalidate: the client applies `data-balances` optimistically; the
+  // cookie only needs to be right for the next full page load.
 }
 
 /** Change the currency used by dashboards and cross-currency summaries. */

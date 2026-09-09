@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Drawer, SideDrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { SidebarNav } from "@/components/nav/sidebar-nav";
 import { ProfileChip, type ProfileChipStreak } from "@/components/nav/profile-chip";
+import { BalanceVisibilityToggle } from "@/components/nav/balance-visibility-toggle";
 import { APP_VERSION } from "@/lib/version";
 
 /** Mobile-only top bar: hamburger + Wally on the left, profile chip on the right. */
@@ -90,7 +91,8 @@ export function MobileTopBar({
 
         <span className="text-base font-bold tracking-tight">Wally<span className="text-primary">.</span></span>
 
-        <ProfileChip name={name} email={email} streak={streak} compact className="ml-auto" />
+        <BalanceVisibilityToggle className="relative z-[1] ml-auto" />
+        <ProfileChip name={name} email={email} streak={streak} compact />
       </header>
     </>
   );

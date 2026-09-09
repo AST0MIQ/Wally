@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
-import { ACCENT_COOKIE, THEME_COOKIE, isAccentChoice, isThemeChoice } from "@/i18n/config";
+import { ACCENT_COOKIE, BALANCES_COOKIE, THEME_COOKIE, isAccentChoice, isBalancesChoice, isThemeChoice } from "@/i18n/config";
 
 import { Toaster } from "@/components/ui/toaster";
 import { ConfirmHost } from "@/components/ui/confirm";
@@ -59,9 +59,11 @@ export default async function RootLayout({
   const accentCookie = (await cookies()).get(ACCENT_COOKIE)?.value;
   const userAccent = session?.user?.accent;
   const accent = isAccentChoice(userAccent) ? userAccent : isAccentChoice(accentCookie) ? accentCookie : "blue";
+  const balancesCookie = (await cookies()).get(BALANCES_COOKIE)?.value;
+  const dataBalances = isBalancesChoice(balancesCookie) && balancesCookie === "hidden" ? "hidden" : undefined;
 
   return (
-    <html lang={locale} data-theme={dataTheme} data-accent={accent} suppressHydrationWarning>
+    <html lang={locale} data-theme={dataTheme} data-accent={accent} data-balances={dataBalances} suppressHydrationWarning>
       <head>
         <AppleSplash />
       </head>

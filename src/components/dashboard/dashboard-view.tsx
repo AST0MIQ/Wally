@@ -153,7 +153,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
                   <span className="size-2 shrink-0 rounded-full bg-positive" />
                   {t("incomeThisMonth")}
                 </p>
-                <p title={money(data.thisMonth.income)} className="mt-1 truncate text-xl font-semibold tabular-nums text-positive">
+                <p title={money(data.thisMonth.income)} className="balance-mask mt-1 truncate text-xl font-semibold tabular-nums text-positive">
                   {moneyC(data.thisMonth.income)}
                 </p>
                 {incomeCmp && <p className="mt-0.5 text-[11px]">{incomeCmp}</p>}
@@ -163,7 +163,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
                   <span className="size-2 shrink-0 rounded-full bg-negative" />
                   {t("expenseThisMonth")}
                 </p>
-                <p title={money(data.thisMonth.expense)} className="mt-1 truncate text-xl font-semibold tabular-nums text-negative">
+                <p title={money(data.thisMonth.expense)} className="balance-mask mt-1 truncate text-xl font-semibold tabular-nums text-negative">
                   {moneyC(data.thisMonth.expense)}
                 </p>
                 {expenseCmp && <p className="mt-0.5 text-[11px]">{expenseCmp}</p>}
@@ -197,7 +197,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
               <span
                 title={money(data.thisMonth.net)}
                 className={cn(
-                  "min-w-0 truncate pl-2 text-lg font-bold tabular-nums",
+                  "balance-mask min-w-0 truncate pl-2 text-lg font-bold tabular-nums",
                   net > 0 ? "text-positive" : net < 0 ? "text-negative" : "text-foreground",
                 )}
               >
@@ -221,7 +221,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
                 <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </div>
               <p title={money(account.balanceBase)} className="balance-mask mt-4 truncate text-xl font-semibold tabular-nums">{moneyC(account.balanceBase)}</p>
-              {account.currency !== base && <p className="mt-1 truncate text-xs text-muted-foreground">{formatMoney(account.balanceNative, account.currency, locale)}</p>}
+              {account.currency !== base && <p className="balance-mask mt-1 truncate text-xs text-muted-foreground">{formatMoney(account.balanceNative, account.currency, locale)}</p>}
             </Link>
           ))}
         </div>
@@ -245,7 +245,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
             return <Link key={`${item.type}-${item.id}`} href="/transactions" className="flex min-h-16 items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/70">
               <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", transfer ? "bg-muted text-muted-foreground" : income ? "bg-positive/10 text-positive" : "bg-negative/10 text-negative")}>{transfer ? <ArrowLeftRight className="size-4" /> : income ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}</span>
               <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{label}</span><span className="block truncate text-xs text-muted-foreground">{formatDate(item.date, locale, { month: "short", day: "numeric" })}</span></span>
-              <span className={cn("shrink-0 text-sm font-semibold tabular-nums", transfer ? "text-muted-foreground" : income ? "text-positive" : "text-negative")}>{income ? "+" : transfer ? "" : "−"}{amount}</span>
+              <span className={cn("balance-mask shrink-0 text-sm font-semibold tabular-nums", transfer ? "text-muted-foreground" : income ? "text-positive" : "text-negative")}>{income ? "+" : transfer ? "" : "−"}{amount}</span>
             </Link>;
           })}
         </Card> : <DashboardEmpty icon={<WalletCards className="size-5" />} text={t("noRecent")} href="/transactions" action={t("addTransaction")} />}
@@ -256,7 +256,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
           <div className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-investment/10 p-3"><span className="flex items-center gap-2 text-sm font-medium"><PieChart className="size-4 text-investment" />{t("portfolioValue")}</span><strong className="balance-mask truncate text-lg tabular-nums">{moneyC(nw.totalInvestment)}</strong></div>
           <div className="space-y-1">{nw.portfolios.slice(0, 5).map((portfolio) => {
             const gain = Number(portfolio.unrealizedBase);
-            return <Link key={portfolio.id} href={`/portfolio/${portfolio.id}`} className="flex min-h-14 items-center gap-3 rounded-xl px-2 transition-colors hover:bg-muted/70"><span className="min-w-0 flex-1 truncate text-sm font-medium">{portfolio.name}</span><span className="shrink-0 text-right"><span className="balance-mask block text-sm font-semibold tabular-nums">{moneyC(portfolio.marketValueBase)}</span><span className={cn("block text-[11px]", gain >= 0 ? "text-positive" : "text-negative")}>{gain >= 0 ? "+" : ""}{moneyC(gain)}</span></span><ChevronRight className="size-4 text-muted-foreground" /></Link>;
+            return <Link key={portfolio.id} href={`/portfolio/${portfolio.id}`} className="flex min-h-14 items-center gap-3 rounded-xl px-2 transition-colors hover:bg-muted/70"><span className="min-w-0 flex-1 truncate text-sm font-medium">{portfolio.name}</span><span className="shrink-0 text-right"><span className="balance-mask block text-sm font-semibold tabular-nums">{moneyC(portfolio.marketValueBase)}</span><span className={cn("balance-mask block text-[11px]", gain >= 0 ? "text-positive" : "text-negative")}>{gain >= 0 ? "+" : ""}{moneyC(gain)}</span></span><ChevronRight className="size-4 text-muted-foreground" /></Link>;
           })}</div>
         </Card> : <DashboardEmpty icon={<PieChart className="size-5" />} text={t("noPortfolio")} href="/portfolio" action={t("addPortfolio")} />}
       </DashSection>
