@@ -49,5 +49,7 @@ export const COLOR_TOKENS = [
   "muted",
   "border",
   "glow",
+  "cash",
+  "investment",
 ] as const;
 export type ColorToken = (typeof COLOR_TOKENS)[number];

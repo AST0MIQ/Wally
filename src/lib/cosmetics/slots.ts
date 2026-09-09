@@ -100,7 +100,9 @@ export const SLOT_CONFIG_FIELDS: Record<RenderedSlot, readonly ConfigField[]> = 
   PROFILE_BADGE: ["colors", "shape"],
   CHART_STYLE: ["colors", "chartStyle", "intensity"],
   ICON_SET: ["colors", "iconStyle"],
-  TYPOGRAPHY: ["colors", "typography"],
+  // Retained for stored v2 assets, but the renderer deliberately applies no
+  // alternate font so LINE Seed Sans remains consistent across Wally.
+  TYPOGRAPHY: ["typography"],
   AMBIENT_EFFECT: ["colors", "ambientEffect", "intensity", "mediaUrl"],
   INTERACTION_EFFECT: ["colors", "interactionEffect", "intensity"],
   CELEBRATION_EFFECT: ["colors", "celebrationEffect", "intensity"],

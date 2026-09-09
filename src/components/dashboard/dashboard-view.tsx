@@ -126,12 +126,12 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
             )}
           >
             <span
-              className={overviewTheme.active ? "bg-primary" : "bg-white"}
-              style={{ width: `${cashPct}%` }}
+              className={overviewTheme.active ? "" : "bg-white"}
+              style={{ width: `${cashPct}%`, backgroundColor: overviewTheme.active ? "var(--ck-cash, var(--ck-primary))" : undefined }}
             />
             <span
-              className={overviewTheme.active ? "bg-primary/45" : "bg-white/55"}
-              style={{ width: `${100 - cashPct}%`, marginLeft: "2px" }}
+              className={overviewTheme.active ? "" : "bg-white/55"}
+              style={{ width: `${100 - cashPct}%`, marginLeft: "2px", backgroundColor: overviewTheme.active ? "var(--ck-investment, var(--ck-glow, var(--ck-primary)))" : undefined }}
             />
           </div>
           <div className="mt-1.5 flex justify-between text-[11px] text-white/70">

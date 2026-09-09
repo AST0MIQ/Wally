@@ -130,7 +130,7 @@ export function AssetForm({
               disabled={editing}
               onChange={(e) => setSlot(e.target.value as EquipmentSlot)}
             >
-              {EQUIPMENT_SLOTS.map((s) => (
+              {EQUIPMENT_SLOTS.filter((s) => s !== "TYPOGRAPHY").map((s) => (
                 <option key={s} value={s}>{tCosmetics(`slots.${s}`)}</option>
               ))}
             </Select>
@@ -155,23 +155,33 @@ export function AssetForm({
               placeholder="/cosmetics/…"
             />
           </Field>
-          {media.length > 0 && !configLocked && (
-            <Field label="เลือกรูปจากคลัง" hint="เลือกแล้วระบบจะใช้เป็นทั้งรูปตัวอย่างและรูปตกแต่ง">
-              <Select
-                value=""
-                onChange={(event) => {
-                  const url = event.target.value;
-                  if (!url) return;
-                  setPreviewUrl(url);
-                  setConfig((current) => ({ ...current, mediaUrl: url }));
-                }}
-              >
-                <option value="">เลือกรูป…</option>
-                {media.map((item) => <option key={item.id} value={item.url}>{item.name}</option>)}
-              </Select>
-            </Field>
-          )}
         </div>
+        {!configLocked && (
+          <Field label="รูปที่ใช้กับไอเทม" hint="เลือกจากภาพจริงได้ทันที รูปเดียวกันจะใช้ทั้งบนหน้าร้านและในธีม">
+            {media.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {media.map((item) => {
+                  const selected = config.mediaUrl === item.url;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => { setPreviewUrl(item.url); setConfig((current) => ({ ...current, mediaUrl: item.url })); }}
+                      className={`overflow-hidden rounded-xl border text-left transition ${selected ? "border-primary ring-2 ring-primary/25" : "border-border hover:border-primary/50"}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.url} alt="" className="aspect-video w-full object-cover" />
+                      <span className="block truncate px-2 py-1.5 text-xs">{item.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">ยังไม่มีรูปในคลัง กรุณาอัปโหลดที่เมนูคลังสื่อก่อน</p>
+            )}
+            {config.mediaUrl && <Button type="button" size="sm" variant="ghost" className="mt-2" onClick={() => { setPreviewUrl(""); setConfig((current) => ({ ...current, mediaUrl: undefined })); }}>ไม่ใช้รูป</Button>}
+          </Field>
+        )}
         <Field label={tc("description")}>
           <Textarea
             value={description}

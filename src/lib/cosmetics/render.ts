@@ -23,6 +23,8 @@ const COLOR_VAR: Record<string, string> = {
   muted: "--ck-muted",
   border: "--ck-border",
   glow: "--ck-glow",
+  cash: "--ck-cash",
+  investment: "--ck-investment",
 };
 
 export function cosmeticVars(config: AssetConfig): Record<string, string> {
@@ -176,7 +178,9 @@ export function cosmeticSemanticClasses(
   switch (slot) {
     case "CHART_STYLE": return config.chartStyle ? `ck-chart-${config.chartStyle.toLowerCase()}` : "";
     case "ICON_SET": return config.iconStyle ? `ck-icons-${config.iconStyle.toLowerCase()}` : "";
-    case "TYPOGRAPHY": return config.typography ? `ck-type-${config.typography.toLowerCase()}` : "";
+    // Typography cosmetics are intentionally neutral: Wally uses LINE Seed Sans
+    // consistently across every theme.
+    case "TYPOGRAPHY": return "";
     case "AMBIENT_EFFECT": return config.ambientEffect ? `ck-ambient-${config.ambientEffect.toLowerCase()}` : "";
     case "INTERACTION_EFFECT": return config.interactionEffect ? `ck-interaction-${config.interactionEffect.toLowerCase()}` : "";
     case "CELEBRATION_EFFECT": return config.celebrationEffect ? `ck-celebration-${config.celebrationEffect.toLowerCase()}` : "";

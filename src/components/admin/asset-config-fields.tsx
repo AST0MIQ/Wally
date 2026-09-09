@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Field } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import type { AssetConfig } from "@/lib/cosmetics/config";
 import {
   BORDER_EFFECTS,
@@ -35,6 +36,12 @@ type Props = {
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
+const PALETTES = [
+  { name: "Ocean", colors: { surface: "#0f2a44", primary: "#38bdf8", text: "#f8fafc", muted: "#bae6fd", border: "#38bdf8", glow: "#0ea5e9", cash: "#67e8f9", investment: "#818cf8" } },
+  { name: "Sakura", colors: { surface: "#fff1f5", primary: "#db2777", text: "#831843", muted: "#be185d", border: "#f9a8d4", glow: "#f472b6", cash: "#fb7185", investment: "#c084fc" } },
+  { name: "Forest", colors: { surface: "#052e2b", primary: "#34d399", text: "#ecfdf5", muted: "#a7f3d0", border: "#10b981", glow: "#6ee7b7", cash: "#2dd4bf", investment: "#a3e635" } },
+  { name: "Sunset", colors: { surface: "#431407", primary: "#fb923c", text: "#fff7ed", muted: "#fed7aa", border: "#f97316", glow: "#fbbf24", cash: "#facc15", investment: "#fb7185" } },
+] as const;
 
 export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
   const t = useTranslations("admin.assets");
@@ -73,6 +80,26 @@ export function AssetConfigFields({ slot, value, onChange, disabled }: Props) {
         <div>
           <p className="mb-2 text-sm font-medium">{t("colors")}</p>
           <p className="mb-3 text-xs text-muted-foreground">{t("colorHelp")}</p>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {PALETTES.map((palette) => (
+              <Button
+                key={palette.name}
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="gap-2 border border-border"
+                onClick={() => set({ colors: { ...palette.colors } })}
+              >
+                <span className="flex -space-x-1">
+                  {[palette.colors.primary, palette.colors.cash, palette.colors.investment].map((color) => (
+                    <span key={color} className="size-4 rounded-full border border-white/70" style={{ backgroundColor: color }} />
+                  ))}
+                </span>
+                {palette.name}
+              </Button>
+            ))}
+            <Button type="button" size="sm" variant="ghost" onClick={() => set({ colors: undefined })}>{t("resetColors")}</Button>
+          </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {COLOR_TOKENS.map((token) => {
               const v = value.colors?.[token] ?? "";

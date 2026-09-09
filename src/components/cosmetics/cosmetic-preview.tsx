@@ -177,6 +177,22 @@ export function CosmeticPreview({
         <span className="relative z-[1] flex size-8 items-center justify-center rounded-full border">A</span>
       </div>
     );
+  } else if (slot === "OVERVIEW_CARD") {
+    const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
+    body = (
+      <div style={cardStyle} className={cn("relative min-h-40 w-full overflow-hidden border p-5", cosmeticCardHostClass(config))}>
+        <span aria-hidden className={cn("ck-fx", fx)} />
+        <div className="relative z-[1]">
+          <p className="text-xs opacity-70">{t("previewNetWorth")}</p>
+          <strong className="mt-1 block text-3xl">฿245,800</strong>
+          <div className="mt-5 grid grid-cols-2 text-xs"><span>{t("previewCash")} 60%</span><span className="text-right">{t("previewInvestment")} 40%</span></div>
+          <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-current/15">
+            <span className="w-3/5" style={{ backgroundColor: "var(--ck-cash, var(--ck-primary))" }} />
+            <span className="ml-0.5 w-2/5" style={{ backgroundColor: "var(--ck-investment, var(--ck-glow, var(--ck-primary)))" }} />
+          </div>
+        </div>
+      </div>
+    );
   } else if (slot === "TRANSACTION_CARD") {
     const cardStyle = cosmeticCardHostStyle(config) as React.CSSProperties;
     body = (
