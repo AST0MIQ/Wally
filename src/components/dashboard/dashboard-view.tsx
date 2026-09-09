@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, BarChart3, Check, ChevronRight, Flame, Landmark, PieChart, Sparkles, TrendingUp, WalletCards } from "lucide-react";
@@ -23,6 +23,8 @@ import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
 import { CategoryBars } from "@/components/charts/category-bars";
 import { useBalancesHidden } from "@/hooks/use-balances-hidden";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
+import { toast } from "@/components/ui/toaster";
+import { checkInToday } from "@/app/actions/streak";
 
 const CATEGORY_ROWS = 5;
 
@@ -147,21 +149,29 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
         <p className="mt-2.5 text-[11px] text-white/60">≈ {t("approxFx")}</p>
       )}
 
-      {streak && streak.count > 0 && (
+      {streak && (streak.count > 0 || !streak.loggedToday) && (
         <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-white/10 px-3 py-2 text-[11px] text-white/85">
           <Flame className="size-3.5 shrink-0" />
-          <span className="font-semibold text-white">{ts("unitDays", { n: streak.count })}</span>
-          <span className="text-white/70">{ts("streakLabel")}</span>
-          {streak.nextKey && (
-            <span className="text-white/60">
-              · {ts("toNext", { n: streak.daysToNext ?? 0, tier: ts(`tier_${streak.nextKey}`) })}
-            </span>
+          {streak.count > 0 ? (
+            <>
+              <span className="font-semibold text-white">{ts("unitDays", { n: streak.count })}</span>
+              <span className="text-white/70">{ts("streakLabel")}</span>
+              {streak.nextKey && (
+                <span className="text-white/60">
+                  · {ts("toNext", { n: streak.daysToNext ?? 0, tier: ts(`tier_${streak.nextKey}`) })}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-white/70">{ts("startHint")}</span>
           )}
-          {streak.loggedToday && (
+          {streak.loggedToday ? (
             <span className="ml-auto inline-flex items-center gap-1 text-white">
               <Check className="size-3" />
               {ts("doneToday")}
             </span>
+          ) : (
+            <StreakCheckIn label={ts("checkIn")} doneLabel={ts("checkInDone")} />
           )}
         </div>
       )}
@@ -322,6 +332,26 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       <ChevronRight className="size-4 text-muted-foreground" />
     </Link>
   </section>;
+}
+
+function StreakCheckIn({ label, doneLabel }: { label: string; doneLabel: string }) {
+  const [pending, start] = useTransition();
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          await checkInToday();
+          toast.success(doneLabel);
+        })
+      }
+      className="ml-auto inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 font-medium text-white transition-colors hover:bg-white/25 disabled:opacity-60"
+    >
+      <Check className="size-3" />
+      {label}
+    </button>
+  );
 }
 
 function DashboardEmpty({ icon, text, href, action }: { icon: React.ReactNode; text: string; href: string; action: string }) {

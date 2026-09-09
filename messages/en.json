@@ -395,6 +395,8 @@
     "current": "Current tier",
     "doneToday": "Logged today",
     "logToday": "Not logged yet",
+    "checkIn": "Nothing to log today",
+    "checkInDone": "Checked in — streak kept",
     "celebrateTitle": "{days}-day streak!",
     "celebrateBody": "You unlocked “{tier}” 🎉"
   },
