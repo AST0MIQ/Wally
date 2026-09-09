@@ -293,7 +293,8 @@
     "importPartial": "Imported {created} · {failed} failed",
     "readingSlip": "Reading slip… {progress}%",
     "slipReady": "Slip read. Please review the details before saving.",
-    "slipFailed": "Could not read the slip. Please enter the details manually."
+    "slipFailed": "Could not read the slip. Please enter the details manually.",
+    "priceFromAmount": "Slip value {amount} — enter the shares to get the price"
   },
   "analytics": {
     "title": "Analytics",
