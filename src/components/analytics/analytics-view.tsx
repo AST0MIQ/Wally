@@ -290,20 +290,18 @@ function StatTile({
 
   return (
     <Card className="relative min-w-0 overflow-visible p-4">
-      <div className="flex items-center justify-between gap-1">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        {hint && (
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-label={t("howCalculated")}
-            aria-expanded={open}
-            className="-m-1 shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Info className="size-3.5" />
-          </button>
-        )}
-      </div>
+      <p className="pr-6 text-xs text-muted-foreground">{label}</p>
+      {hint && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={t("howCalculated")}
+          aria-expanded={open}
+          className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Info className="size-3.5" />
+        </button>
+      )}
       <p
         title={title ?? value}
         className={cn(
