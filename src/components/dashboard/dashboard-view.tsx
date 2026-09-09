@@ -87,7 +87,20 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
           <p className="balance-mask mt-0.5 flex flex-wrap items-baseline gap-x-1.5 text-base font-semibold">
             <span title={money(nw.totalInvestment)} className="min-w-0 truncate">{moneyC(nw.totalInvestment)}</span>
             {investmentGainPct !== null && (
-              <span className={cn("shrink-0 text-[11px] font-medium", investmentGain >= 0 ? "text-emerald-200" : "text-red-200")}>
+              <span
+                className={cn(
+                  "shrink-0 text-[11px] font-semibold",
+                  // Cosmetic overview themes can be light/pastel — use a deeper
+                  // tint there; the default brand gradient is dark, keep it bright.
+                  overviewTheme.active
+                    ? investmentGain >= 0
+                      ? "text-emerald-600"
+                      : "text-red-600"
+                    : investmentGain >= 0
+                      ? "text-emerald-200"
+                      : "text-red-200",
+                )}
+              >
                 {investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(2)}%
               </span>
             )}
@@ -210,7 +223,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       })()}
     </DashSection>
 
-    <DashSection title={t("accountBreakdown")} href="/accounts" label={t("allAccounts", { count: nw.accounts.length })}>
+    <DashSection title={t("accountBreakdown")} href="/accounts" label={t("allAccounts", { count: nw.accounts.length })} className="hidden md:block">
       {nw.accounts.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {nw.accounts.slice(0, 6).map((account) => (
@@ -234,7 +247,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
         : <p className="rounded-2xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">{ui("noSpending")}</p>}
     </DashSection>
 
-    <div className="grid items-start gap-7 lg:grid-cols-2">
+    <div className="hidden items-start gap-7 md:grid lg:grid-cols-2">
       <DashSection title={t("recent")} href="/transactions" label={t("viewAll")}>
         {data.recentTransactions.length > 0 ? <Card className="divide-y divide-border/70 overflow-hidden p-1">
           {data.recentTransactions.map((item) => {
@@ -292,8 +305,8 @@ function DashboardEmpty({ icon, text, href, action }: { icon: React.ReactNode; t
   return <div className="flex min-h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-5 text-center"><span className="mb-2 flex size-10 items-center justify-center rounded-xl bg-muted text-primary">{icon}</span><p className="text-sm text-muted-foreground">{text}</p><Link href={href} className="mt-3 inline-flex min-h-10 items-center text-sm font-medium text-primary">{action}<ChevronRight className="ml-1 size-4" /></Link></div>;
 }
 
-function DashSection({ title, href, label, children }: { title: string; href?: string; label?: string; children: React.ReactNode }) {
-  return <section className="min-w-0">
+function DashSection({ title, href, label, children, className }: { title: string; href?: string; label?: string; children: React.ReactNode; className?: string }) {
+  return <section className={cn("min-w-0", className)}>
     <div className="flex items-center justify-between gap-4">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       {href && <Link href={href} className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-primary hover:text-blue-700">{label}<ChevronRight className="size-3.5" /></Link>}
