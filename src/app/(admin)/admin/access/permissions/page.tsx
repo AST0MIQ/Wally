@@ -5,7 +5,7 @@ import { resourceLabel } from "@/lib/rbac/catalogue";
 import { listPermissionCatalogue } from "@/server/services/rbac/permission.service";
 import { Card } from "@/components/ui/card";
 
-export const metadata = { title: "Permissions" };
+export const metadata = { title: "รายการสิทธิ์ทั้งหมด" };
 
 export default async function PermissionsPage() {
   await requireCapability("roles:read");

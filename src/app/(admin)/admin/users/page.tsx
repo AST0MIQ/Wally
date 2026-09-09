@@ -8,7 +8,7 @@ import type { Locale } from "@/i18n/config";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export const metadata = { title: "User Directory" };
+export const metadata = { title: "รายชื่อผู้ใช้" };
 
 export default async function UserDirectoryPage({
   searchParams,
@@ -51,7 +51,7 @@ export default async function UserDirectoryPage({
                     {u.email} · {t("joined")} {formatDate(u.createdAt, locale)}
                   </p>
                 </div>
-                {u.role === "ADMIN" && <Badge variant="accent">ADMIN</Badge>}
+                {u.role === "ADMIN" && <Badge variant="accent">ผู้ดูแลระบบ</Badge>}
                 <span className="text-xs text-muted-foreground">
                   {u.entitlements} {t("entitlements").toLowerCase()} · {u.equipped}{" "}
                   {t("equipped").toLowerCase()}

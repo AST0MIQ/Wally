@@ -20,6 +20,7 @@ export type PreviewAsset = {
 
 export function PreviewLab({ assets }: { assets: PreviewAsset[] }) {
   const t = useTranslations("admin.previewLab");
+  const tSlots = useTranslations("cosmetics.slots");
   const [picks, setPicks] = useState<Partial<Record<RenderedSlot, string>>>({});
   const [scheme, setScheme] = useState<"light" | "dark">("light");
 
@@ -43,7 +44,7 @@ export function PreviewLab({ assets }: { assets: PreviewAsset[] }) {
         </div>
         {RENDERED_SLOTS.map((slot) => (
           <label key={slot} className="flex flex-col gap-1 text-xs">
-            <span className="font-medium text-muted-foreground">{slot}</span>
+            <span className="font-medium text-muted-foreground">{tSlots(slot)}</span>
             <Select
               value={picks[slot] ?? ""}
               onChange={(e) =>

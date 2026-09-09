@@ -55,7 +55,7 @@ export default async function UserAccessPage({
         </p>
         {access.isSuperAdmin && (
           <span className="mt-2 inline-block">
-            <Badge variant="accent">SUPER_ADMIN</Badge>
+            <Badge variant="accent">ผู้ดูแลระบบสูงสุด</Badge>
           </span>
         )}
       </div>
@@ -78,7 +78,7 @@ export default async function UserAccessPage({
                 <code className="text-xs text-muted-foreground">{r.key}</code>
                 {r.isSystem && <Badge>{t("roles")}</Badge>}
                 {r.archivedAt && (
-                  <span className="text-xs text-negative">archived</span>
+                  <span className="text-xs text-negative">เก็บถาวรแล้ว</span>
                 )}
                 <span className="ml-auto text-xs text-muted-foreground">
                   {formatDate(r.assignedAt, locale)}

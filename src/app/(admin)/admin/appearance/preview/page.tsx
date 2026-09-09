@@ -6,7 +6,7 @@ import { parseAssetConfig } from "@/lib/cosmetics/config";
 import { RENDERED_SLOTS } from "@/lib/cosmetics/slots";
 import { PreviewLab, type PreviewAsset } from "@/components/admin/preview-lab";
 
-export const metadata = { title: "Preview Lab" };
+export const metadata = { title: "ทดลองธีม" };
 
 export default async function PreviewLabPage() {
   await requirePermission("assets.read");

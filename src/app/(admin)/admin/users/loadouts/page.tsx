@@ -5,7 +5,7 @@ import { requirePermission } from "@/server/lib/guards";
 import { listUsersWithLoadout } from "@/server/services/cosmetics/admin-cosmetics.service";
 import { Card } from "@/components/ui/card";
 
-export const metadata = { title: "Loadouts" };
+export const metadata = { title: "ธีมที่กำลังใช้" };
 
 export default async function LoadoutsPage() {
   await requirePermission("entitlements.read");

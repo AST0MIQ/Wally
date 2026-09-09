@@ -36,9 +36,8 @@ export default async function RolesPage() {
 
       {bootstrapCount > 0 && (
         <Card className="border-accent/40 bg-accent/5 p-3 text-xs text-muted-foreground">
-          {bootstrapCount} bootstrap SUPER_ADMIN
-          {bootstrapCount === 1 ? "" : "s"} configured via the{" "}
-          <code>ADMIN_EMAILS</code> environment variable (read-only).
+          ผู้ดูแลระบบสูงสุดจากค่าเริ่มต้น {bootstrapCount} คน กำหนดผ่านตัวแปร{" "}
+          <code>ADMIN_EMAILS</code> และแก้ไขจากหน้านี้ไม่ได้
         </Card>
       )}
 

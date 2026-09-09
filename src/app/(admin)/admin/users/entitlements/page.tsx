@@ -7,7 +7,7 @@ import { formatDateTime } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 import { Card } from "@/components/ui/card";
 
-export const metadata = { title: "Entitlements" };
+export const metadata = { title: "สิทธิ์ไอเทม" };
 
 export default async function EntitlementsFeedPage() {
   await requirePermission("entitlements.read");

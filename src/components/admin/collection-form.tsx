@@ -16,6 +16,7 @@ import { Select } from "@/components/ui/select";
 import { Field } from "@/components/ui/label";
 
 const RARITIES = ["COMMON", "RARE", "EPIC", "SPECIAL", "LIMITED"] as const;
+const RARITY_LABELS: Record<string, string> = { COMMON: "ทั่วไป", RARE: "หายาก", EPIC: "พิเศษ", SPECIAL: "รุ่นพิเศษ", LIMITED: "จำนวนจำกัด" };
 
 type ExistingCollection = {
   id: string;
@@ -103,7 +104,7 @@ export function CollectionForm({ collection }: { collection?: ExistingCollection
         </Field>
         <Field label={tc("rarity")}>
           <Select value={rarity} onChange={(e) => setRarity(e.target.value)}>
-            {RARITIES.map((r) => <option key={r}>{r}</option>)}
+            {RARITIES.map((r) => <option key={r} value={r}>{RARITY_LABELS[r]}</option>)}
           </Select>
         </Field>
         <Field label={t("coverUrl")}>

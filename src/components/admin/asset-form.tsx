@@ -30,6 +30,8 @@ const ACQUISITIONS = [
   "PURCHASE",
   "LIMITED_EVENT",
 ] as const;
+const RARITY_LABELS: Record<string, string> = { COMMON: "ทั่วไป", RARE: "หายาก", EPIC: "พิเศษ", SPECIAL: "รุ่นพิเศษ", LIMITED: "จำนวนจำกัด" };
+const ACQUISITION_LABELS: Record<string, string> = { ADMIN_GRANT: "ผู้ดูแลมอบให้", DEFAULT: "ได้รับเริ่มต้น", STREAK_REWARD: "รางวัลจดต่อเนื่อง", RANK_REWARD: "รางวัลแรงก์", ACHIEVEMENT: "รางวัลความสำเร็จ", PURCHASE: "ซื้อจากร้าน", LIMITED_EVENT: "กิจกรรมพิเศษ" };
 
 type ExistingAsset = {
   id: string;
@@ -141,7 +143,7 @@ export function AssetForm({
           </Field>
           <Field label={tc("rarity")}>
             <Select value={rarity} onChange={(e) => setRarity(e.target.value)}>
-              {RARITIES.map((r) => <option key={r}>{r}</option>)}
+              {RARITIES.map((r) => <option key={r} value={r}>{RARITY_LABELS[r]}</option>)}
             </Select>
           </Field>
           <Field label={t("acquisition")}>
@@ -149,7 +151,7 @@ export function AssetForm({
               value={acquisitionType}
               onChange={(e) => setAcquisitionType(e.target.value)}
             >
-              {ACQUISITIONS.map((a) => <option key={a}>{a}</option>)}
+              {ACQUISITIONS.map((a) => <option key={a} value={a}>{ACQUISITION_LABELS[a]}</option>)}
             </Select>
           </Field>
           <Field label={t("preview")}>
