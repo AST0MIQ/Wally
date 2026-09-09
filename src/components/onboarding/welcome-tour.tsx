@@ -93,7 +93,7 @@ function resolveAnchor(name: string): HTMLElement | null {
   return visible[0] ?? null;
 }
 
-export function WelcomeTour() {
+export function WelcomeTour({ hasAccounts = true }: { hasAccounts?: boolean }) {
   const t = useTranslations("onboarding.tour");
   const router = useRouter();
   const pathname = usePathname();
@@ -152,6 +152,15 @@ export function WelcomeTour() {
     }
     setOpen(false);
   }, []);
+
+  /**
+   * Finishing the tour. A user who hasn't set up an account yet is handed
+   * straight to the accounts page — that's the one thing they need next.
+   */
+  const finish = useCallback(() => {
+    dismiss();
+    if (!hasAccounts) router.push("/accounts");
+  }, [dismiss, hasAccounts, router]);
 
   const safeStep = Math.min(step, steps.length - 1);
   const current = steps[safeStep] ?? steps[0]!;
@@ -239,13 +248,13 @@ export function WelcomeTour() {
       if (e.key === "Escape") dismiss();
       else if (e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
-        if (isLast) dismiss();
+        if (isLast) finish();
         else next();
       } else if (e.key === "ArrowLeft") back();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, isLast, next, back, dismiss]);
+  }, [open, isLast, next, back, dismiss, finish]);
 
   if (!mounted || !open) return null;
 
@@ -328,8 +337,8 @@ export function WelcomeTour() {
               </Button>
             )}
             {isLast ? (
-              <Button size="sm" onClick={dismiss}>
-                {t("done")}
+              <Button size="sm" onClick={finish}>
+                {hasAccounts ? t("done") : t("createAccount")}
               </Button>
             ) : (
               <Button size="sm" onClick={next}>
