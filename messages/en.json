@@ -104,7 +104,13 @@
     "uncategorized": "Uncategorized",
     "empty": "Nothing here yet",
     "emptyCta": "Add an account and your first transaction to see your dashboard.",
-    "spentOfIncome": "Spent {pct}% of this month's income"
+    "spentOfIncome": "Spent {pct}% of this month's income",
+    "noAccounts": "No accounts to show yet",
+    "addAccount": "Add account",
+    "noRecent": "No recent transactions yet",
+    "addTransaction": "Add first transaction",
+    "noPortfolio": "No investment portfolios yet",
+    "addPortfolio": "Create portfolio"
   },
   "transactions": {
     "title": "Transactions",

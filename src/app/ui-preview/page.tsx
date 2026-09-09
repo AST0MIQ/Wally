@@ -12,6 +12,10 @@ export default async function Preview({ searchParams }: { searchParams: Promise<
     lastMonth: zero ? { income: "0", expense: "0", net: "0" } : { income: "38750", expense: "29070", net: "9680" },
     expenseByCategory: ["Food & drinks", "Housing", "Shopping", "Transport"].map((name, i) => ({ categoryId: name, name, systemKey: null, icon: ["☕","🏠","🛍️","🚗"][i]!, color: ["#f97316","#14b8a6","#8b5cf6","#3b82f6"][i]!, amount: ["12500","7200","5150","3000"][i]!, pct: [45,26,18,11][i]! })),
     incomeExpense: [], netWorthHistory: [],
+    recentTransactions: [
+      { type: "EXPENSE", id: "preview-expense", date: new Date().toISOString(), createdAt: new Date().toISOString(), amount: "850", currency: "THB", accountId: "bank", accountName: "Everyday account", accountIcon: "🏦", categoryId: "food", categoryName: "Food & drinks", categorySystemKey: null, categoryIcon: "☕", categoryColor: "#f97316", subcategoryId: null, subcategoryName: null, subcategorySystemKey: null, description: "Lunch", note: null },
+      { type: "INCOME", id: "preview-income", date: new Date().toISOString(), createdAt: new Date().toISOString(), amount: "42000", currency: "THB", accountId: "bank", accountName: "Everyday account", accountIcon: "🏦", categoryId: "salary", categoryName: "Salary", categorySystemKey: null, categoryIcon: "💼", categoryColor: "#10b981", subcategoryId: null, subcategoryName: null, subcategorySystemKey: null, description: "Salary", note: null },
+    ],
   };
   return <AppShell role="USER" email="alex@example.com" lastSeenVersion="1.0.0" accounts={[]} categories={[]}><DashboardView data={data} firstName="Alex" /></AppShell>;
 }

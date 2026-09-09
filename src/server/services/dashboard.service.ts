@@ -14,6 +14,7 @@ import {
   type Flows,
   type MonthlyFlow,
 } from "@/server/lib/analytics";
+import { listTransactions, type FeedItem } from "@/server/services/transaction.service";
 export type DashboardData = {
   baseCurrency: string;
   netWorth: NetWorthBreakdown;
@@ -22,6 +23,7 @@ export type DashboardData = {
   expenseByCategory: CategorySlice[];
   incomeExpense: MonthlyFlow[];
   netWorthHistory: NetWorthPoint[];
+  recentTransactions: FeedItem[];
 };
 
 export async function getDashboard(userId: string): Promise<DashboardData> {
@@ -41,6 +43,7 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     expenseByCategory,
     incomeExpense,
     netWorthHistory,
+    recentTransactions,
   ] = await Promise.all([
     computeNetWorth(userId),
     sumFlows(userId, cur.start, cur.end, base),
@@ -48,6 +51,12 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     amountByCategory(userId, cur.start, cur.end, base, "EXPENSE"),
     incomeExpenseSeries(userId, tz, base, 6),
     getNetWorthHistory(userId, 120),
+    listTransactions(userId, {
+      limit: 5,
+      type: "ALL",
+      sort: "date",
+      direction: "desc",
+    }),
   ]);
 
   return {
@@ -58,5 +67,6 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     expenseByCategory: expenseByCategory.slice(0, 6),
     incomeExpense,
     netWorthHistory,
+    recentTransactions: recentTransactions.items,
   };
 }
