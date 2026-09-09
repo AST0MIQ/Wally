@@ -116,11 +116,23 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
 
       {netWorth > 0 && (
         <div className="mt-3" aria-label={`${t("cash")} ${cashPct.toFixed(0)}%, ${t("investment")} ${(100 - cashPct).toFixed(0)}%`}>
-          {/* `bg-current` rides the card's text colour so the split stays
-              visible on both the dark brand gradient and light cosmetic cards. */}
-          <div className="flex h-2 overflow-hidden rounded-full bg-current/20">
-            <span className="bg-current/90" style={{ width: `${cashPct}%` }} />
-            <span className="bg-current/45" style={{ width: `${100 - cashPct}%`, marginLeft: "2px" }} />
+          {/* Default hero card is the dark accent gradient → white reads best.
+              Cosmetic cards can be any shade → use the accent colour, which
+              stays vivid and legible on light and dark surfaces alike. */}
+          <div
+            className={cn(
+              "flex h-2 overflow-hidden rounded-full",
+              overviewTheme.active ? "bg-current/15" : "bg-white/20",
+            )}
+          >
+            <span
+              className={overviewTheme.active ? "bg-primary" : "bg-white"}
+              style={{ width: `${cashPct}%` }}
+            />
+            <span
+              className={overviewTheme.active ? "bg-primary/45" : "bg-white/55"}
+              style={{ width: `${100 - cashPct}%`, marginLeft: "2px" }}
+            />
           </div>
           <div className="mt-1.5 flex justify-between text-[11px] text-white/70">
             <span>{t("cash")} {cashPct.toFixed(0)}%</span>
