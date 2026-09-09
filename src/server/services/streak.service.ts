@@ -104,6 +104,15 @@ export async function getStreak(userId: string): Promise<StreakData> {
   };
 }
 
+/**
+ * Manual daily check-in — "I looked at my money today, there was just nothing
+ * to record". Counts toward the streak exactly like recording a transaction,
+ * so a genuinely no-spending day doesn't break the run. No limit.
+ */
+export async function checkInStreak(userId: string): Promise<void> {
+  return registerStreakActivity(userId);
+}
+
 /** Called after the user records a transaction / transfer. Best-effort. */
 export async function registerStreakActivity(userId: string): Promise<void> {
   try {
