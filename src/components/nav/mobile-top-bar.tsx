@@ -78,6 +78,7 @@ export function MobileTopBar({
             type="button"
             aria-label={t("menu")}
             onClick={() => setOpen(true)}
+            data-tour="menu-button"
             className="relative flex size-11 items-center justify-center rounded-md text-foreground hover:bg-muted"
           >
             <Menu className="size-5" />

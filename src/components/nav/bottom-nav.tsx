@@ -22,6 +22,7 @@ export function BottomNav({ className }: { className?: string }) {
 
   return (
     <nav
+      data-tour="primary-nav"
       className={cn(
         "fixed inset-x-3 bottom-3 z-40 mb-[env(safe-area-inset-bottom)]",
         className,
@@ -48,6 +49,7 @@ export function BottomNav({ className }: { className?: string }) {
             type="button"
             onClick={() => openQuickAdd()}
             aria-label={t("addTransaction")}
+            data-tour="add-transaction"
             className="mx-auto flex size-13 -translate-y-3 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_10px_24px_-8px_var(--primary)] transition-all duration-200 active:scale-95"
           >
             <Plus className="size-6" />

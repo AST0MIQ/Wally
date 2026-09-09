@@ -3,6 +3,12 @@ export type ParsedInvestmentSlip = {
   symbol?: string;
   quantity?: string;
   price?: string;
+  /**
+   * Gross trade value ("มูลค่าหุ้นที่ซื้อ/ขาย"). Present on pending market-order
+   * slips that do not yet state a fill price or share count — the caller can
+   * divide it by a user-entered quantity to recover the price per share.
+   */
+  amount?: string;
   fee?: string;
   tradeDate?: string;
 };
@@ -29,13 +35,18 @@ export function parseInvestmentSlip(text: string): ParsedInvestmentSlip {
   const exchangeContext = normalized.match(/([A-Z0-9.{}«\s]{1,100})NASDAQ/i)?.[1] ?? "";
   const exchangeSymbols = [...exchangeContext.matchAll(/\b([A-Z][A-Z0-9.]{1,9})\b/g)];
   const symbolNearExchange = exchangeSymbols.at(-1)?.[1];
-  const inferredType = action?.[1] === "ขาย"
+  const inferredType = action?.[1] === "ขาย" || normalized.includes("มูลค่าหุ้นที่ขาย")
     ? "SELL"
-    : action || normalized.includes("คำสั่งซื้อ")
+    : action || normalized.includes("คำสั่งซื้อ") || normalized.includes("มูลค่าหุ้นที่ซื้อ")
       ? "BUY"
       : normalized.includes("คำสั่งขาย")
         ? "SELL"
         : undefined;
+  // Pending market-order slips ("รอดำเนินการ") show a gross trade value but no
+  // fill price or share count yet.
+  const amount = normalized
+    .match(/มูลค่าหุ้นที่(?:ซื้อ|ขาย)[\s\S]{0,80}?([\d,]+(?:\.\d+)?)\s*(?:USD)?/i)?.[1]
+    ?.replaceAll(",", "");
   const commission = numberAfter(normalized, "ค่าคอมมิชชั่?[นณ]");
   const vat = normalized
     .match(/ภาษีมูลค่าเพิ่ม[\s\S]{0,100}?\(VAT\)[\s\S]{0,100}?([\d,.]+(?:\.\d+)?)/i)?.[1]
@@ -59,7 +70,8 @@ export function parseInvestmentSlip(text: string): ParsedInvestmentSlip {
     symbol: (action?.[2] ?? symbolNearExchange)?.toUpperCase(),
     quantity: marketAndQuantity?.[2]?.replaceAll(",", "") ?? numberAfter(normalized, "จำนวนหุ้น"),
     price: marketAndQuantity?.[1]?.replaceAll(",", "") ?? numberAfter(normalized, "ราคาที่ได้จริง"),
-    fee: fee > 0 ? String(fee) : undefined,
+    amount,
+    fee: fee > 0 ? String(Number(fee.toFixed(6))) : undefined,
     tradeDate,
   };
 }

@@ -172,6 +172,16 @@ export function QuickAddSheet({
     !!toAccount &&
     fromAccount.currency !== toAccount.currency;
 
+  // Switching the source onto the account already chosen as the target leaves an
+  // impossible pair (from === to) that silently hides the FX fields — move the
+  // target to the next available account so the pair stays valid.
+  useEffect(() => {
+    if (mode !== "TRANSFER" || !fromAccountId) return;
+    if (toAccountId && toAccountId !== fromAccountId) return;
+    const next = accounts.find((a) => a.id !== fromAccountId);
+    if (next) setToAccountId(next.id);
+  }, [mode, fromAccountId, toAccountId, accounts]);
+
   const fmtNumber = (value: number, digits: number) =>
     Number.isFinite(value) && value > 0 ? String(Number(value.toFixed(digits))) : "";
 
@@ -436,7 +446,7 @@ export function QuickAddSheet({
 
             {amountPad}
 
-            {crossCurrency && accounts.length >= 2 && (
+            {crossCurrency && (
               <label className="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
                 {ocrState === "READING" ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
                 <span className="flex-1">

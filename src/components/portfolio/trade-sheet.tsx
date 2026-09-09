@@ -50,7 +50,9 @@ export function TradeSheet({
   const [results, setResults] = useState<SecuritySearchResult[]>([]);
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
+  const [slipAmount, setSlipAmount] = useState("");
   const [fee, setFee] = useState("");
+  const autoPriceRef = useRef(false);
   const [tradeDate, setTradeDate] = useState(todayISO());
   const [settlementAccountId, setSettlementAccountId] = useState("");
   const [note, setNote] = useState("");
@@ -72,6 +74,8 @@ export function TradeSheet({
     setResults([]);
     setQuantity("");
     setPrice("");
+    setSlipAmount("");
+    autoPriceRef.current = false;
     setFee("");
     setTradeDate(todayISO());
     setSettlementAccountId("");
@@ -110,10 +114,24 @@ export function TradeSheet({
         setQuery(parsed.symbol);
       }
       if (parsed.quantity) setQuantity(parsed.quantity);
-      if (parsed.price) setPrice(parsed.price);
+      if (parsed.price) {
+        setPrice(parsed.price);
+        autoPriceRef.current = false;
+      }
+      // Pending market-order slips carry only a gross trade value. Keep it so
+      // that price per share can be derived once the user types the quantity.
+      if (parsed.amount && !parsed.price) {
+        setSlipAmount(parsed.amount);
+        if (parsed.quantity && Number(parsed.quantity) > 0) {
+          setPrice(String(Number(parsed.amount) / Number(parsed.quantity)));
+          autoPriceRef.current = true;
+        }
+      }
       if (parsed.fee) setFee(parsed.fee);
       if (parsed.tradeDate) setTradeDate(parsed.tradeDate);
-      setOcrState(parsed.symbol || parsed.quantity || parsed.price ? "READY" : "ERROR");
+      setOcrState(
+        parsed.symbol || parsed.quantity || parsed.price || parsed.amount ? "READY" : "ERROR",
+      );
     } catch {
       setOcrState("ERROR");
     } finally {
@@ -132,6 +150,18 @@ export function TradeSheet({
     }, 300);
     return () => clearTimeout(handle);
   }, [query, finnhubEnabled]);
+
+  // Derive price per share from a pending-slip gross value once a quantity is
+  // known. Only touch the price while it is still auto-managed (untouched by
+  // the user or previously auto-filled).
+  useEffect(() => {
+    if (!slipAmount || Number(slipAmount) <= 0) return;
+    if (!(autoPriceRef.current || price === "")) return;
+    if (Number(quantity) > 0) {
+      setPrice(String(Number(slipAmount) / Number(quantity)));
+      autoPriceRef.current = true;
+    }
+  }, [slipAmount, quantity, price]);
 
   const canSave =
     symbol.trim().length > 0 &&
@@ -263,11 +293,17 @@ export function TradeSheet({
                 onChange={(e) => setQuantity(e.target.value)}
               />
             </Field>
-            <Field label={isHolding ? t("costPerShare") : t("price")}>
+            <Field
+              label={isHolding ? t("costPerShare") : t("price")}
+              hint={slipAmount ? t("priceFromAmount", { amount: slipAmount }) : undefined}
+            >
               <Input
                 inputMode="decimal"
                 value={price}
-                onChange={(e) => setPrice(e.target.value)}
+                onChange={(e) => {
+                  autoPriceRef.current = false;
+                  setPrice(e.target.value);
+                }}
               />
             </Field>
           </div>

@@ -66,6 +66,7 @@ export function SidebarNav({
       <Button
         size="sm"
         className="mb-7 rounded-xl"
+        data-tour="add-transaction"
         onClick={() => {
           onNavigate?.();
           openQuickAdd();
@@ -75,7 +76,7 @@ export function SidebarNav({
         {t("addTransaction")}
       </Button>
 
-      <nav className="flex flex-1 flex-col gap-1">
+      <nav data-tour="primary-nav" className="flex flex-1 flex-col gap-1">
         {PRIMARY_NAV.map(({ href, labelKey, icon: Icon }) => (
           <Link
             key={href}

@@ -7,6 +7,8 @@ export const LOCALE_COOKIE = "NEXT_LOCALE";
 export const THEME_COOKIE = "wally-theme";
 export const ACCENT_COOKIE = "wally-accent";
 export const BALANCES_COOKIE = "wally-balances";
+/** Set once the user has finished (or skipped) the first-run onboarding screen. */
+export const ONBOARDED_COOKIE = "wally-onboarded";
 export type ThemeChoice = "light" | "dark" | "system";
 
 /** Whether monetary amounts are shown or masked across the app. */

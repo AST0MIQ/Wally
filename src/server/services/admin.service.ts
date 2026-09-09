@@ -12,11 +12,12 @@ export type AdminStats = {
   newThisWeek: number;
   newThisMonth: number;
   prevMonthUsers: number;
+  /** signed in today (Asia/Bangkok) */
+  activeToday: number;
   /** signed in within the last 7 days */
   active7d: number;
   /** signed in within the last 30 days */
   activeUsers: number;
-  adminCount: number;
   /** users whose lastSeenVersion matches the deployed build */
   onLatestVersion: number;
   latestVersion: string;
@@ -71,9 +72,9 @@ export async function getAdminStats(): Promise<AdminStats> {
     newThisWeek,
     newThisMonth,
     prevMonthUsers,
+    activeToday,
     active7d,
     activeUsers,
-    adminCount,
     onLatestVersion,
     withAccount,
     withTransaction,
@@ -91,9 +92,9 @@ export async function getAdminStats(): Promise<AdminStats> {
     prisma.user.count({
       where: { createdAt: { gte: prevMonth.start, lt: month.start } },
     }),
+    prisma.user.count({ where: { lastLoginAt: { gte: startOfToday } } }),
     prisma.user.count({ where: { lastLoginAt: { gte: active7 } } }),
     prisma.user.count({ where: { lastLoginAt: { gte: active30 } } }),
-    prisma.user.count({ where: { role: "ADMIN" } }),
     prisma.user.count({ where: { lastSeenVersion: APP_VERSION } }),
     prisma.user.count({ where: { financeAccounts: { some: {} } } }),
     prisma.user.count({ where: { transactions: { some: {} } } }),
@@ -123,9 +124,9 @@ export async function getAdminStats(): Promise<AdminStats> {
     newThisWeek,
     newThisMonth,
     prevMonthUsers,
+    activeToday,
     active7d,
     activeUsers,
-    adminCount,
     onLatestVersion,
     latestVersion: APP_VERSION,
     withAccount,

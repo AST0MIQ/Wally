@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LineChart } from "@/components/charts/line-chart";
 import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
 import { CategoryBars } from "@/components/charts/category-bars";
+import { useBalancesHidden } from "@/hooks/use-balances-hidden";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
 
 const CATEGORY_ROWS = 5;
@@ -64,14 +65,16 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
 
   if (!hasAnything) return <section className="flex flex-col gap-6">
     <PageHeader title={t("title")} description={ui("overview")} />
-    <EmptyState title={t("empty")} description={t("emptyCta")} action={<Link href="/accounts" className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-medium text-white">{t("accountBreakdown")} <ChevronRight className="ml-1 size-4" /></Link>} />
+    <div data-tour="net-worth">
+      <EmptyState title={t("empty")} description={t("emptyCta")} action={<Link href="/accounts" className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-medium text-white">{t("accountBreakdown")} <ChevronRight className="ml-1 size-4" /></Link>} />
+    </div>
   </section>;
 
   return <section className="flex flex-col gap-9 pb-4">
     <PageHeader title={t("title")} description={ui("overview")} eyebrow={<>{t("greeting")}{firstName ? `, ${firstName}` : ""}</>} action={<AddTransactionButton />} />
 
     {/* Net worth — the one-glance answer. Streak tiers layer on extra flair. */}
-    <section className={cn(
+    <section data-tour="net-worth" className={cn(
       "relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7",
       overviewTheme.active
         ? overviewTheme.className
@@ -345,6 +348,7 @@ function TrendTabs({ labels, history, incomeExpense, compare, formatValue }: {
   formatValue: (n: number) => string;
 }) {
   const [tab, setTab] = useState<TrendTabId>("history");
+  const balancesHidden = useBalancesHidden();
   const tabs: { id: TrendTabId; label: string }[] = [
     { id: "history", label: labels.netWorthHistory ?? "" },
     { id: "flow", label: labels.incomeVsExpense ?? "" },
@@ -359,7 +363,7 @@ function TrendTabs({ labels, history, incomeExpense, compare, formatValue }: {
 
     <div className="mt-5">
       {tab === "history" && (history.length >= 2
-        ? <LineChart data={history} formatValue={formatValue} />
+        ? <LineChart data={history} formatValue={formatValue} maskValues={balancesHidden} />
         : <p className="py-8 text-center text-sm text-muted-foreground">{labels.collecting}</p>)}
 
       {tab === "flow" && <>
@@ -367,7 +371,7 @@ function TrendTabs({ labels, history, incomeExpense, compare, formatValue }: {
           <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-positive" />{labels.income}</span>
           <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-negative" />{labels.expense}</span>
         </div>
-        <IncomeExpenseBars data={incomeExpense} formatValue={formatValue} />
+        <IncomeExpenseBars data={incomeExpense} formatValue={formatValue} maskValues={balancesHidden} />
       </>}
 
       {tab === "compare" && <div className="soft-divider">

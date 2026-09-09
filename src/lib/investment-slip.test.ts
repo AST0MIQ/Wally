@@ -40,4 +40,29 @@ describe("parseInvestmentSlip", () => {
       tradeDate: "2026-03-17",
     });
   });
+
+  it("extracts a pending Dime market-order slip (no fill price / share count yet)", () => {
+    const parsed = parseInvestmentSlip([
+      "สถานะ (ณ 03 เม.ย. 2568 - 20:38 น.)",
+      "รอดำเนินการ",
+      "คุณส่งคำสั่งเรียบร้อยแล้ว คำสั่งของคุณจะได้รับการเสนอซื้อในช่วงเวลาทำการตลาด (regular hours)",
+      "ซื้อ JEPQ                                  🇺🇸 NASDAQ",
+      "29.16 USD",
+      "มูลค่าหุ้นที่ซื้อ                        29.11 USD",
+      "ค่าคอมมิชชัน                            0.05 USD",
+      "ภาษีมูลค่าเพิ่ม 7% (VAT)                 0.0033 USD",
+      "วันที่ส่งคำสั่ง            Dime! Fast",
+      "03 เม.ย. 2568 - 20:38 น.",
+      "ประเภทคำสั่ง             ราคาตลาด (Market)",
+    ].join("\n"));
+    expect(parsed).toMatchObject({
+      type: "BUY",
+      symbol: "JEPQ",
+      amount: "29.11",
+      fee: "0.0533",
+      tradeDate: "2025-04-03",
+    });
+    expect(parsed.quantity).toBeUndefined();
+    expect(parsed.price).toBeUndefined();
+  });
 });
