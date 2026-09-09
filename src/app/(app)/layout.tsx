@@ -1,4 +1,4 @@
-import { requireUser } from "@/server/lib/guards";
+import { getRequestPrincipal, requireUser } from "@/server/lib/guards";
 import { getQuickAddData } from "@/server/services/quick-add";
 import { getStreak } from "@/server/services/streak.service";
 import { getResolvedLoadout } from "@/server/services/cosmetics/loadout.service";
@@ -15,17 +15,18 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
-  const [{ accounts, categories }, streak, loadout] = await Promise.all([
+  const [{ accounts, categories }, streak, loadout, principal] = await Promise.all([
     getQuickAddData(user.id),
     getStreak(user.id),
     getResolvedLoadout(user.id),
+    getRequestPrincipal(),
   ]);
 
   return (
     <CosmeticProvider loadout={loadout}>
       <CosmeticRoot loadout={loadout}>
         <AppShell
-          role={user.role}
+          role={principal.canAccessAdmin ? "ADMIN" : "USER"}
           name={user.name}
           email={user.email}
           lastSeenVersion={user.lastSeenVersion}
