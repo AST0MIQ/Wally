@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Field } from "@/components/ui/label";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
@@ -122,8 +122,11 @@ export function TransactionsView({
         </Field>
         <Button type="submit" variant="secondary" aria-label={tc("search")}><Search /></Button>
         </form>
-        <details open={hasFilters || undefined}>
-          <summary className="text-sm font-medium text-muted-foreground">{tc("filter")}</summary>
+        <details open={hasFilters || undefined} className="group">
+          <summary className="flex list-none items-center gap-1.5 text-sm font-medium text-muted-foreground [&::-webkit-details-marker]:hidden">
+            <ChevronRight className="size-4 shrink-0 transition-transform duration-200 group-open:rotate-90" />
+            {tc("filter")}
+          </summary>
         <div className="grid mt-4 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Field label={t("type")}>
             <Select

@@ -32,7 +32,7 @@ const LABEL_KEY = {
   rose: "accentRose",
 } as const satisfies Record<AccentChoice, string>;
 
-export function AccentPicker() {
+export function AccentPicker({ compact = false }: { compact?: boolean }) {
   const t = useTranslations("settings");
   const [choice, setChoice] = useState<AccentChoice>("blue");
   const [, startTransition] = useTransition();
@@ -47,6 +47,29 @@ export function AccentPicker() {
     document.documentElement.dataset.accent = next;
     document.cookie = `${ACCENT_COOKIE}=${next};path=/;max-age=31536000;samesite=lax`;
     startTransition(() => setAccent(next));
+  }
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap gap-2.5">
+        {accentChoices.map((color) => (
+          <button
+            key={color}
+            type="button"
+            aria-label={t(LABEL_KEY[color])}
+            aria-pressed={choice === color}
+            onClick={() => select(color)}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-background transition-all",
+              choice === color ? "ring-foreground" : "ring-transparent hover:ring-border",
+            )}
+            style={{ backgroundColor: COLORS[color] }}
+          >
+            {choice === color && <Check className="size-4 text-white" />}
+          </button>
+        ))}
+      </div>
+    );
   }
 
   return (
