@@ -141,6 +141,83 @@ function TwoLevelNav({
   );
 }
 
+/**
+ * Mobile drawer navigation: one flat, scrollable list of every section and its
+ * pages. The desktop icon-rail + contextual-panel model is cramped in a narrow
+ * drawer, so on phones we show everything at once.
+ */
+function AdminMobileNav({
+  email,
+  permissions,
+  onNavigate,
+}: {
+  email?: string | null;
+  permissions: readonly string[];
+  onNavigate: () => void;
+}) {
+  const pathname = usePathname();
+  const t = useTranslations("admin.nav");
+  const groups = visibleAdminNav(permissions);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-card">
+      <nav aria-label={t("categories")} className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+        {groups.map((group) => {
+          const GroupIcon = group.icon;
+          return (
+            <div key={group.labelKey} className="mb-3 last:mb-0">
+              <p className="flex items-center gap-2 px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <GroupIcon className="size-3.5 shrink-0" />
+                {t(`groups.${group.labelKey}`)}
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isItemActive(pathname, item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onNavigate}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="size-4 shrink-0" />
+                      <span className="flex-1">{t(item.labelKey)}</span>
+                      {item.placeholder && (
+                        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {t("soon")}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="border-t border-border px-3 py-3">
+        <p className="truncate px-2 text-xs font-medium">{email}</p>
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          className="mt-1.5 flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          {t("backToApp")}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 /** Admin Console shell — deliberately separate from the app AppShell: no
  *  QuickAdd, no bottom nav, no streak. */
 export function AdminShell({
@@ -188,7 +265,7 @@ export function AdminShell({
                 </button>
               </div>
               <div className="min-h-0 flex-1 pt-2">
-                <TwoLevelNav email={email} permissions={permissions} onNavigate={() => setOpen(false)} />
+                <AdminMobileNav email={email} permissions={permissions} onNavigate={() => setOpen(false)} />
               </div>
             </SideDrawerContent>
           </Drawer>
