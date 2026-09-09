@@ -74,6 +74,34 @@ export function AccountForm({
   const currencyOptions = COMMON_CURRENCIES.map((c) => c.code);
   if (!currencyOptions.includes(currency)) currencyOptions.unshift(currency);
 
+  /**
+   * The dialog trigger keeps this component mounted, so React state survives a
+   * close. Re-seed every field whenever the dialog opens — from the account when
+   * editing, from blank defaults when adding — so a previous entry never carries
+   * over into the next "add account".
+   */
+  function resetForm() {
+    setName(account?.name ?? "");
+    setType(account?.type ?? "BANK");
+    setCustomTypeLabel(account?.customTypeLabel ?? "");
+    setCurrency(account?.currency ?? "THB");
+    setOpeningBalance(
+      account?.openingBalance && account.openingBalance !== "0"
+        ? account.openingBalance
+        : "",
+    );
+    setOpeningBalanceDate(account?.openingBalanceDate?.slice(0, 10) ?? todayISO());
+    setIcon(account?.icon ?? "");
+    setColor(account?.color ?? "");
+    create.clearErrors();
+    update.clearErrors();
+  }
+
+  function handleOpenChange(next: boolean) {
+    if (next) resetForm();
+    setOpen(next);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const payload = {
@@ -103,7 +131,7 @@ export function AccountForm({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
