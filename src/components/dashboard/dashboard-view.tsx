@@ -116,9 +116,11 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
 
       {netWorth > 0 && (
         <div className="mt-3" aria-label={`${t("cash")} ${cashPct.toFixed(0)}%, ${t("investment")} ${(100 - cashPct).toFixed(0)}%`}>
-          <div className="flex h-1.5 overflow-hidden rounded-full bg-white/20">
-            <span className="bg-white/85" style={{ width: `${cashPct}%` }} />
-            <span className="bg-white/45" style={{ width: `${100 - cashPct}%` }} />
+          {/* `bg-current` rides the card's text colour so the split stays
+              visible on both the dark brand gradient and light cosmetic cards. */}
+          <div className="flex h-2 overflow-hidden rounded-full bg-current/20">
+            <span className="bg-current/90" style={{ width: `${cashPct}%` }} />
+            <span className="bg-current/45" style={{ width: `${100 - cashPct}%`, marginLeft: "2px" }} />
           </div>
           <div className="mt-1.5 flex justify-between text-[11px] text-white/70">
             <span>{t("cash")} {cashPct.toFixed(0)}%</span>

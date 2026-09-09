@@ -38,12 +38,15 @@ function TwoLevelNav({
   expanded = true,
   onExpandedChange,
   onNavigate,
+  onClose,
   permissions,
 }: {
   email?: string | null;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onNavigate?: () => void;
+  /** When set, the panel header shows a close (X) button — used in the mobile drawer. */
+  onClose?: () => void;
   permissions: readonly string[];
 }) {
   const pathname = usePathname();
@@ -92,9 +95,15 @@ function TwoLevelNav({
             <p className="truncate text-xs font-medium text-muted-foreground">{t("consoleTag")}</p>
             <h2 className="truncate text-base font-semibold">{t(`groups.${activeGroup.labelKey}`)}</h2>
           </div>
-          {onExpandedChange && <button type="button" onClick={() => onExpandedChange(false)} aria-label={t("collapse")} title={t("collapse")} className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
-            <ChevronLeft className="size-4" />
-          </button>}
+          {onClose ? (
+            <button type="button" onClick={onClose} aria-label={t("close")} className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
+              <X className="size-4" />
+            </button>
+          ) : onExpandedChange ? (
+            <button type="button" onClick={() => onExpandedChange(false)} aria-label={t("collapse")} title={t("collapse")} className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
+              <ChevronLeft className="size-4" />
+            </button>
+          ) : null}
         </div>
 
         <nav aria-label={t(`groups.${activeGroup.labelKey}`)} className="flex flex-1 flex-col gap-1 overflow-y-auto">
@@ -141,83 +150,6 @@ function TwoLevelNav({
   );
 }
 
-/**
- * Mobile drawer navigation: one flat, scrollable list of every section and its
- * pages. The desktop icon-rail + contextual-panel model is cramped in a narrow
- * drawer, so on phones we show everything at once.
- */
-function AdminMobileNav({
-  email,
-  permissions,
-  onNavigate,
-}: {
-  email?: string | null;
-  permissions: readonly string[];
-  onNavigate: () => void;
-}) {
-  const pathname = usePathname();
-  const t = useTranslations("admin.nav");
-  const groups = visibleAdminNav(permissions);
-
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-card">
-      <nav aria-label={t("categories")} className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-        {groups.map((group) => {
-          const GroupIcon = group.icon;
-          return (
-            <div key={group.labelKey} className="mb-3 last:mb-0">
-              <p className="flex items-center gap-2 px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <GroupIcon className="size-3.5 shrink-0" />
-                {t(`groups.${group.labelKey}`)}
-              </p>
-              <div className="flex flex-col gap-0.5">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const active = isItemActive(pathname, item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onNavigate}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                        active
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                      )}
-                    >
-                      <Icon className="size-4 shrink-0" />
-                      <span className="flex-1">{t(item.labelKey)}</span>
-                      {item.placeholder && (
-                        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          {t("soon")}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-border px-3 py-3">
-        <p className="truncate px-2 text-xs font-medium">{email}</p>
-        <Link
-          href="/dashboard"
-          onClick={onNavigate}
-          className="mt-1.5 flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          {t("backToApp")}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 /** Admin Console shell — deliberately separate from the app AppShell: no
  *  QuickAdd, no bottom nav, no streak. */
 export function AdminShell({
@@ -250,22 +182,15 @@ export function AdminShell({
             >
               <Menu className="size-5" />
             </button>
-            <SideDrawerContent side="left" className="mobile-safe-drawer w-[min(22rem,calc(100vw-1rem))] p-0">
-              <div className="flex items-center justify-between px-4 pt-4">
-                <DrawerTitle className="text-sm font-semibold">
-                  {t("consoleTag")}
-                </DrawerTitle>
-                <button
-                  type="button"
-                  aria-label={t("close")}
-                  onClick={() => setOpen(false)}
-                  className="flex size-8 items-center justify-center rounded-md hover:bg-muted"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 pt-2">
-                <AdminMobileNav email={email} permissions={permissions} onNavigate={() => setOpen(false)} />
+            <SideDrawerContent side="left" className="mobile-safe-drawer w-[min(23rem,calc(100vw-0.75rem))] bg-card! p-0">
+              <DrawerTitle className="sr-only">{t("consoleTag")}</DrawerTitle>
+              <div className="min-h-0 flex-1">
+                <TwoLevelNav
+                  email={email}
+                  permissions={permissions}
+                  onNavigate={() => setOpen(false)}
+                  onClose={() => setOpen(false)}
+                />
               </div>
             </SideDrawerContent>
           </Drawer>
