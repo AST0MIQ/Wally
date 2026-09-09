@@ -392,6 +392,201 @@ export const COLLECTIONS: DemoCollection[] = [
       },
     ],
   },
+  {
+    // Full-coverage minimal / retro set: one asset for every equipment slot.
+    slug: "analog-paper",
+    name: "Analog Paper",
+    description:
+      "Minimal retro — warm paper, muted ink, soft grain. No glow, no motion; rounded corners and a printed feel throughout.",
+    rarity: "RARE",
+    assets: [
+      {
+        slug: "analog-paper-background",
+        name: "Paper Stock",
+        slot: "APP_BACKGROUND",
+        rarity: "RARE",
+        config: {
+          colors: { background: "#f3ede0", surface: "#efe7d6", glow: "#d9a441" },
+          surface: "GRADIENT",
+          texture: "FINE_NOISE",
+          intensity: "LOW",
+          lightCompatible: true,
+          darkCompatible: false,
+        },
+      },
+      {
+        slug: "analog-paper-navigation",
+        name: "Ruled Nav",
+        slot: "NAVIGATION",
+        rarity: "RARE",
+        config: {
+          colors: { surface: "#efe7d6", border: "#d8cfbc" },
+          shape: "ROUNDED",
+          surface: "FLAT",
+          texture: "FINE_NOISE",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-header",
+        name: "Masthead",
+        slot: "HEADER",
+        rarity: "RARE",
+        config: {
+          colors: { surface: "#efe7d6", border: "#d8cfbc" },
+          surface: "FLAT",
+          texture: "FINE_NOISE",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-profile-frame",
+        name: "Stamp Frame",
+        slot: "PROFILE_FRAME",
+        rarity: "RARE",
+        config: {
+          colors: { border: "#b5533a", glow: "#d9a441" },
+          borderEffect: "GRADIENT_BORDER",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-profile-badge",
+        name: "Ink Badge",
+        slot: "PROFILE_BADGE",
+        rarity: "RARE",
+        config: {
+          colors: { primary: "#3f7d76" },
+          shape: "ROUNDED",
+        },
+      },
+      {
+        slug: "analog-paper-profile-aura",
+        name: "Warm Halo",
+        slot: "PROFILE_AURA",
+        rarity: "RARE",
+        config: {
+          colors: { glow: "#d9a441" },
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-overview-card",
+        name: "Cover Sheet",
+        slot: "OVERVIEW_CARD",
+        rarity: "RARE",
+        config: {
+          colors: { surface: "#faf5e9", border: "#d8cfbc", text: "#2b2b28" },
+          shape: "ROUNDED",
+          surface: "FLAT",
+          texture: "FINE_NOISE",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-account-card",
+        name: "Index Card",
+        slot: "ACCOUNT_CARD",
+        rarity: "RARE",
+        config: {
+          colors: { surface: "#f6efdf", border: "#d8cfbc", text: "#2b2b28" },
+          shape: "ROUNDED",
+          surface: "FLAT",
+          texture: "FINE_NOISE",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-investment-card",
+        name: "Ledger Sheet",
+        slot: "INVESTMENT_CARD",
+        rarity: "RARE",
+        config: {
+          colors: { surface: "#f6efdf", border: "#3f7d76", text: "#22302e" },
+          shape: "ROUNDED",
+          surface: "FLAT",
+          texture: "FINE_NOISE",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-transaction-card",
+        name: "Receipt Slip",
+        slot: "TRANSACTION_CARD",
+        rarity: "RARE",
+        config: {
+          colors: { surface: "#faf5e9", border: "#d8cfbc", text: "#2b2b28" },
+          shape: "ROUNDED",
+          surface: "FLAT",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-chart-style",
+        name: "Dashed Plot",
+        slot: "CHART_STYLE",
+        rarity: "RARE",
+        config: {
+          colors: { primary: "#b5533a", glow: "#d9a441" },
+          chartStyle: "DOTTED",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-icon-set",
+        name: "Soft Icons",
+        slot: "ICON_SET",
+        rarity: "RARE",
+        config: {
+          colors: { primary: "#3f7d76" },
+          iconStyle: "ROUNDED",
+        },
+      },
+      {
+        slug: "analog-paper-typography",
+        name: "Newsprint Type",
+        slot: "TYPOGRAPHY",
+        rarity: "RARE",
+        config: {
+          colors: { text: "#2b2b28" },
+          typography: "EDITORIAL",
+        },
+      },
+      {
+        slug: "analog-paper-ambient-effect",
+        name: "Paper Grain",
+        slot: "AMBIENT_EFFECT",
+        rarity: "RARE",
+        config: {
+          colors: { muted: "#8a8578" },
+          ambientEffect: "SOFT_GRAIN",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-interaction-effect",
+        name: "Gentle Lift",
+        slot: "INTERACTION_EFFECT",
+        rarity: "RARE",
+        config: {
+          colors: { glow: "#d9a441" },
+          interactionEffect: "SOFT_LIFT",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "analog-paper-celebration-effect",
+        name: "Quiet Rings",
+        slot: "CELEBRATION_EFFECT",
+        rarity: "RARE",
+        config: {
+          colors: { glow: "#b5533a" },
+          celebrationEffect: "RINGS",
+          intensity: "LOW",
+        },
+      },
+    ],
+  },
 ];
 
 export async function seedCosmeticDemo(prisma: PrismaClient): Promise<void> {
