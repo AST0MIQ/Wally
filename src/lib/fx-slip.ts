@@ -49,12 +49,15 @@ export function parseFxSlip(text: string): ParsedFxSlip {
 
   const clean = (value?: string) => value?.replaceAll(",", "");
 
-  // Credited side — "เป็น\n999.67 THB"
-  const toMatch = normalized.match(new RegExp(`เป็น[\\s\\S]{0,30}?${AMOUNT}\\s*${CCY}`));
+  // Credited side — "เป็น\n999.67 THB". Tesseract routinely mangles the vowel
+  // marks in "เป็น", so accept a fuzzy spelling as a fallback.
+  const toMatch =
+    normalized.match(new RegExp(`เป็น[\\s\\S]{0,30}?${AMOUNT}\\s*${CCY}`)) ??
+    normalized.match(new RegExp(`เป\\S{0,2}น[\\s\\S]{0,30}?${AMOUNT}\\s*${CCY}`));
   // Debited side — "แลกเปลี่ยน\n30.45 USD", but never "อัตราแลกเปลี่ยน"
   const fromMatch = normalized.match(new RegExp(`(?<!อัตรา)แลกเปลี่ยน[\\s\\S]{0,30}?${AMOUNT}\\s*${CCY}`));
-  // Quoted rate — "1 USD = 32.83 THB"
-  const rateMatch = normalized.match(new RegExp(`1\\s*${CCY}\\s*=\\s*${AMOUNT}\\s*${CCY}`));
+  // Quoted rate — "1 USD = 32.83 THB" (tolerating 1→l/I and =→＝/: OCR slips)
+  const rateMatch = normalized.match(new RegExp(`[1lI]\\s*${CCY}\\s*[=＝:]\\s*${AMOUNT}\\s*${CCY}`));
 
   const dateMatch =
     normalized.match(new RegExp(`วันที่ได้รับเงิน[\\s\\S]{0,40}?(\\d{1,2})\\s*(${MONTH_ALT})\\.?\\s*(\\d{2,4})`)) ??
@@ -64,7 +67,7 @@ export function parseFxSlip(text: string): ParsedFxSlip {
 
   let fromAmount = clean(fromMatch?.[1]);
   let fromCurrency = fromMatch?.[2];
-  const toAmount = clean(toMatch?.[1]);
+  let toAmount = clean(toMatch?.[1]);
   const toCurrency = toMatch?.[2];
 
   // If OCR dropped the debited amount, we can still name its currency via the rate line.
@@ -85,9 +88,18 @@ export function parseFxSlip(text: string): ParsedFxSlip {
     }
   }
 
-  // Fill a missing debited amount from the credited amount and the rate.
+  // The "1 X = Y Z" line OCRs far less reliably than the two headline amounts,
+  // so when it did not parse, recover the rate straight from the amounts.
+  if (!rate && fromAmount && toAmount && Number(fromAmount) > 0 && Number(toAmount) > 0) {
+    rate = trimNumber(Number(toAmount) / Number(fromAmount), 6);
+  }
+
+  // Fill whichever headline amount OCR dropped from the other one and the rate.
   if (!fromAmount && toAmount && rate && Number(rate) > 0) {
     fromAmount = trimNumber(Number(toAmount) / Number(rate), 2);
+  }
+  if (!toAmount && fromAmount && rate && Number(rate) > 0) {
+    toAmount = trimNumber(Number(fromAmount) * Number(rate), 2);
   }
 
   return {

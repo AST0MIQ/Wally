@@ -68,6 +68,43 @@ describe("parseFxSlip", () => {
     expect(parsed.fromAmount).toBe("30.45");
   });
 
+  it("derives the rate from the two amounts when the quoted rate line is unreadable", () => {
+    const parsed = parseFxSlip([
+      "สถานะ (ณ 8 ก.ย. 69 - 10:30 น.)",
+      "สำเร็จ",
+      "คุณได้รับเงินที่คุณแลกเปลี่ยนแล้ว",
+      "แลกเปลี่ยน",
+      "30.48 USD",
+      "บัญชีชำระเงิน : Dime! FCD - USD",
+      "เปน",
+      "999.74 THB",
+      "บัญชีรับเงิน : Dime! Save",
+      "อัตราแลกเปลี่ยน ] USD ~ 32.8 THB",
+      "อัตราแลกเปลี่ยน ณ ปัจจุบัน",
+      "วันที่ได้รับเงิน 8 ก.ย. 69 - 10:30 น.",
+      "เลขที่คำสั่ง FX20260908032957000gpqq",
+    ].join("\n"));
+
+    expect(parsed).toMatchObject({
+      fromAmount: "30.48",
+      fromCurrency: "USD",
+      toAmount: "999.74",
+      toCurrency: "THB",
+      date: "2026-09-08",
+      orderNo: "FX20260908032957000gpqq",
+    });
+    expect(Number(parsed.rate)).toBeCloseTo(32.8, 2);
+  });
+
+  it("still reads the quoted rate line when OCR only garbles the '=' sign", () => {
+    const parsed = parseFxSlip([
+      "แลกเปลี่ยน 30.45 USD",
+      "เป็น 999.67 THB",
+      "อัตราแลกเปลี่ยน 1 USD : 32.83 THB",
+    ].join("\n"));
+    expect(parsed.rate).toBe("32.83");
+  });
+
   it("returns nothing usable for unrelated text", () => {
     expect(parseFxSlip("just a normal receipt for coffee")).toEqual({
       fromAmount: undefined,
