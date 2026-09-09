@@ -90,15 +90,7 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
               <span
                 className={cn(
                   "shrink-0 text-[11px] font-semibold",
-                  // Cosmetic overview themes can be light/pastel — use a deeper
-                  // tint there; the default brand gradient is dark, keep it bright.
-                  overviewTheme.active
-                    ? investmentGain >= 0
-                      ? "text-emerald-600"
-                      : "text-red-600"
-                    : investmentGain >= 0
-                      ? "text-emerald-200"
-                      : "text-red-200",
+                  investmentGain >= 0 ? "text-emerald-200" : "text-red-200",
                 )}
               >
                 {investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(2)}%
@@ -110,9 +102,9 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
 
       {netWorth > 0 && (
         <div className="mt-3" aria-label={`${t("cash")} ${cashPct.toFixed(0)}%, ${t("investment")} ${(100 - cashPct).toFixed(0)}%`}>
-          <div className="flex h-1.5 overflow-hidden rounded-full bg-white/20">
-            <span className="bg-white/85" style={{ width: `${cashPct}%` }} />
-            <span className="bg-white/45" style={{ width: `${100 - cashPct}%` }} />
+          <div className="flex h-2 overflow-hidden rounded-full bg-white/20">
+            <span className="bg-white" style={{ width: `${cashPct}%` }} />
+            <span className="ml-0.5 bg-white/55" style={{ width: `${100 - cashPct}%` }} />
           </div>
           <div className="mt-1.5 flex justify-between text-[11px] text-white/70">
             <span>{t("cash")} {cashPct.toFixed(0)}%</span>
