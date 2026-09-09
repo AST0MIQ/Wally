@@ -11,6 +11,7 @@ import { COMMON_CURRENCIES } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { LanguageSwitcher } from "@/components/nav/language-switcher";
+import { AccentPicker } from "@/components/settings/accent-picker";
 
 export function OnboardingForm({ defaultCurrency }: { defaultCurrency: string }) {
   const t = useTranslations("onboarding.setup");
@@ -43,6 +44,11 @@ export function OnboardingForm({ defaultCurrency }: { defaultCurrency: string })
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t("language")}</label>
           <LanguageSwitcher />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">{t("accent")}</label>
+          <AccentPicker compact />
         </div>
 
         <div className="flex flex-col gap-2">

@@ -591,8 +591,9 @@
     "replay": "How to use Wally",
     "setup": {
       "title": "Welcome to Wally",
-      "subtitle": "Two quick choices and you’re in.",
+      "subtitle": "A few quick choices and you’re in.",
       "language": "Language",
+      "accent": "Accent colour",
       "currency": "Main currency",
       "currencyHint": "Used for your dashboard and net-worth totals. You can change it later in Settings.",
       "start": "Get started",
