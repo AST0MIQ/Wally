@@ -1,9 +1,24 @@
 // Temporary visual QA fixture; removed before delivery.
 import { DashboardView } from "@/components/dashboard/dashboard-view";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AppShell } from "@/components/nav/app-shell";
+import { PERMISSION_KEYS } from "@/lib/rbac/catalogue";
 import type { DashboardData } from "@/server/services/dashboard.service";
-export default async function Preview({ searchParams }: { searchParams: Promise<{ zero?: string }> }) {
-  const zero = (await searchParams).zero;
+export default async function Preview({ searchParams }: { searchParams: Promise<{ zero?: string; view?: string }> }) {
+  const params = await searchParams;
+  if (params.view === "admin") {
+    return <AdminShell email="admin@example.com" permissions={PERMISSION_KEYS}>
+      <section className="space-y-3">
+        <p className="text-sm font-medium text-primary">Admin navigation preview</p>
+        <h1 className="text-3xl font-bold tracking-tight">ภาพรวมผู้ดูแล</h1>
+        <p className="max-w-xl text-muted-foreground">เลือกหมวดจากแถบไอคอนด้านซ้าย แล้วเลือกหน้าที่ต้องการจากเมนูระดับสอง</p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {["ผู้ใช้ทั้งหมด", "ไอเทมที่เผยแพร่", "รางวัลที่มอบแล้ว"].map((label, index) => <div key={label} className="rounded-2xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{[128, 24, 356][index]}</p></div>)}
+        </div>
+      </section>
+    </AdminShell>;
+  }
+  const zero = params.zero;
   const accounts = [{ id: "bank", name: "Everyday account", icon: "🏦", color: "#2563eb", currency: "THB", balanceNative: "84500", balanceBase: "84500" }, { id: "savings", name: "Rainy day savings", icon: "🌱", color: "#059669", currency: "THB", balanceNative: "40000", balanceBase: "40000" }];
   const data: DashboardData = {
     baseCurrency: "THB",

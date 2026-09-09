@@ -34,16 +34,19 @@ export type AdminNavItem = {
 
 export type AdminNavGroup = {
   labelKey: string; // under `admin.nav.groups`
+  icon: LucideIcon;
   items: AdminNavItem[];
 };
 
 export const ADMIN_NAV: AdminNavGroup[] = [
   {
     labelKey: "overview",
+    icon: LayoutDashboard,
     items: [{ href: "/admin", labelKey: "overview", icon: LayoutDashboard }],
   },
   {
     labelKey: "appearance",
+    icon: Palette,
     items: [
       { href: "/admin/appearance/collections", labelKey: "collections", icon: Layers, permission: "collections.read" },
       { href: "/admin/appearance/assets", labelKey: "assets", icon: Box, permission: "assets.read" },
@@ -54,6 +57,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   },
   {
     labelKey: "rewards",
+    icon: Gift,
     items: [
       { href: "/admin/rewards/rules", labelKey: "rewardRules", icon: Gift, permission: "rewards.read" },
       { href: "/admin/rewards/rank-streak", labelKey: "rankStreak", icon: Flame, permission: "users.read" },
@@ -61,6 +65,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   },
   {
     labelKey: "users",
+    icon: Users,
     items: [
       { href: "/admin/users", labelKey: "userDirectory", icon: Users, permission: "users.read" },
       { href: "/admin/users/entitlements", labelKey: "entitlements", icon: Ticket, permission: "entitlements.read" },
@@ -69,6 +74,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   },
   {
     labelKey: "access",
+    icon: ShieldCheck,
     items: [
       { href: "/admin/access/users", labelKey: "accessUsers", icon: UserCog, permission: "roles.read" },
       { href: "/admin/access/roles", labelKey: "accessRoles", icon: ShieldCheck, permission: "roles.read" },
@@ -78,6 +84,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   },
   {
     labelKey: "commerce",
+    icon: ShoppingBag,
     items: [
       { href: "/admin/commerce/products", labelKey: "products", icon: ShoppingBag, permission: "commerce.read" },
       { href: "/admin/commerce/orders", labelKey: "orders", icon: Receipt, permission: "commerce.read" },
@@ -85,6 +92,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   },
   {
     labelKey: "operations",
+    icon: Settings2,
     items: [
       { href: "/admin/operations/flags", labelKey: "featureFlags", icon: Flag, permission: "settings.read" },
       { href: "/admin/operations/config", labelKey: "appConfig", icon: Settings2, permission: "settings.read" },

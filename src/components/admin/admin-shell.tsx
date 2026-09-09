@@ -4,48 +4,89 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Menu, Shield, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Menu, Shield, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV } from "@/components/admin/admin-nav";
 import { Drawer, SideDrawerContent, DrawerTitle } from "@/components/ui/drawer";
 
-function NavBody({ onNavigate, permissions }: { onNavigate?: () => void; permissions: readonly string[] }) {
+function visibleAdminNav(permissions: readonly string[]) {
+  return ADMIN_NAV.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.permission || permissions.includes(item.permission)),
+  })).filter((group) => group.items.length > 0);
+}
+
+function isItemActive(pathname: string, href: string) {
+  return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+}
+
+function TwoLevelNav({
+  email,
+  expanded = true,
+  onExpandedChange,
+  onNavigate,
+  permissions,
+}: {
+  email?: string | null;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+  onNavigate?: () => void;
+  permissions: readonly string[];
+}) {
   const pathname = usePathname();
   const t = useTranslations("admin.nav");
-  const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+  const groups = visibleAdminNav(permissions);
+  const activeGroup = groups.find((group) => group.items.some((item) => isItemActive(pathname, item.href))) ?? groups[0];
+
+  if (!activeGroup) return null;
+  const activeItemHref = activeGroup.items
+    .filter((item) => isItemActive(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto px-4 py-6">
-      <Link
-        href="/admin"
-        onClick={onNavigate}
-        className="flex items-center gap-2.5 px-2"
-      >
-        <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white">
-          <Shield className="size-4" />
-        </span>
-        <span className="text-lg font-bold tracking-tight">
-          Wally<span className="text-primary">.</span>
-          <span className="ml-1 text-xs font-medium text-muted-foreground">
-            {t("consoleTag")}
-          </span>
-        </span>
-      </Link>
+    <div className="flex h-full min-h-0 bg-card">
+      <div className="flex w-[68px] shrink-0 flex-col items-center border-r border-border/80 px-2 py-5">
+        <Link href="/admin" onClick={onNavigate} aria-label={t("consoleTag")} title={t("consoleTag")} className="mb-7 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+          <Shield className="size-5" />
+        </Link>
+        <nav aria-label={t("categories")} className="flex w-full flex-1 flex-col items-center gap-2">
+          {groups.map((group) => {
+            const Icon = group.icon;
+            const active = group.labelKey === activeGroup.labelKey;
+            return <Link
+              key={group.labelKey}
+              href={group.items[0]!.href}
+              onClick={() => onExpandedChange?.(true)}
+              aria-label={t(`groups.${group.labelKey}`)}
+              aria-current={active ? "page" : undefined}
+              title={t(`groups.${group.labelKey}`)}
+              className={cn("flex size-11 items-center justify-center rounded-xl transition-colors", active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")}
+            >
+              <Icon className="size-5" />
+            </Link>;
+          })}
+        </nav>
+        <Link href="/dashboard" onClick={onNavigate} aria-label={t("backToApp")} title={t("backToApp")} className="flex size-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
+          <ArrowLeft className="size-5" />
+        </Link>
+      </div>
 
-      <nav className="flex flex-1 flex-col gap-4">
-        {ADMIN_NAV.map((group) => ({
-          ...group,
-          items: group.items.filter((item) => !item.permission || permissions.includes(item.permission)),
-        })).filter((group) => group.items.length > 0).map((group) => (
-          <div key={group.labelKey} className="flex flex-col gap-1">
-            <p className="px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-              {t(`groups.${group.labelKey}`)}
-            </p>
-            {group.items.map((item) => {
+      {expanded && <div className="flex min-w-0 flex-1 flex-col px-3 py-5">
+        <div className="mb-5 flex min-h-10 items-center gap-2 px-2">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium text-muted-foreground">{t("consoleTag")}</p>
+            <h2 className="truncate text-base font-semibold">{t(`groups.${activeGroup.labelKey}`)}</h2>
+          </div>
+          {onExpandedChange && <button type="button" onClick={() => onExpandedChange(false)} aria-label={t("collapse")} title={t("collapse")} className="flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
+            <ChevronLeft className="size-4" />
+          </button>}
+        </div>
+
+        <nav aria-label={t(`groups.${activeGroup.labelKey}`)} className="flex flex-1 flex-col gap-1 overflow-y-auto">
+          {activeGroup.items.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.href);
+              const active = item.href === activeItemHref;
               return (
                 <Link
                   key={item.href}
@@ -53,7 +94,7 @@ function NavBody({ onNavigate, permissions }: { onNavigate?: () => void; permiss
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                    "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                     active
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
@@ -69,18 +110,19 @@ function NavBody({ onNavigate, permissions }: { onNavigate?: () => void; permiss
                 </Link>
               );
             })}
-          </div>
-        ))}
-      </nav>
+        </nav>
 
-      <Link
-        href="/dashboard"
-        onClick={onNavigate}
-        className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
-      >
-        <ArrowLeft className="size-4" />
-        {t("backToApp")}
-      </Link>
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="truncate px-2 text-xs font-medium">{email}</p>
+          <Link href="/dashboard" onClick={onNavigate} className="mt-2 flex min-h-10 items-center gap-2 rounded-xl px-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+            <ArrowLeft className="size-4" />{t("backToApp")}
+          </Link>
+        </div>
+      </div>}
+
+      {!expanded && onExpandedChange && <button type="button" onClick={() => onExpandedChange(true)} aria-label={t("expand")} title={t("expand")} className="absolute bottom-5 left-[76px] hidden size-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm hover:text-foreground md:flex">
+        <ChevronRight className="size-4" />
+      </button>}
     </div>
   );
 }
@@ -98,11 +140,12 @@ export function AdminShell({
 }) {
   const t = useTranslations("admin.nav");
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="md:grid md:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="sticky top-0 hidden h-dvh border-r border-border bg-card md:block">
-        <NavBody permissions={permissions} />
+    <div className={cn("md:grid", expanded ? "md:grid-cols-[292px_minmax(0,1fr)]" : "md:grid-cols-[68px_minmax(0,1fr)]")}>
+      <aside className="relative sticky top-0 hidden h-dvh border-r border-border bg-card md:block">
+        <TwoLevelNav email={email} permissions={permissions} expanded={expanded} onExpandedChange={setExpanded} />
       </aside>
 
       <div className="flex min-h-dvh flex-col">
@@ -116,7 +159,7 @@ export function AdminShell({
             >
               <Menu className="size-5" />
             </button>
-            <SideDrawerContent side="left" className="w-72">
+            <SideDrawerContent side="left" className="w-[min(22rem,calc(100vw-1rem))] p-0">
               <div className="flex items-center justify-between px-4 pt-4">
                 <DrawerTitle className="text-sm font-semibold">
                   {t("consoleTag")}
@@ -130,7 +173,9 @@ export function AdminShell({
                   <X className="size-4" />
                 </button>
               </div>
-              <NavBody permissions={permissions} onNavigate={() => setOpen(false)} />
+              <div className="min-h-0 flex-1 pt-2">
+                <TwoLevelNav email={email} permissions={permissions} onNavigate={() => setOpen(false)} />
+              </div>
             </SideDrawerContent>
           </Drawer>
 
