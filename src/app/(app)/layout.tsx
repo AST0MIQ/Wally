@@ -1,3 +1,7 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { ONBOARDED_COOKIE } from "@/i18n/config";
 import { requireUser } from "@/server/lib/guards";
 import { getQuickAddData } from "@/server/services/quick-add";
 import { getStreak } from "@/server/services/streak.service";
@@ -16,6 +20,14 @@ export default async function AppLayout({
     getQuickAddData(user.id),
     getStreak(user.id),
   ]);
+
+  // First run on this browser, and nothing set up yet → send them through the
+  // one-screen onboarding. Cookie-only (no DB column), so an existing account
+  // with data is never bounced.
+  const onboarded = (await cookies()).get(ONBOARDED_COOKIE)?.value === "1";
+  if (!onboarded && accounts.length === 0) {
+    redirect("/onboarding");
+  }
 
   return (
     <AppShell

@@ -10,6 +10,7 @@ import { LanguageSwitcher } from "@/components/nav/language-switcher";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
 import { BaseCurrencySelect } from "@/components/settings/base-currency-select";
 import { AccentPicker } from "@/components/settings/accent-picker";
+import { ReplayTourButton } from "@/components/onboarding/replay-tour-button";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -45,6 +46,9 @@ export default async function SettingsPage() {
             <ChevronRight className="size-4 text-muted-foreground" />
           </Card>
         </Link>
+        <Card className="p-5 transition-colors hover:bg-muted">
+          <ReplayTourButton />
+        </Card>
       </div>
 
       <Card>

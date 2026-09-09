@@ -61,14 +61,16 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
 
   if (!hasAnything) return <section className="flex flex-col gap-6">
     <PageHeader title={t("title")} description={ui("overview")} />
-    <EmptyState title={t("empty")} description={t("emptyCta")} action={<Link href="/accounts" className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-medium text-white">{t("accountBreakdown")} <ChevronRight className="ml-1 size-4" /></Link>} />
+    <div data-tour="net-worth">
+      <EmptyState title={t("empty")} description={t("emptyCta")} action={<Link href="/accounts" className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-medium text-white">{t("accountBreakdown")} <ChevronRight className="ml-1 size-4" /></Link>} />
+    </div>
   </section>;
 
   return <section className="flex flex-col gap-9 pb-4">
     <PageHeader title={t("title")} description={ui("overview")} eyebrow={<>{t("greeting")}{firstName ? `, ${firstName}` : ""}</>} action={<AddTransactionButton />} />
 
     {/* Net worth — the one-glance answer. Streak tiers layer on extra flair. */}
-    <section className={cn(
+    <section data-tour="net-worth" className={cn(
       "brand-gradient relative overflow-hidden rounded-3xl px-5 py-5 text-white shadow-[0_20px_48px_-36px_rgb(0_0_0_/_0.55)] sm:px-7",
       heroCardClasses(heroFxTier),
     )}>

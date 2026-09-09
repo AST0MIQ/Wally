@@ -8,6 +8,7 @@ import { MobileTopBar } from "@/components/nav/mobile-top-bar";
 import { DesktopHeader } from "@/components/nav/desktop-header";
 import { BottomNav } from "@/components/nav/bottom-nav";
 import { StreakCelebration } from "@/components/streak/streak-celebration";
+import { WelcomeTour } from "@/components/onboarding/welcome-tour";
 import { QuickAddProvider } from "@/components/transactions/quick-add-provider";
 import { MarketDataRefresh } from "@/components/market/market-data-refresh";
 
@@ -51,6 +52,7 @@ export function AppShell({
   return (
     <QuickAddProvider accounts={accounts} categories={categories}>
       <MarketDataRefresh />
+      <WelcomeTour />
       <StreakCelebration
         pending={streak.pendingCelebration}
         count={streak.count}

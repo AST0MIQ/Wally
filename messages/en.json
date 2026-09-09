@@ -579,5 +579,51 @@
     "accountFirst": "Add an account to start recording transactions.",
     "transferAccounts": "You need two accounts to transfer money.",
     "moneySpace": "Your everyday money space"
+  },
+  "onboarding": {
+    "replay": "How to use Wally",
+    "setup": {
+      "title": "Welcome to Wally",
+      "subtitle": "Two quick choices and you’re in.",
+      "language": "Language",
+      "currency": "Main currency",
+      "currencyHint": "Used for your dashboard and net-worth totals. You can change it later in Settings.",
+      "start": "Get started",
+      "skip": "Skip for now"
+    },
+    "tour": {
+      "back": "Back",
+      "next": "Next",
+      "done": "Got it",
+      "skip": "Skip",
+      "welcome": {
+        "title": "Welcome to Wally",
+        "body": "Wally keeps your accounts, spending and investments in one place. Here’s a quick tour of the parts you’ll use most."
+      },
+      "dashboard": {
+        "title": "Your net worth, up top",
+        "body": "This card adds every account and investment into one figure, with the month’s income and spending right below it."
+      },
+      "log": {
+        "title": "Log as you go",
+        "body": "This button opens the quick-add sheet for an income, expense or transfer. Log something daily and your streak keeps climbing."
+      },
+      "logHow": {
+        "title": "Recording a transaction",
+        "body": "In the sheet: pick income, expense or transfer, type the amount, choose the account and a category, then save. It takes a few seconds."
+      },
+      "grow": {
+        "title": "Move around from here",
+        "body": "Use the navigation to jump between your dashboard, accounts, portfolio and analytics."
+      },
+      "menu": {
+        "title": "The menu button",
+        "body": "Tap the ☰ button, top-left, for the full menu — settings, the theme shop, patch notes and sign-out. You can also swipe in from the left edge."
+      },
+      "personalize": {
+        "title": "Make it yours",
+        "body": "Change language or theme in Settings, and unlock themes from the Shop. You can replay this guide any time from Settings."
+      }
+    }
   }
 }
