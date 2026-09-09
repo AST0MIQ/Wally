@@ -21,6 +21,18 @@ function isItemActive(pathname: string, href: string) {
   return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 }
 
+/** Instant hover/focus tooltip for the icon-only rail. */
+function RailTooltip({ label }: { label: string }) {
+  return (
+    <span
+      role="tooltip"
+      className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 translate-x-1 whitespace-nowrap rounded-lg bg-popover px-2 py-1 text-xs font-medium text-popover-foreground opacity-0 shadow-md ring-1 ring-border transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100"
+    >
+      {label}
+    </span>
+  );
+}
+
 function TwoLevelNav({
   email,
   expanded = true,
@@ -47,8 +59,9 @@ function TwoLevelNav({
   return (
     <div className="flex h-full min-h-0 bg-card">
       <div className="flex w-[68px] shrink-0 flex-col items-center border-r border-border/80 px-2 py-5">
-        <Link href="/admin" onClick={onNavigate} aria-label={t("consoleTag")} title={t("consoleTag")} className="mb-7 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+        <Link href="/admin" onClick={onNavigate} aria-label={t("consoleTag")} className="group relative mb-7 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
           <Shield className="size-5" />
+          <RailTooltip label={t("consoleTag")} />
         </Link>
         <nav aria-label={t("categories")} className="flex w-full flex-1 flex-col items-center gap-2">
           {groups.map((group) => {
@@ -60,15 +73,16 @@ function TwoLevelNav({
               onClick={() => onExpandedChange?.(true)}
               aria-label={t(`groups.${group.labelKey}`)}
               aria-current={active ? "page" : undefined}
-              title={t(`groups.${group.labelKey}`)}
-              className={cn("flex size-11 items-center justify-center rounded-xl transition-colors", active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")}
+              className={cn("group relative flex size-11 items-center justify-center rounded-xl transition-colors", active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")}
             >
               <Icon className="size-5" />
+              <RailTooltip label={t(`groups.${group.labelKey}`)} />
             </Link>;
           })}
         </nav>
-        <Link href="/dashboard" onClick={onNavigate} aria-label={t("backToApp")} title={t("backToApp")} className="flex size-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
+        <Link href="/dashboard" onClick={onNavigate} aria-label={t("backToApp")} className="group relative flex size-11 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
           <ArrowLeft className="size-5" />
+          <RailTooltip label={t("backToApp")} />
         </Link>
       </div>
 

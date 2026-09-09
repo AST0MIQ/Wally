@@ -1,6 +1,6 @@
 "use client";
 
-import { permissionsByResource } from "@/lib/rbac/catalogue";
+import { permissionsByResource, resourceLabel } from "@/lib/rbac/catalogue";
 
 const GROUPS = permissionsByResource();
 
@@ -32,8 +32,8 @@ export function PermissionChecklist({
     <div className="flex flex-col gap-4">
       {GROUPS.map((g) => (
         <fieldset key={g.resource} className="rounded-lg border border-border p-3">
-          <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {g.resource}
+          <legend className="px-1 text-xs font-semibold tracking-wide text-muted-foreground">
+            {resourceLabel(g.resource)}
           </legend>
           <div className="flex flex-col gap-1.5">
             {g.permissions.map((p) => (

@@ -15,39 +15,57 @@
  */
 
 export const PERMISSIONS = [
-  { key: "admin.access", resource: "admin", action: "access", description: "Enter the Admin Console" },
+  { key: "admin.access", resource: "admin", action: "access", description: "เข้าใช้งานหน้าผู้ดูแลระบบ" },
 
-  { key: "collections.read", resource: "collections", action: "read", description: "View cosmetic collections" },
-  { key: "collections.write", resource: "collections", action: "write", description: "Create and edit collections" },
-  { key: "collections.publish", resource: "collections", action: "publish", description: "Publish / hide / archive collections" },
-  { key: "collections.delete", resource: "collections", action: "delete", description: "Hard-delete a draft collection" },
+  { key: "collections.read", resource: "collections", action: "read", description: "ดูคอลเลกชันไอเทม" },
+  { key: "collections.write", resource: "collections", action: "write", description: "สร้างและแก้ไขคอลเลกชัน" },
+  { key: "collections.publish", resource: "collections", action: "publish", description: "เผยแพร่ ซ่อน หรือเก็บคอลเลกชันเข้าคลัง" },
+  { key: "collections.delete", resource: "collections", action: "delete", description: "ลบคอลเลกชันฉบับร่างออกถาวร" },
 
-  { key: "assets.read", resource: "assets", action: "read", description: "View cosmetic assets" },
-  { key: "assets.write", resource: "assets", action: "write", description: "Create and edit assets" },
-  { key: "assets.publish", resource: "assets", action: "publish", description: "Publish / hide / archive assets" },
-  { key: "assets.delete", resource: "assets", action: "delete", description: "Hard-delete a draft asset" },
+  { key: "assets.read", resource: "assets", action: "read", description: "ดูไอเทม" },
+  { key: "assets.write", resource: "assets", action: "write", description: "สร้างและแก้ไขไอเทม" },
+  { key: "assets.publish", resource: "assets", action: "publish", description: "เผยแพร่ ซ่อน หรือเก็บไอเทมเข้าคลัง" },
+  { key: "assets.delete", resource: "assets", action: "delete", description: "ลบไอเทมฉบับร่างออกถาวร" },
 
-  { key: "rewards.read", resource: "rewards", action: "read", description: "View reward rules" },
-  { key: "rewards.write", resource: "rewards", action: "write", description: "Create, edit and toggle reward rules" },
+  { key: "rewards.read", resource: "rewards", action: "read", description: "ดูกติกาการให้รางวัล" },
+  { key: "rewards.write", resource: "rewards", action: "write", description: "สร้าง แก้ไข และเปิด/ปิดกติกาการให้รางวัล" },
 
-  { key: "entitlements.read", resource: "entitlements", action: "read", description: "View a user's entitlements and loadout" },
-  { key: "entitlements.grant", resource: "entitlements", action: "grant", description: "Grant an asset or collection to a user" },
-  { key: "entitlements.revoke", resource: "entitlements", action: "revoke", description: "Revoke a user's entitlement" },
+  { key: "entitlements.read", resource: "entitlements", action: "read", description: "ดูสิทธิ์ครอบครองและชุดแต่งตัวของผู้ใช้" },
+  { key: "entitlements.grant", resource: "entitlements", action: "grant", description: "มอบไอเทมหรือคอลเลกชันให้ผู้ใช้" },
+  { key: "entitlements.revoke", resource: "entitlements", action: "revoke", description: "เพิกถอนสิทธิ์ครอบครองของผู้ใช้" },
 
-  { key: "users.read", resource: "users", action: "read", description: "Search the registered-user directory" },
+  { key: "users.read", resource: "users", action: "read", description: "ค้นหารายชื่อผู้ใช้ที่ลงทะเบียน" },
 
-  { key: "commerce.read", resource: "commerce", action: "read", description: "View products and orders" },
-  { key: "commerce.write", resource: "commerce", action: "write", description: "Manage products and orders" },
+  { key: "commerce.read", resource: "commerce", action: "read", description: "ดูสินค้าและคำสั่งซื้อ" },
+  { key: "commerce.write", resource: "commerce", action: "write", description: "จัดการสินค้าและคำสั่งซื้อ" },
 
-  { key: "roles.read", resource: "roles", action: "read", description: "View roles, permissions and admin users" },
-  { key: "roles.write", resource: "roles", action: "write", description: "Create, edit and archive roles and their permissions" },
-  { key: "roles.assign", resource: "roles", action: "assign", description: "Assign and revoke a user's roles (SUPER_ADMIN only)" },
+  { key: "roles.read", resource: "roles", action: "read", description: "ดูชุดสิทธิ์ รายการสิทธิ์ และผู้ดูแลระบบ" },
+  { key: "roles.write", resource: "roles", action: "write", description: "สร้าง แก้ไข และเก็บถาวรชุดสิทธิ์พร้อมสิทธิ์ในชุด" },
+  { key: "roles.assign", resource: "roles", action: "assign", description: "กำหนดและเพิกถอนชุดสิทธิ์ของผู้ใช้ (เฉพาะ SUPER_ADMIN)" },
 
-  { key: "settings.read", resource: "settings", action: "read", description: "View runtime configuration" },
-  { key: "settings.write", resource: "settings", action: "write", description: "Change runtime configuration" },
+  { key: "settings.read", resource: "settings", action: "read", description: "ดูการตั้งค่าระบบ" },
+  { key: "settings.write", resource: "settings", action: "write", description: "แก้ไขการตั้งค่าระบบ" },
 
-  { key: "audit.read", resource: "audit", action: "read", description: "Read the audit log" },
+  { key: "audit.read", resource: "audit", action: "read", description: "ดูบันทึกการตรวจสอบ" },
 ] as const;
+
+/** Human-readable Thai label for each permission `resource` group. */
+export const RESOURCE_LABELS: Record<string, string> = {
+  admin: "ผู้ดูแลระบบ",
+  collections: "คอลเลกชัน",
+  assets: "ไอเทม",
+  rewards: "รางวัล",
+  entitlements: "สิทธิ์ครอบครอง",
+  users: "ผู้ใช้",
+  commerce: "การขาย",
+  roles: "ชุดสิทธิ์การใช้งาน",
+  settings: "การตั้งค่า",
+  audit: "การตรวจสอบ",
+};
+
+export function resourceLabel(resource: string): string {
+  return RESOURCE_LABELS[resource] ?? resource;
+}
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
 

@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { requireCapability } from "@/server/lib/guards";
+import { resourceLabel } from "@/lib/rbac/catalogue";
 import { listPermissionCatalogue } from "@/server/services/rbac/permission.service";
 import { Card } from "@/components/ui/card";
 
@@ -21,8 +22,8 @@ export default async function PermissionsPage() {
       <div className="flex flex-col gap-4">
         {groups.map((g) => (
           <Card key={g.resource} className="p-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {g.resource}
+            <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground">
+              {resourceLabel(g.resource)}
             </p>
             <ul className="flex flex-col divide-y divide-border">
               {g.permissions.map((p) => (
