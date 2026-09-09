@@ -4,7 +4,7 @@
  */
 import type { PrismaClient, EquipmentSlot, Prisma } from "@prisma/client";
 
-import { assetConfigV1Schema } from "@/lib/cosmetics/config";
+import { parseAssetConfig } from "@/lib/cosmetics/config";
 
 type DemoAsset = {
   slug: string;
@@ -12,6 +12,8 @@ type DemoAsset = {
   slot: EquipmentSlot;
   rarity: Prisma.CosmeticAssetCreateInput["rarity"];
   config: Prisma.InputJsonValue;
+  /** defaults to 1; set 2 for configs that use the Phase 2 effect fields */
+  configVersion?: number;
 };
 
 type DemoCollection = {
@@ -22,7 +24,23 @@ type DemoCollection = {
   assets: DemoAsset[];
 };
 
-const COLLECTIONS: DemoCollection[] = [
+/** Phase 2 effect fields — presence bumps a config to version 2. */
+const V2_KEYS = [
+  "chartStyle",
+  "iconStyle",
+  "typography",
+  "ambientEffect",
+  "interactionEffect",
+  "celebrationEffect",
+] as const;
+
+function configVersionFor(asset: DemoAsset): number {
+  if (asset.configVersion) return asset.configVersion;
+  const keys = Object.keys(asset.config as Record<string, unknown>);
+  return keys.some((k) => (V2_KEYS as readonly string[]).includes(k)) ? 2 : 1;
+}
+
+export const COLLECTIONS: DemoCollection[] = [
   {
     slug: "sakura",
     name: "Sakura",
@@ -39,7 +57,6 @@ const COLLECTIONS: DemoCollection[] = [
           surface: "GRADIENT",
           texture: "FINE_NOISE",
           motion: "FLOATING_PARTICLES",
-          reducedMotionMotion: "NONE",
           intensity: "LOW",
         },
       },
@@ -50,10 +67,8 @@ const COLLECTIONS: DemoCollection[] = [
         rarity: "RARE",
         config: {
           colors: { border: "#f472b6", glow: "#f9a8d4" },
-          shape: "SOFT",
           borderEffect: "GRADIENT_BORDER",
-          motion: "SHIMMER",
-          reducedMotionMotion: "NONE",
+          motion: "PULSE",
         },
       },
       {
@@ -84,7 +99,6 @@ const COLLECTIONS: DemoCollection[] = [
           colors: { background: "#0b1026", glow: "#6366f1" },
           surface: "GRADIENT",
           motion: "FLOATING_PARTICLES",
-          reducedMotionMotion: "NONE",
           intensity: "MEDIUM",
           darkCompatible: true,
           lightCompatible: false,
@@ -98,7 +112,6 @@ const COLLECTIONS: DemoCollection[] = [
         config: {
           colors: { glow: "#818cf8" },
           motion: "PULSE",
-          reducedMotionMotion: "NONE",
           intensity: "MEDIUM",
         },
       },
@@ -154,6 +167,231 @@ const COLLECTIONS: DemoCollection[] = [
       },
     ],
   },
+  {
+    // Full-coverage cyberpunk set: one asset for every equipment slot.
+    slug: "neon-nexus",
+    name: "Neon Nexus",
+    description:
+      "Full cyberpunk override — every slot filled. Cyan / magenta / violet neon on black chrome, sharp edges, scanline grain.",
+    rarity: "LIMITED",
+    assets: [
+      {
+        slug: "neon-nexus-background",
+        name: "Nexus Grid",
+        slot: "APP_BACKGROUND",
+        rarity: "LIMITED",
+        config: {
+          colors: { background: "#05060f", surface: "#0a0f1f", glow: "#22d3ee" },
+          surface: "GRADIENT",
+          texture: "FINE_NOISE",
+          motion: "FLOATING_PARTICLES",
+          intensity: "MEDIUM",
+          darkCompatible: true,
+          lightCompatible: false,
+        },
+      },
+      {
+        slug: "neon-nexus-navigation",
+        name: "Chrome Deck",
+        slot: "NAVIGATION",
+        rarity: "LIMITED",
+        config: {
+          colors: { surface: "#0b0f1e", border: "#22d3ee", glow: "#22d3ee" },
+          shape: "SHARP",
+          surface: "GLASS",
+          borderEffect: "GLOW",
+          texture: "FINE_NOISE",
+          intensity: "MEDIUM",
+        },
+      },
+      {
+        slug: "neon-nexus-header",
+        name: "Datastream Bar",
+        slot: "HEADER",
+        rarity: "LIMITED",
+        config: {
+          colors: { surface: "#0b0f1e", border: "#ff2fb0", glow: "#ff2fb0" },
+          surface: "GLASS",
+          borderEffect: "GRADIENT_BORDER",
+          texture: "FINE_NOISE",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "neon-nexus-profile-frame",
+        name: "Circuit Frame",
+        slot: "PROFILE_FRAME",
+        rarity: "LIMITED",
+        config: {
+          colors: { border: "#22d3ee", glow: "#a855f7" },
+          borderEffect: "GRADIENT_BORDER",
+          motion: "PULSE",
+          intensity: "MEDIUM",
+        },
+      },
+      {
+        slug: "neon-nexus-profile-badge",
+        name: "Runner Badge",
+        slot: "PROFILE_BADGE",
+        rarity: "LIMITED",
+        config: {
+          colors: { primary: "#22d3ee" },
+          shape: "SHARP",
+        },
+      },
+      {
+        slug: "neon-nexus-profile-aura",
+        name: "Overclock Aura",
+        slot: "PROFILE_AURA",
+        rarity: "LIMITED",
+        config: {
+          colors: { glow: "#ff2fb0" },
+          motion: "PULSE",
+          intensity: "HIGH",
+        },
+      },
+      {
+        slug: "neon-nexus-overview-card",
+        name: "HUD Overview",
+        slot: "OVERVIEW_CARD",
+        rarity: "LIMITED",
+        config: {
+          colors: {
+            surface: "#0a0f1f",
+            border: "#22d3ee",
+            glow: "#22d3ee",
+            text: "#e2e8f0",
+          },
+          shape: "SHARP",
+          surface: "ELEVATED",
+          borderEffect: "GLOW",
+          texture: "FINE_NOISE",
+          motion: "SHIMMER",
+          intensity: "MEDIUM",
+        },
+      },
+      {
+        slug: "neon-nexus-account-card",
+        name: "Credchip Card",
+        slot: "ACCOUNT_CARD",
+        rarity: "LIMITED",
+        config: {
+          colors: {
+            surface: "#0b1020",
+            border: "#a855f7",
+            glow: "#a855f7",
+            text: "#ede9fe",
+          },
+          shape: "SHARP",
+          surface: "ELEVATED",
+          borderEffect: "GRADIENT_BORDER",
+          motion: "SHIMMER",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "neon-nexus-investment-card",
+        name: "Market Uplink",
+        slot: "INVESTMENT_CARD",
+        rarity: "LIMITED",
+        config: {
+          colors: {
+            surface: "#0a0f1f",
+            border: "#ff2fb0",
+            glow: "#ff2fb0",
+            text: "#ffe4f3",
+          },
+          shape: "SHARP",
+          surface: "ELEVATED",
+          borderEffect: "GLOW",
+          motion: "PULSE",
+          intensity: "MEDIUM",
+        },
+      },
+      {
+        slug: "neon-nexus-transaction-card",
+        name: "Ledger Terminal",
+        slot: "TRANSACTION_CARD",
+        rarity: "LIMITED",
+        config: {
+          colors: {
+            surface: "#0b0f1e",
+            border: "#22d3ee",
+            glow: "#22d3ee",
+            text: "#e0f2fe",
+          },
+          shape: "SHARP",
+          surface: "GLASS",
+          borderEffect: "SHINE",
+          intensity: "LOW",
+        },
+      },
+      {
+        slug: "neon-nexus-chart-style",
+        name: "Neon Trace",
+        slot: "CHART_STYLE",
+        rarity: "LIMITED",
+        config: {
+          colors: { primary: "#22d3ee", glow: "#ff2fb0" },
+          chartStyle: "NEON",
+          intensity: "MEDIUM",
+        },
+      },
+      {
+        slug: "neon-nexus-icon-set",
+        name: "Hexdroid Icons",
+        slot: "ICON_SET",
+        rarity: "LIMITED",
+        config: {
+          colors: { primary: "#22d3ee" },
+          iconStyle: "DUOTONE",
+        },
+      },
+      {
+        slug: "neon-nexus-typography",
+        name: "Terminal Type",
+        slot: "TYPOGRAPHY",
+        rarity: "LIMITED",
+        config: {
+          colors: { text: "#e2e8f0" },
+          typography: "COMPACT",
+        },
+      },
+      {
+        slug: "neon-nexus-ambient-effect",
+        name: "Holo Orbs",
+        slot: "AMBIENT_EFFECT",
+        rarity: "LIMITED",
+        config: {
+          colors: { glow: "#ff2fb0" },
+          ambientEffect: "GLOW_ORBS",
+          intensity: "MEDIUM",
+        },
+      },
+      {
+        slug: "neon-nexus-interaction-effect",
+        name: "Pulse Tap",
+        slot: "INTERACTION_EFFECT",
+        rarity: "LIMITED",
+        config: {
+          colors: { glow: "#22d3ee" },
+          interactionEffect: "GLOW_TAP",
+          intensity: "MEDIUM",
+        },
+      },
+      {
+        slug: "neon-nexus-celebration-effect",
+        name: "Data Burst",
+        slot: "CELEBRATION_EFFECT",
+        rarity: "LIMITED",
+        config: {
+          colors: { glow: "#a855f7" },
+          celebrationEffect: "SPARKLE",
+          intensity: "HIGH",
+        },
+      },
+    ],
+  },
 ];
 
 export async function seedCosmeticDemo(prisma: PrismaClient): Promise<void> {
@@ -176,8 +414,9 @@ export async function seedCosmeticDemo(prisma: PrismaClient): Promise<void> {
     });
 
     for (const [ai, a] of col.assets.entries()) {
-      // fail loudly if a demo config is invalid
-      assetConfigV1Schema.parse(a.config);
+      const version = configVersionFor(a);
+      // fail loudly if a demo config is invalid for its version
+      parseAssetConfig(version, a.config);
 
       // Published config is IMMUTABLE. Re-seeding only creates missing rows and
       // touches safe metadata — it never rewrites `config`, `status`,
@@ -200,7 +439,7 @@ export async function seedCosmeticDemo(prisma: PrismaClient): Promise<void> {
               rarity: a.rarity,
               status: "PUBLISHED",
               acquisitionType: "ADMIN_GRANT",
-              configVersion: 1,
+              configVersion: version,
               config: a.config,
               publishedAt: now,
             },
