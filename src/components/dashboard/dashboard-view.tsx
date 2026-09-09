@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LineChart } from "@/components/charts/line-chart";
 import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
 import { CategoryBars } from "@/components/charts/category-bars";
+import { useBalancesHidden } from "@/hooks/use-balances-hidden";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
 
 const CATEGORY_ROWS = 5;
@@ -319,6 +320,7 @@ function TrendTabs({ labels, history, incomeExpense, compare, formatValue }: {
   formatValue: (n: number) => string;
 }) {
   const [tab, setTab] = useState<TrendTabId>("history");
+  const balancesHidden = useBalancesHidden();
   const tabs: { id: TrendTabId; label: string }[] = [
     { id: "history", label: labels.netWorthHistory ?? "" },
     { id: "flow", label: labels.incomeVsExpense ?? "" },
@@ -333,7 +335,7 @@ function TrendTabs({ labels, history, incomeExpense, compare, formatValue }: {
 
     <div className="mt-5">
       {tab === "history" && (history.length >= 2
-        ? <LineChart data={history} formatValue={formatValue} />
+        ? <LineChart data={history} formatValue={formatValue} maskValues={balancesHidden} />
         : <p className="py-8 text-center text-sm text-muted-foreground">{labels.collecting}</p>)}
 
       {tab === "flow" && <>
@@ -341,7 +343,7 @@ function TrendTabs({ labels, history, incomeExpense, compare, formatValue }: {
           <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-positive" />{labels.income}</span>
           <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-negative" />{labels.expense}</span>
         </div>
-        <IncomeExpenseBars data={incomeExpense} formatValue={formatValue} />
+        <IncomeExpenseBars data={incomeExpense} formatValue={formatValue} maskValues={balancesHidden} />
       </>}
 
       {tab === "compare" && <div className="soft-divider">

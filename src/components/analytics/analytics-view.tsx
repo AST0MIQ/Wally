@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { Info } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
@@ -12,6 +14,7 @@ import type { AnalyticsData, Period } from "@/server/services/analytics.service"
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useBalancesHidden } from "@/hooks/use-balances-hidden";
 import { IncomeExpenseBars } from "@/components/charts/income-expense-bars";
 import { CategoryBars } from "@/components/charts/category-bars";
 import { LineChart } from "@/components/charts/line-chart";
@@ -66,10 +69,14 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
   const ui = useTranslations("ui");
   const t = useTranslations("analytics");
   const tCat = useTranslations("categories");
+  const balancesHidden = useBalancesHidden();
   const base = data.baseCurrency;
   const fmt = (n: number | string) => formatCurrency(n, base, locale);
   const fmtC = (n: number | string) => formatMoneyCompact(n, base, locale);
   const fmtSigned = (n: number) => (n >= 0 ? `+${fmt(n)}` : `−${fmt(-n)}`);
+  // For amounts baked into prose (insights) — CSS `.balance-mask` can't reach
+  // those, so swap in a fixed placeholder when "hide amounts" is on.
+  const amt = (n: number | string) => (balancesHidden ? "••••" : fmt(n));
 
   const catName = (c: { name: string | null; systemKey: string | null }) =>
     c.name ? categoryLabel(tCat, { systemKey: c.systemKey, name: c.name }) : "—";
@@ -94,7 +101,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
   if (data.topCategory) {
     insights.push(
       t("spentOn", {
-        amount: fmt(data.topCategory.amount),
+        amount: amt(data.topCategory.amount),
         category: catName(data.topCategory),
       }),
     );
@@ -111,15 +118,15 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
       t("expenseDown", { pct: Math.round(Math.abs(data.expenseDeltaPct)) }),
     );
   }
-  if (netMonth > 0) insights.push(t("incomeOverExpense", { amount: fmt(netMonth) }));
+  if (netMonth > 0) insights.push(t("incomeOverExpense", { amount: amt(netMonth) }));
   else if (netMonth < 0)
-    insights.push(t("expenseOverIncome", { amount: fmt(-netMonth) }));
+    insights.push(t("expenseOverIncome", { amount: amt(-netMonth) }));
   if (data.netWorthDelta !== null) {
     const d = Number(data.netWorthDelta);
     insights.push(
       d >= 0
-        ? t("netWorthUp", { amount: fmt(d) })
-        : t("netWorthDown", { amount: fmt(-d) }),
+        ? t("netWorthUp", { amount: amt(d) })
+        : t("netWorthDown", { amount: amt(-d) }),
     );
   }
 
@@ -145,13 +152,15 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
       <NetWorthCard data={data} fmt={fmt} fmtC={fmtC} fmtSigned={fmtSigned} t={t} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label={t("income")} value={fmtC(income)} title={fmt(income)} tone="positive" />
-        <StatTile label={t("expense")} value={fmtC(expense)} title={fmt(expense)} tone="negative" />
+        <StatTile label={t("income")} value={fmtC(income)} title={fmt(income)} tone="positive" hint={t("hintIncome")} mask />
+        <StatTile label={t("expense")} value={fmtC(expense)} title={fmt(expense)} tone="negative" hint={t("hintExpense")} mask />
         <StatTile
           label={t("net")}
           value={`${netMonth >= 0 ? "+" : "−"}${fmtC(Math.abs(netMonth))}`}
           title={fmtSigned(netMonth)}
           tone={netMonth >= 0 ? "positive" : "negative"}
+          hint={t("hintNet")}
+          mask
         />
         <StatTile
           label={t("savingsRate")}
@@ -165,13 +174,14 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
                 ? "positive"
                 : "negative"
           }
+          hint={t("hintSavingsRate")}
         />
       </div>
 
       {trendPoints.length >= 2 && (
         <Card className="flex flex-col gap-3 p-5">
           <h2 className="text-sm font-semibold">{t("netTrend")}</h2>
-          <LineChart data={trendPoints} formatValue={(n) => fmt(n)} />
+          <LineChart data={trendPoints} formatValue={(n) => fmt(n)} maskValues={balancesHidden} />
         </Card>
       )}
 
@@ -197,6 +207,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
               expense: Number(b.expense),
             }))}
             formatValue={(n) => fmt(n)}
+            maskValues={balancesHidden}
           />
         </Card>
       )}
@@ -234,7 +245,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
                   <span>{catName(c)}</span>
                 </span>
                 <span className="flex items-center gap-3">
-                  <span className="tabular-nums">{fmt(c.amount)}</span>
+                  <span className="balance-mask inline-block tabular-nums">{fmt(c.amount)}</span>
                   {delta !== null && (
                     <span
                       className={cn(
@@ -264,25 +275,64 @@ function StatTile({
   value,
   title,
   tone,
+  hint,
+  mask,
 }: {
   label: string;
   value: string;
   title?: string;
   tone: "positive" | "negative" | "neutral";
+  hint?: string;
+  mask?: boolean;
 }) {
+  const t = useTranslations("analytics");
+  const [open, setOpen] = useState(false);
+
   return (
-    <Card className="min-w-0 p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <Card className="relative min-w-0 overflow-visible p-4">
+      <div className="flex items-center justify-between gap-1">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        {hint && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={t("howCalculated")}
+            aria-expanded={open}
+            className="-m-1 shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Info className="size-3.5" />
+          </button>
+        )}
+      </div>
       <p
         title={title ?? value}
         className={cn(
           "mt-1 truncate text-lg font-semibold tabular-nums",
+          mask && "balance-mask",
           tone === "positive" && "text-positive",
           tone === "negative" && "text-negative",
         )}
       >
         {value}
       </p>
+
+      {hint && open && (
+        <>
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-30 cursor-default"
+          />
+          <div
+            role="tooltip"
+            className="absolute inset-x-0 top-full z-40 mt-1 rounded-lg border border-border bg-card p-3 text-xs leading-relaxed text-muted-foreground shadow-lg"
+          >
+            {hint}
+          </div>
+        </>
+      )}
     </Card>
   );
 }
@@ -318,11 +368,12 @@ function NetWorthCard({
               delta >= 0 ? "text-positive" : "text-negative",
             )}
           >
-            {fmtSigned(delta)} · {t("vsPrevPeriod")}
+            <span className="balance-mask inline-block">{fmtSigned(delta)}</span> ·{" "}
+            {t("vsPrevPeriod")}
           </span>
         )}
       </div>
-      <p title={fmt(data.netWorthNow)} className="truncate text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
+      <p title={fmt(data.netWorthNow)} className="balance-mask truncate text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
         {fmtC(data.netWorthNow)}
       </p>
 
@@ -334,10 +385,12 @@ function NetWorthCard({
           </div>
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>
-              {t("cash")} {cashPct}% · {fmt(cash)}
+              {t("cash")} {cashPct}% ·{" "}
+              <span className="balance-mask inline-block">{fmt(cash)}</span>
             </span>
             <span>
-              {t("investment")} {investPct}% · {fmt(invest)}
+              {t("investment")} {investPct}% ·{" "}
+              <span className="balance-mask inline-block">{fmt(invest)}</span>
             </span>
           </div>
         </div>
