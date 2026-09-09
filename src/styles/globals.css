@@ -286,21 +286,31 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .interactive-lift:hover { transform: translateY(-2px); box-shadow: 0 16px 36px -24px rgb(15 23 42 / 0.38); }
 .balance-mask { font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.035em; }
 /* Privacy mode: one global toggle masks every monetary figure app-wide.
-   `-webkit-text-security: disc` renders each glyph as a • bullet — same
-   length, same alignment, no layout shift, and it inherits the text
-   colour so it reads correctly on every card. pointer-events: none stops
-   `title` tooltips from leaking the exact amount on hover / long-press. */
+   The real digits are made invisible with `-webkit-text-fill-color`
+   (which leaves `currentColor` intact) and a FIXED-length `••••••` is
+   drawn on top via ::after — so the mask never reveals how many digits
+   the amount has. The pseudo inherits `text-align` and `currentColor`,
+   so it stays aligned and readable on every card. pointer-events: none
+   stops `title` tooltips from leaking the exact amount on hover. */
 :root[data-balances="hidden"] .balance-mask {
-  -webkit-text-security: disc;
-  text-security: disc;
+  position: relative;
+  -webkit-text-fill-color: transparent;
   -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
   cursor: default;
 }
-/* Firefox < 117 has no text-security — fall back to a blur. */
-@supports not ((-webkit-text-security: disc) or (text-security: disc)) {
-  :root[data-balances="hidden"] .balance-mask { filter: blur(0.42em); }
+:root[data-balances="hidden"] .balance-mask::after {
+  content: "••••••";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: block;
+  text-align: inherit;
+  letter-spacing: 0.08em;
+  -webkit-text-fill-color: currentColor;
+  font-variant-numeric: normal;
 }
 .soft-divider > * + * { border-top: 1px solid color-mix(in srgb, var(--border) 78%, transparent); }
 button:not(:disabled), summary { cursor: pointer; }
