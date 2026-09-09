@@ -52,7 +52,7 @@ export function AppShell({
   return (
     <QuickAddProvider accounts={accounts} categories={categories}>
       <MarketDataRefresh />
-      <WelcomeTour />
+      <WelcomeTour hasAccounts={accounts.length > 0} />
       <StreakCelebration
         pending={streak.pendingCelebration}
         count={streak.count}

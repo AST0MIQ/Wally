@@ -62,13 +62,8 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
     </span>;
   };
 
-  if (!hasAnything) return <section className="flex flex-col gap-6">
-    <PageHeader title={t("title")} description={ui("overview")} />
-    <div data-tour="net-worth">
-      <EmptyState title={t("empty")} description={t("emptyCta")} action={<Link href="/accounts" className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-medium text-white">{t("accountBreakdown")} <ChevronRight className="ml-1 size-4" /></Link>} />
-    </div>
-  </section>;
-
+  // A brand-new account still gets the real overview card (all zeroes) so the
+  // page — and the welcome tour that points at it — reads the same on day one.
   return <section className="flex flex-col gap-9 pb-4">
     <PageHeader title={t("title")} description={ui("overview")} eyebrow={<>{t("greeting")}{firstName ? `, ${firstName}` : ""}</>} action={<AddTransactionButton />} />
 
@@ -149,6 +144,19 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       )}
       </div>
     </section>
+
+    {!hasAnything ? (
+      <EmptyState
+        title={t("empty")}
+        description={t("emptyCta")}
+        action={
+          <Link href="/accounts" className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-medium text-white">
+            {t("addAccount")} <ChevronRight className="ml-1 size-4" />
+          </Link>
+        }
+      />
+    ) : (
+      <>
 
     {/* This month — spending health */}
     <DashSection title={t("monthlyHealth")} href="/analytics" label={t("viewAnalytics")}>
@@ -303,6 +311,8 @@ export function DashboardView({ data, firstName, streak }: { data: DashboardData
       </span>
       <ChevronRight className="size-4 text-muted-foreground" />
     </Link>
+      </>
+    )}
   </section>;
 }
 
