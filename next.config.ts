@@ -26,7 +26,12 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.googleusercontent.com https://*.public.blob.vercel-storage.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://cdn.jsdelivr.net https://tessdata.projectnaptha.com",
+  // The Blob host must be listed here as well as in `img-src`: the service
+  // worker intercepts a cosmetic <img> and re-issues it with `fetch()`, and a
+  // fetch from the worker is governed by `connect-src`. Without it the image
+  // loads fine wherever no service worker is active (dev, a first visit that
+  // beat registration) and fails everywhere else.
+  "connect-src 'self' https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://*.public.blob.vercel-storage.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "frame-ancestors 'none'",
