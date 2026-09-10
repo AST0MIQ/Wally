@@ -35,6 +35,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { CosmeticPreview } from "@/components/cosmetics/cosmetic-preview";
+import { cosmeticMediaUrl } from "@/lib/cosmetics/render";
 
 type Tab = "owned" | "locked" | "all";
 
@@ -207,6 +208,18 @@ export function CosmeticsView({
           {visible.map((i) => (
             <li key={i.assetId}>
               <Card className="flex h-full flex-col gap-2 p-4">
+                {cosmeticMediaUrl({ mediaUrl: i.previewUrl ?? undefined }) && (
+                  // The item's own artwork. Same-origin/Blob validated, purely
+                  // decorative — the name below is what identifies the item.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={i.previewUrl!}
+                    alt=""
+                    aria-hidden
+                    loading="lazy"
+                    className="-mx-4 -mt-4 mb-1 aspect-video w-[calc(100%+2rem)] rounded-t-xl bg-muted object-cover"
+                  />
+                )}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{i.name}</p>
