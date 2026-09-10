@@ -45,6 +45,7 @@ export const MEDIA: MediaSeed[] = [
   { file: "02-profile-frame.png", name: "แพนด้า — กรอบไผ่ (ภาพใช้จริง)", usage: "PROFILE_FRAME", width: 1024, height: 1024 },
   { file: "03-cover.png", name: "แพนด้า — ปกชุดธีม", usage: "COLLECTION_COVER", width: 1344, height: 752 },
   { file: "04-profile-badge.png", name: "แพนด้า — ป้ายหน้าแพนด้า (ภาพใช้จริง)", usage: "PROFILE_BADGE", width: 1024, height: 1024 },
+  { file: "05-card-surface.png", name: "แพนด้า — ลายพื้นการ์ดไผ่ (ภาพใช้จริง)", usage: "CARD_SURFACE", width: 1600, height: 900 },
   { file: "p-app-background.png", name: "แพนด้า — ตัวอย่างพื้นหลังแอป", ...PREVIEW },
   { file: "p-ambient-effect.png", name: "แพนด้า — ตัวอย่างเอฟเฟกต์พื้นหลัง", ...PREVIEW },
   { file: "p-navigation.png", name: "แพนด้า — ตัวอย่างแถบเมนู", ...PREVIEW },
@@ -126,10 +127,10 @@ export const ASSETS: AssetSeed[] = [
   {
     slug: "panda-overview-card",
     name: "แพนด้า — การ์ดภาพรวมกระดาษสา",
-    description: "การ์ดใบเด่น ขอบนุ่ม ยกตัวเล็กน้อย",
+    description: "การ์ดใบเด่น ปูลายไผ่จาง ๆ ที่ขอบ กลางการ์ดเว้นว่างให้ตัวเลขอ่านออก",
     slot: "OVERVIEW_CARD",
     preview: `${BLOB}/p-overview-card.png`,
-    config: { colors: pick("surface", "primary", "text", "muted", "border", "glow", "cash", "investment"), shape: "SOFT", surface: "ELEVATED", borderEffect: "NONE", texture: "FINE_NOISE", motion: "NONE", intensity: "LOW" },
+    config: { colors: pick("surface", "primary", "text", "muted", "border", "glow", "cash", "investment"), shape: "SOFT", surface: "ELEVATED", borderEffect: "NONE", texture: "NONE", motion: "NONE", intensity: "LOW", mediaUrl: `${BLOB}/05-card-surface.png` },
   },
   {
     slug: "panda-account-card",

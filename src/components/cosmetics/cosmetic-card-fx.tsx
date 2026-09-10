@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { cosmeticClasses, cosmeticVars } from "@/lib/cosmetics/render";
+import { cosmeticClasses, cosmeticMediaUrl, cosmeticVars } from "@/lib/cosmetics/render";
 import { shouldRenderLayer } from "@/lib/cosmetics/config";
 import type { EquipmentSlot } from "@/lib/cosmetics/slots";
 import { useCosmetic } from "@/components/cosmetics/cosmetic-context";
@@ -13,17 +13,29 @@ import { useRenderCtx } from "@/components/cosmetics/use-render-ctx";
  * current scheme / needs a newer app. Always `pointer-events: none` +
  * `aria-hidden` — it can never intercept a tap, drag or scroll. Place inside a
  * `position: relative`, clipping (`overflow-hidden`) host.
+ *
+ * A card asset may carry its own surface artwork in `config.mediaUrl`. It is
+ * painted inside this same overlay, underneath the preset effects, so it is
+ * clipped to the card's radius and can never sit above the card's text — the
+ * artwork decorates the surface, it does not replace the content.
  */
 export function CosmeticCardFx({ slot }: { slot: EquipmentSlot }) {
   const asset = useCosmetic(slot);
   const ctx = useRenderCtx();
   if (!asset || !shouldRenderLayer(asset.config, ctx)) return null;
 
+  const media = cosmeticMediaUrl(asset.config);
   return (
     <span
       aria-hidden
       style={cosmeticVars(asset.config) as React.CSSProperties}
       className={cn("ck-fx z-0", cosmeticClasses(asset.config, { slot }))}
-    />
+    >
+      {media && (
+        // Decorative user-authored artwork; same-origin / Blob validated.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={media} alt="" aria-hidden className="ck-fx-media" />
+      )}
+    </span>
   );
 }

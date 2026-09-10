@@ -32,6 +32,7 @@ export const MEDIA_USAGES = [
   "AMBIENT_EFFECT",
   "PROFILE_FRAME",
   "PROFILE_BADGE",
+  "CARD_SURFACE",
   "ASSET_PREVIEW",
   "COLLECTION_COVER",
 ] as const;
@@ -111,6 +112,12 @@ export const MEDIA_USAGE_SPECS: Record<MediaUsage, MediaUsageSpec> = {
     where: "ป้ายเล็กมุมขวาล่างของรูปโปรไฟล์",
     note: "PNG พื้นหลังโปร่งใส ตัวป้ายควรเต็มเฟรมเพราะถูกย่อเหลือ 44% ของรูปโปรไฟล์",
   },
+  CARD_SURFACE: {
+    ...LANDSCAPE,
+    label: "ลายพื้นการ์ด",
+    where: "ลายที่ปูอยู่บนการ์ดภาพรวม/บัญชี/การลงทุน/รายการรับจ่าย",
+    note: "ถูกครอบตามรูปทรงการ์ดซึ่งกว้างกว่าภาพมาก ลายจึงควรกระจายทั่วภาพและจางพอให้ตัวเลขอ่านออก",
+  },
   ASSET_PREVIEW: {
     ...LANDSCAPE,
     label: "รูปตัวอย่างไอเทม",
@@ -143,6 +150,11 @@ export function usageForSlot(slot: string): MediaUsage | null {
     case "AMBIENT_EFFECT": return "AMBIENT_EFFECT";
     case "PROFILE_FRAME": return "PROFILE_FRAME";
     case "PROFILE_BADGE": return "PROFILE_BADGE";
+    case "OVERVIEW_CARD":
+    case "ACCOUNT_CARD":
+    case "INVESTMENT_CARD":
+    case "TRANSACTION_CARD":
+      return "CARD_SURFACE";
     default: return null;
   }
 }

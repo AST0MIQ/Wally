@@ -77,6 +77,14 @@
   border-radius: inherit;
   overflow: hidden;
 }
+.ck-fx-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
 .ck-card-replaced {
   /* The host receives an opaque inline background from the validated asset.
      This marker documents replacement precedence and gives future card slots
