@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, ImagePlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 import { uploadMediaAction } from "@/app/actions/admin/media";
+import { useAction } from "@/hooks/use-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -34,32 +37,47 @@ function measure(file: File): Promise<{ width: number; height: number } | null> 
 }
 
 export function MediaUploadForm({ defaultUsage = "APP_BACKGROUND" }: { defaultUsage?: MediaUsage }) {
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [fileName, setFileName] = useState("");
+  const [name, setName] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [usage, setUsage] = useState<MediaUsage>(defaultUsage);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const spec = MEDIA_USAGE_SPECS[usage];
   const warnings = size ? mediaSizeWarnings(usage, size.width, size.height) : [];
+  const upload = useAction(uploadMediaAction);
 
   useEffect(() => setUsage(defaultUsage), [defaultUsage]);
 
-  const acceptFile = async (file?: File) => {
-    if (!file || !fileRef.current) return;
-    const transfer = new DataTransfer();
-    transfer.items.add(file);
-    fileRef.current.files = transfer.files;
-    setFileName(file.name);
-    setSize(await measure(file));
+  const acceptFile = async (picked?: File) => {
+    if (!picked) return;
+    setFile(picked);
+    setSize(await measure(picked));
   };
 
-  return <form action={uploadMediaAction} className="grid gap-3">
+  const submit = async () => {
+    if (!file) return;
+    const res = await upload.run(
+      { file, name: name || undefined, usage },
+      { successMessage: "อัปโหลดเข้าคลังแล้ว" },
+    );
+    if (res.ok) {
+      setFile(null);
+      setSize(null);
+      setName("");
+      if (fileRef.current) fileRef.current.value = "";
+      router.refresh();
+    }
+  };
+
+  return <div className="grid gap-3">
     <div className="grid gap-3 sm:grid-cols-2">
       <Field label="ชื่อรูป">
-        <Input name="name" placeholder="เช่น พื้นหลังซากุระ" />
+        <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="เช่น พื้นหลังซากุระ" />
       </Field>
       <Field label="ใช้กับส่วนไหน" hint={spec.where}>
-        <Select name="usage" value={usage} onChange={(event) => setUsage(event.target.value as MediaUsage)}>
+        <Select value={usage} onChange={(event) => setUsage(event.target.value as MediaUsage)}>
           {MEDIA_USAGES.map((value) => (
             <option key={value} value={value}>{MEDIA_USAGE_SPECS[value].label}</option>
           ))}
@@ -80,8 +98,8 @@ export function MediaUploadForm({ defaultUsage = "APP_BACKGROUND" }: { defaultUs
     >
       <ImagePlus className="size-6 text-primary" />
       <span className="text-sm font-medium">ลากรูปมาวาง หรือแตะเพื่อเลือก</span>
-      <span className="text-xs text-muted-foreground">{fileName || "PNG, JPG, WebP หรือ GIF ไม่เกิน 8 MB"}</span>
-      <input ref={fileRef} name="file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" required className="sr-only" onChange={(event) => void acceptFile(event.target.files?.[0])} />
+      <span className="text-xs text-muted-foreground">{file?.name || "PNG, JPG, WebP หรือ GIF ไม่เกิน 8 MB"}</span>
+      <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={(event) => void acceptFile(event.target.files?.[0])} />
     </label>
 
     {size && (
@@ -104,6 +122,8 @@ export function MediaUploadForm({ defaultUsage = "APP_BACKGROUND" }: { defaultUs
       )
     )}
 
-    <Button type="submit" disabled={!fileName}>อัปโหลดเข้าคลัง</Button>
-  </form>;
+    <Button type="button" onClick={submit} disabled={!file || upload.pending}>
+      {upload.pending ? "กำลังอัปโหลด…" : "อัปโหลดเข้าคลัง"}
+    </Button>
+  </div>;
 }

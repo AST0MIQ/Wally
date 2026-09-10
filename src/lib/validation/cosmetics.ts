@@ -3,6 +3,7 @@ import { z } from "zod";
 import { zCuid, zOptionalText, zShortText } from "@/lib/validation/common";
 import { assetConfigV2Schema } from "@/lib/cosmetics/config";
 import { EQUIPMENT_SLOTS } from "@/lib/cosmetics/slots";
+import { MEDIA_USAGES } from "@/lib/cosmetics/media-usage";
 
 export const zSlug = z
   .string()
@@ -174,3 +175,15 @@ export const applyCollectionSchema = z.object({ collectionId: zCuid });
 
 export type AssetCreateInput = z.infer<typeof assetCreateSchema>;
 export type CollectionCreateInput = z.infer<typeof collectionCreateSchema>;
+
+// ── Media library ────────────────────────────────────────────
+export const zMediaUsage = z.enum(MEDIA_USAGES);
+
+export const mediaUploadSchema = z.object({
+  file: z.instanceof(File, { message: "media_file_required" }),
+  name: zOptionalText(120),
+  usage: zMediaUsage,
+});
+
+export const mediaUsageSchema = z.object({ id: zCuid, usage: zMediaUsage });
+export const mediaIdSchema = z.object({ id: zCuid });

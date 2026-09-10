@@ -3,13 +3,11 @@ import { AlertTriangle } from "lucide-react";
 
 import { requirePermission } from "@/server/lib/guards";
 import { listMedia } from "@/server/services/cosmetics/media.service";
-import { archiveMediaAction } from "@/app/actions/admin/media";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MediaUploadForm } from "@/components/admin/media-upload-form";
 import { MediaUrlField } from "@/components/admin/media-url-field";
-import { MediaUsageSelect } from "@/components/admin/media-usage-select";
+import { MediaCardActions } from "@/components/admin/media-card-actions";
 import {
   MEDIA_USAGES,
   MEDIA_USAGE_SPECS,
@@ -108,15 +106,12 @@ export default async function MediaPage({
                   </p>
                 )}
                 <MediaUrlField name={item.name} url={item.url} />
-                <div className="flex items-center gap-2">
-                  <MediaUsageSelect id={item.id} usage={item.usage} name={item.name} />
-                  {item.status === "ACTIVE" && (
-                    <form action={archiveMediaAction}>
-                      <input type="hidden" name="id" value={item.id} />
-                      <Button type="submit" variant="ghost" size="sm">เก็บเข้าคลัง</Button>
-                    </form>
-                  )}
-                </div>
+                <MediaCardActions
+                  id={item.id}
+                  name={item.name}
+                  usage={item.usage}
+                  archivable={item.status === "ACTIVE"}
+                />
               </div>
             </Card>
           );

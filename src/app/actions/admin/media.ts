@@ -1,33 +1,44 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePermission } from "@/server/lib/guards";
-import { archiveMedia, setMediaUsage, uploadMedia } from "@/server/services/cosmetics/media.service";
-import { isMediaUsage, type MediaUsage } from "@/lib/cosmetics/media-usage";
+import { adminAction } from "@/server/lib/admin-action";
+import {
+  mediaIdSchema,
+  mediaUploadSchema,
+  mediaUsageSchema,
+} from "@/lib/validation/cosmetics";
+import {
+  archiveMedia,
+  setMediaUsage,
+  uploadMedia,
+} from "@/server/services/cosmetics/media.service";
 
-function readUsage(formData: FormData): MediaUsage {
-  const raw = String(formData.get("usage") ?? "");
-  if (!isMediaUsage(raw)) throw new Error("กรุณาเลือกส่วนที่จะนำรูปไปใช้");
-  return raw;
-}
+const MEDIA_PATH = "/admin/appearance/media";
 
-export async function uploadMediaAction(formData: FormData) {
-  const admin = await requirePermission("assets.write");
-  const file = formData.get("file");
-  const name = String(formData.get("name") ?? "");
-  if (!(file instanceof File)) throw new Error("กรุณาเลือกไฟล์รูป");
-  await uploadMedia(admin.id, file, name, readUsage(formData));
-  revalidatePath("/admin/appearance/media");
-}
+export const uploadMediaAction = adminAction(
+  mediaUploadSchema,
+  async ({ input, admin }) => {
+    const media = await uploadMedia(admin.id, input.file, input.name, input.usage);
+    revalidatePath(MEDIA_PATH);
+    return { id: media.id };
+  },
+  { name: "media.upload", permission: "assets.write" },
+);
 
-export async function setMediaUsageAction(formData: FormData) {
-  const admin = await requirePermission("assets.write");
-  await setMediaUsage(admin.id, String(formData.get("id") ?? ""), readUsage(formData));
-  revalidatePath("/admin/appearance/media");
-}
+export const setMediaUsageAction = adminAction(
+  mediaUsageSchema,
+  async ({ input, admin }) => {
+    await setMediaUsage(admin.id, input.id, input.usage);
+    revalidatePath(MEDIA_PATH);
+  },
+  { name: "media.setUsage", permission: "assets.write" },
+);
 
-export async function archiveMediaAction(formData: FormData) {
-  const admin = await requirePermission("assets.write");
-  await archiveMedia(admin.id, String(formData.get("id") ?? ""));
-  revalidatePath("/admin/appearance/media");
-}
+export const archiveMediaAction = adminAction(
+  mediaIdSchema,
+  async ({ input, admin }) => {
+    await archiveMedia(admin.id, input.id);
+    revalidatePath(MEDIA_PATH);
+  },
+  { name: "media.archive", permission: "assets.write" },
+);

@@ -64,6 +64,13 @@ export function useAction<TInput, TData>(
               collection_has_references: t("hasReferences"),
               published_asset_config_locked: t("configLocked"),
               slot_taken_in_collection: t("slotTaken"),
+              // media library
+              media_type_not_allowed: t("mediaTypeNotAllowed"),
+              media_too_large: t("mediaTooLarge"),
+              media_storage_not_configured: t("mediaStorageNotConfigured"),
+              media_usage_invalid: t("mediaUsageInvalid"),
+              media_file_required: t("mediaFileRequired"),
+              media_not_found: t("mediaNotFound"),
               // access control (RBAC)
               last_super_admin: t("lastSuperAdmin"),
               role_archived: t("roleArchived"),
