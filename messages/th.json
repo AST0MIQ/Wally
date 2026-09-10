@@ -869,7 +869,7 @@
     "reservedRoleKey": "คีย์นี้ถูกสงวนไว้สำหรับบทบาทระบบ",
     "roleHasReferences": "บทบาทนี้เคยถูกกำหนดมาก่อน จึงทำได้เพียงเก็บถาวร ลบไม่ได้",
     "mediaTypeNotAllowed": "ชนิดไฟล์ไม่รองรับ ใช้ PNG, JPG, WebP หรือ GIF เท่านั้น",
-    "mediaTooLarge": "ไฟล์ใหญ่เกิน 8 MB กรุณาย่อขนาดก่อน",
+    "mediaTooLarge": "ไฟล์ใหญ่เกิน 4 MB กรุณาย่อขนาดก่อน",
     "mediaStorageNotConfigured": "ระบบยังไม่ได้ตั้งค่าที่เก็บไฟล์ (BLOB_READ_WRITE_TOKEN) บนสภาพแวดล้อมนี้",
     "mediaUsageInvalid": "กรุณาเลือกส่วนที่จะนำรูปไปใช้",
     "mediaFileRequired": "กรุณาเลือกไฟล์รูป",

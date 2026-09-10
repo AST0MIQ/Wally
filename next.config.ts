@@ -55,6 +55,15 @@ const nextConfig: NextConfig = {
   distDir: process.env.WALLY_QA_DIST || ".next",
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    // Cosmetic artwork is uploaded through a Server Action, and Next caps a
+    // Server Action body at 1 MB by default — a limit the framework enforces
+    // before our handler runs, so an oversized file surfaces as an opaque
+    // server error rather than a message we can catch. Raise it to match
+    // MAX_BYTES in media.service.ts; 4 MB is the ceiling here because a
+    // Vercel serverless request body may not exceed 4.5 MB.
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

@@ -4,10 +4,15 @@ import { auditInTx } from "@/server/lib/audit";
 import { conflict, notFound } from "@/server/lib/errors";
 import { imageSize } from "@/server/lib/image-size";
 import { serializableTx } from "@/server/lib/tx";
-import { isMediaUsage, type MediaUsage } from "@/lib/cosmetics/media-usage";
+import {
+  MEDIA_ACCEPTED_TYPES,
+  MEDIA_MAX_BYTES,
+  isMediaUsage,
+  type MediaUsage,
+} from "@/lib/cosmetics/media-usage";
 
-const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
-const MAX_BYTES = 8 * 1024 * 1024;
+const ALLOWED: ReadonlySet<string> = new Set(MEDIA_ACCEPTED_TYPES);
+
 
 export function listMedia(opts: { activeOnly?: boolean; usage?: MediaUsage } = {}) {
   return prisma.cosmeticMedia.findMany({
@@ -35,7 +40,7 @@ export async function uploadMedia(
   usage: MediaUsage = "APP_BACKGROUND",
 ) {
   if (!ALLOWED.has(file.type)) conflict("media_type_not_allowed");
-  if (file.size <= 0 || file.size > MAX_BYTES) conflict("media_too_large");
+  if (file.size <= 0 || file.size > MEDIA_MAX_BYTES) conflict("media_too_large");
   if (!isMediaUsage(usage)) conflict("media_usage_invalid");
   if (!process.env.BLOB_READ_WRITE_TOKEN) conflict("media_storage_not_configured");
 

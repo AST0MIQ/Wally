@@ -9,6 +9,7 @@ import { MediaUploadForm } from "@/components/admin/media-upload-form";
 import { MediaUrlField } from "@/components/admin/media-url-field";
 import { MediaCardActions } from "@/components/admin/media-card-actions";
 import {
+  MEDIA_MAX_MB,
   MEDIA_USAGES,
   MEDIA_USAGE_SPECS,
   aspectRatioLabel,
@@ -42,7 +43,7 @@ export default async function MediaPage({
 
       <Card className="p-4">
         <MediaUploadForm defaultUsage={filter ?? "APP_BACKGROUND"} />
-        <p className="mt-2 text-xs text-muted-foreground">รองรับ PNG, JPG, WebP และ GIF ขนาดไม่เกิน 8 MB</p>
+        <p className="mt-2 text-xs text-muted-foreground">รองรับ PNG, JPG, WebP และ GIF ขนาดไม่เกิน {MEDIA_MAX_MB} MB</p>
       </Card>
 
       <div className="flex flex-wrap gap-2">

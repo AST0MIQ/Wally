@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Field } from "@/components/ui/label";
 import {
+  MEDIA_ACCEPTED_TYPES,
+  MEDIA_MAX_BYTES,
+  MEDIA_MAX_MB,
   MEDIA_USAGES,
   MEDIA_USAGE_SPECS,
   aspectRatioLabel,
@@ -44,6 +47,7 @@ export function MediaUploadForm({ defaultUsage = "APP_BACKGROUND" }: { defaultUs
   const [file, setFile] = useState<File | null>(null);
   const [usage, setUsage] = useState<MediaUsage>(defaultUsage);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+  const [rejected, setRejected] = useState("");
   const spec = MEDIA_USAGE_SPECS[usage];
   const warnings = size ? mediaSizeWarnings(usage, size.width, size.height) : [];
   const upload = useAction(uploadMediaAction);
@@ -52,6 +56,22 @@ export function MediaUploadForm({ defaultUsage = "APP_BACKGROUND" }: { defaultUs
 
   const acceptFile = async (picked?: File) => {
     if (!picked) return;
+    // Checked here as well as on the server: a body over the Server Action
+    // limit is refused by the framework before our handler runs, and that
+    // failure has no message we could turn into something readable.
+    if (!(MEDIA_ACCEPTED_TYPES as readonly string[]).includes(picked.type)) {
+      setFile(null);
+      setSize(null);
+      setRejected(`ไฟล์ "${picked.name}" เป็นชนิด ${picked.type || "ที่ไม่รู้จัก"} — รองรับเฉพาะ PNG, JPG, WebP และ GIF`);
+      return;
+    }
+    if (picked.size > MEDIA_MAX_BYTES) {
+      setFile(null);
+      setSize(null);
+      setRejected(`ไฟล์ "${picked.name}" ขนาด ${(picked.size / 1024 / 1024).toFixed(1)} MB เกิน ${MEDIA_MAX_MB} MB ที่รองรับ กรุณาย่อขนาดก่อน`);
+      return;
+    }
+    setRejected("");
     setFile(picked);
     setSize(await measure(picked));
   };
@@ -98,9 +118,16 @@ export function MediaUploadForm({ defaultUsage = "APP_BACKGROUND" }: { defaultUs
     >
       <ImagePlus className="size-6 text-primary" />
       <span className="text-sm font-medium">ลากรูปมาวาง หรือแตะเพื่อเลือก</span>
-      <span className="text-xs text-muted-foreground">{file?.name || "PNG, JPG, WebP หรือ GIF ไม่เกิน 8 MB"}</span>
+      <span className="text-xs text-muted-foreground">{file?.name || `PNG, JPG, WebP หรือ GIF ไม่เกิน ${MEDIA_MAX_MB} MB`}</span>
       <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={(event) => void acceptFile(event.target.files?.[0])} />
     </label>
+
+    {rejected && (
+      <p className="flex gap-2 rounded-xl border border-negative/40 bg-negative/10 p-3 text-xs text-negative">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+        <span>{rejected}</span>
+      </p>
+    )}
 
     {size && (
       warnings.length > 0 ? (

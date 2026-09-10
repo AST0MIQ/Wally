@@ -11,6 +11,22 @@
  * every surface here crops with `object-fit: cover` rather than failing.
  */
 
+/**
+ * Upload ceiling, shared by the client pre-check and the server guard. It is
+ * pinned to `serverActions.bodySizeLimit` in next.config.ts, which is itself
+ * bounded by Vercel's 4.5 MB serverless request body: a larger file is
+ * rejected by the platform before any of our code runs.
+ */
+export const MEDIA_MAX_BYTES = 4 * 1024 * 1024;
+export const MEDIA_MAX_MB = MEDIA_MAX_BYTES / 1024 / 1024;
+
+export const MEDIA_ACCEPTED_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+] as const;
+
 export const MEDIA_USAGES = [
   "APP_BACKGROUND",
   "AMBIENT_EFFECT",

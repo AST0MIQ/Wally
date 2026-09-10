@@ -869,7 +869,7 @@
     "reservedRoleKey": "That key is reserved for a system role.",
     "roleHasReferences": "This role has been assigned before and can only be archived, not deleted.",
     "mediaTypeNotAllowed": "Unsupported file type — use PNG, JPG, WebP or GIF",
-    "mediaTooLarge": "File is larger than 8 MB — please shrink it first",
+    "mediaTooLarge": "File is larger than 4 MB — please shrink it first",
     "mediaStorageNotConfigured": "File storage is not configured (BLOB_READ_WRITE_TOKEN) on this environment",
     "mediaUsageInvalid": "Choose which surface this image is for",
     "mediaFileRequired": "Choose an image file",
