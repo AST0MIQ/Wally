@@ -111,7 +111,7 @@ export function CosmeticPreview({
       >
         <div
           aria-hidden
-          className={cn("absolute inset-0", fx)}
+          className={cn("ck-bg-layer ck-bg-layer-preview", fx)}
           style={{ backgroundColor: "var(--ck-bg, transparent)" }}
         >
           {media && (

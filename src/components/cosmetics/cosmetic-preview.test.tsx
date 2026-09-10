@@ -89,4 +89,18 @@ describe("[2] CosmeticPreview parity with production gate", () => {
       expect(bad).not.toContain("evil");
     }
   });
+
+  it("keeps an app background media layer inside the preview frame", () => {
+    const html = render({
+      slot: "APP_BACKGROUND",
+      config: {
+        mediaUrl: "https://wally.public.blob.vercel-storage.com/cosmetics/background.webp",
+      },
+      ctx: light,
+    });
+
+    expect(html).toContain("ck-bg-layer-preview");
+    expect(html).toContain("ck-bg-media");
+    expect(html).toContain("background.webp");
+  });
 });

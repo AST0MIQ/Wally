@@ -223,7 +223,7 @@ export function AssetForm({
         <p className="mb-2 text-xs font-medium text-muted-foreground">
           {ts("livePreview")}
         </p>
-        <CosmeticPreview slot={slot} config={config} />
+        <CosmeticPreview slot={slot} config={config} previewUrl={previewUrl} />
       </div>
     </div>
   );

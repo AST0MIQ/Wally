@@ -38,6 +38,9 @@
   overflow: hidden;
   background-color: var(--ck-bg, transparent);
 }
+.ck-bg-layer-preview {
+  position: absolute;
+}
 .ck-bg-media {
   position: absolute;
   inset: 0;
