@@ -873,7 +873,8 @@
     "mediaStorageNotConfigured": "ระบบยังไม่ได้ตั้งค่าที่เก็บไฟล์ (BLOB_READ_WRITE_TOKEN) บนสภาพแวดล้อมนี้",
     "mediaUsageInvalid": "กรุณาเลือกส่วนที่จะนำรูปไปใช้",
     "mediaFileRequired": "กรุณาเลือกไฟล์รูป",
-    "mediaNotFound": "ไม่พบรูปนี้ในคลัง"
+    "mediaNotFound": "ไม่พบรูปนี้ในคลัง",
+    "errorRef": "รหัสอ้างอิง"
   },
   "categories": {
     "food": "อาหารและเครื่องดื่ม",

@@ -873,7 +873,8 @@
     "mediaStorageNotConfigured": "File storage is not configured (BLOB_READ_WRITE_TOKEN) on this environment",
     "mediaUsageInvalid": "Choose which surface this image is for",
     "mediaFileRequired": "Choose an image file",
-    "mediaNotFound": "That image is no longer in the library"
+    "mediaNotFound": "That image is no longer in the library",
+    "errorRef": "Error reference"
   },
   "categories": {
     "food": "Food & Drinks",
