@@ -9,9 +9,17 @@
  *   DATABASE_URL=... DIRECT_URL=... npx tsx --tsconfig tsconfig.json scripts/seed-songkran-theme.ts
  *
  * Idempotent: media is keyed by URL and assets by slug, so re-running updates
- * in place rather than duplicating. It leaves the collection and its assets in
- * DRAFT — publishing is a deliberate admin action, and an asset's config
- * freezes the first time it is published.
+ * in place rather than duplicating.
+ *
+ * Flags:
+ *   --publish        also publish the 15 assets and then the collection.
+ *                    PUBLISHING FREEZES EACH ASSET'S CONFIG PERMANENTLY, which
+ *                    is why it is opt-in. Assets go first: the collection
+ *                    service refuses to publish a set holding an unpublished
+ *                    asset, and this script keeps that invariant.
+ *   --grant <email>  give that user an entitlement for all 15 assets, so the
+ *                    theme can actually be equipped. Published only means the
+ *                    item exists; ownership is separate.
  */
 process.loadEnvFile(".env");
 try {
@@ -207,7 +215,23 @@ const ASSETS: AssetSeed[] = [
   },
 ];
 
+function flag(name: string): boolean {
+  return process.argv.includes(`--${name}`);
+}
+
+function flagValue(name: string): string | undefined {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] : undefined;
+}
+
 async function main() {
+  // Say which database is about to be written to. `process.loadEnvFile` never
+  // overrides a variable already in the environment, so a DATABASE_URL passed
+  // on the command line wins over .env — but seeding the wrong environment is
+  // worth one line of confirmation.
+  const target = process.env.DATABASE_URL ?? "";
+  console.log(`target: ${target.replace(/\/\/[^@]*@/, "//***@").split("?")[0] || "(no DATABASE_URL)"}`);
+
   // Fail loudly before writing anything if a config would not survive the
   // validator the admin form and the renderer both run.
   for (const a of ASSETS) parseAssetConfig(2, a.config);
@@ -279,6 +303,55 @@ async function main() {
     });
   }
   console.log(`assets: ${ASSETS.length} linked to ${collection.slug}`);
+
+  if (flag("publish")) {
+    const slugs = ASSETS.map((a) => a.slug);
+    const now = new Date();
+    await prisma.cosmeticAsset.updateMany({
+      where: { slug: { in: slugs }, publishedAt: null },
+      data: { status: "PUBLISHED", publishedAt: now },
+    });
+    await prisma.cosmeticAsset.updateMany({
+      where: { slug: { in: slugs }, status: { not: "PUBLISHED" } },
+      data: { status: "PUBLISHED" },
+    });
+    // Mirrors setCollectionStatus: a set may not be published while it holds
+    // an unpublished asset.
+    const unpublished = await prisma.cosmeticAsset.count({
+      where: { slug: { in: slugs }, status: { not: "PUBLISHED" } },
+    });
+    if (unpublished > 0) throw new Error(`${unpublished} asset(s) still unpublished`);
+    await prisma.cosmeticCollection.update({
+      where: { id: collection.id },
+      data: { status: "PUBLISHED", publishedAt: collection.publishedAt ?? now },
+    });
+    console.log(`published: ${slugs.length} assets + the collection`);
+  } else {
+    console.log("left in DRAFT — pass --publish to publish (freezes configs)");
+  }
+
+  const email = flagValue("grant");
+  if (email) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error(`no user with email ${email}`);
+    const assets = await prisma.cosmeticAsset.findMany({
+      where: { slug: { in: ASSETS.map((a) => a.slug) } },
+      select: { id: true },
+    });
+    for (const a of assets) {
+      await prisma.userEntitlement.upsert({
+        where: { userId_assetId: { userId: user.id, assetId: a.id } },
+        update: { status: "ACTIVE", revokedAt: null },
+        create: {
+          userId: user.id,
+          assetId: a.id,
+          acquisitionType: "LIMITED_EVENT",
+          sourceCollectionId: collection.id,
+        },
+      });
+    }
+    console.log(`granted: ${assets.length} assets to ${email}`);
+  }
 }
 
 void main()
