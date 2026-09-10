@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { StatusActions } from "@/components/admin/status-actions";
 import { CollectionForm } from "@/components/admin/collection-form";
+import { listPickableMedia } from "@/server/services/cosmetics/media.service";
 import { CollectionAssetsPanel } from "@/components/admin/collection-assets-panel";
 import { DuplicateCollectionButton } from "@/components/admin/duplicate-collection-button";
 import { wasEverPublished } from "@/lib/cosmetics/lifecycle";
@@ -29,7 +30,7 @@ export default async function CollectionDetailPage({
   if (!collection) notFound();
 
   const frozen = wasEverPublished(collection);
-  const candidates = await listAssets({});
+  const [candidates, media] = await Promise.all([listAssets({}), listPickableMedia()]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,6 +63,7 @@ export default async function CollectionDetailPage({
       <Card className="p-5">
         <h2 className="mb-4 text-sm font-semibold">{t("editTitle")}</h2>
         <CollectionForm
+          media={media}
           collection={{
             id: collection.id,
             slug: collection.slug,

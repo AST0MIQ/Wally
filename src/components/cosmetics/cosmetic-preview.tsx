@@ -62,7 +62,7 @@ export function CosmeticPreview({
         src={thumb}
         alt=""
         aria-hidden
-        className="h-20 w-full object-cover"
+        className="aspect-video w-full object-cover"
       />
     </span>
   ) : null;

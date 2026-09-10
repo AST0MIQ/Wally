@@ -693,6 +693,15 @@ enum MediaStatus {
   ARCHIVED
 }
 
+/// Where an uploaded image is painted. Mirrors `MEDIA_USAGES` in
+/// `src/lib/cosmetics/media-usage.ts` (kept in sync by its test).
+enum MediaUsage {
+  APP_BACKGROUND
+  AMBIENT_EFFECT
+  ASSET_PREVIEW
+  COLLECTION_COVER
+}
+
 /// Public decorative media stored in Vercel Blob and referenced by cosmetics.
 model CosmeticMedia {
   id           String      @id @default(cuid())
@@ -704,12 +713,15 @@ model CosmeticMedia {
   width        Int?
   height       Int?
   status       MediaStatus @default(ACTIVE)
+  /// which surface this image is meant for; pickers only offer a matching usage
+  usage        MediaUsage  @default(APP_BACKGROUND)
   uploadedBy   User?       @relation("MediaUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedById String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   @@index([status, createdAt])
+  @@index([usage, status, createdAt])
 }
 
 enum ProductStatus {

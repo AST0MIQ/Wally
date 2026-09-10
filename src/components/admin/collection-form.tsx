@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Field } from "@/components/ui/label";
+import { MediaPicker, type PickableMedia } from "@/components/admin/media-picker";
 
 const RARITIES = ["COMMON", "RARE", "EPIC", "SPECIAL", "LIMITED"] as const;
 const RARITY_LABELS: Record<string, string> = { COMMON: "ทั่วไป", RARE: "หายาก", EPIC: "พิเศษ", SPECIAL: "รุ่นพิเศษ", LIMITED: "จำนวนจำกัด" };
@@ -30,7 +31,13 @@ type ExistingCollection = {
   availableTo?: Date | string | null;
 };
 
-export function CollectionForm({ collection }: { collection?: ExistingCollection }) {
+export function CollectionForm({
+  collection,
+  media = [],
+}: {
+  collection?: ExistingCollection;
+  media?: PickableMedia[];
+}) {
   const t = useTranslations("admin.collections");
   const tc = useTranslations("admin.common");
   const router = useRouter();
@@ -107,16 +114,25 @@ export function CollectionForm({ collection }: { collection?: ExistingCollection
             {RARITIES.map((r) => <option key={r} value={r}>{RARITY_LABELS[r]}</option>)}
           </Select>
         </Field>
-        <Field label={t("coverUrl")}>
-          <Input
-            value={coverUrl}
-            onChange={(e) => setCoverUrl(e.target.value)}
-            placeholder="/cosmetics/…"
-          />
-        </Field>
         <Field label="เริ่มให้รับได้"><Input type="datetime-local" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} /></Field>
         <Field label="หยุดให้รับ"><Input type="datetime-local" value={availableTo} onChange={(e) => setAvailableTo(e.target.value)} /></Field>
       </div>
+      <Field label={t("coverUrl")} hint="ภาพปกของชุดธีม เลือกจากคลังรูปหมวด “ปกชุดธีม”">
+        <div className="flex flex-col gap-2">
+          <MediaPicker
+            media={media}
+            usage="COLLECTION_COVER"
+            value={coverUrl}
+            onSelect={setCoverUrl}
+            onClear={() => setCoverUrl("")}
+          />
+          <Input
+            value={coverUrl}
+            onChange={(e) => setCoverUrl(e.target.value)}
+            placeholder="หรือใส่ลิงก์เอง เช่น /cosmetics/…"
+          />
+        </div>
+      </Field>
       <Field label={tc("description")}>
         <Textarea
           value={description}

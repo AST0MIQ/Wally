@@ -18,6 +18,8 @@ import { Select } from "@/components/ui/select";
 import { Field } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { AssetConfigFields } from "@/components/admin/asset-config-fields";
+import { MediaPicker, type PickableMedia } from "@/components/admin/media-picker";
+import { usageForSlot } from "@/lib/cosmetics/media-usage";
 import { CosmeticPreview } from "@/components/cosmetics/cosmetic-preview";
 
 const RARITIES = ["COMMON", "RARE", "EPIC", "SPECIAL", "LIMITED"] as const;
@@ -52,7 +54,7 @@ export function AssetForm({
 }: {
   asset?: ExistingAsset;
   configLocked?: boolean;
-  media?: { id: string; name: string; url: string }[];
+  media?: PickableMedia[];
 }) {
   const t = useTranslations("admin.assets");
   const tc = useTranslations("admin.common");
@@ -77,7 +79,7 @@ export function AssetForm({
   const create = useAction(createAssetAction);
   const update = useAction(updateAssetAction);
   const pending = create.pending || update.pending;
-  const supportsThemeImage = slotConfigFields(slot).includes("mediaUrl");
+  const themeImageUsage = slotConfigFields(slot).includes("mediaUrl") ? usageForSlot(slot) : null;
 
   const submit = async () => {
     if (editing) {
@@ -154,38 +156,36 @@ export function AssetForm({
               {ACQUISITIONS.map((a) => <option key={a} value={a}>{ACQUISITION_LABELS[a]}</option>)}
             </Select>
           </Field>
-          <Field label={t("preview")}>
+        </div>
+
+        <Field label={t("preview")} hint="รูปโฆษณาไอเทมที่ผู้ใช้เห็นบนการ์ดในร้านค้าและกระเป๋า">
+          <div className="flex flex-col gap-2">
+            <MediaPicker
+              media={media}
+              usage="ASSET_PREVIEW"
+              value={previewUrl}
+              onSelect={setPreviewUrl}
+              onClear={() => setPreviewUrl("")}
+            />
             <Input
               value={previewUrl}
               onChange={(e) => setPreviewUrl(e.target.value)}
-              placeholder="/cosmetics/…"
+              placeholder="หรือใส่ลิงก์เอง เช่น /cosmetics/…"
             />
-          </Field>
-        </div>
-        {!configLocked && supportsThemeImage && (
-          <Field label="รูปตกแต่งที่ใช้จริง" hint="ช่องนี้รองรับรูปภาพ เลือกแล้วจะเห็นผลในธีมและใช้เป็นรูปตัวอย่างด้วย">
-            {media.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {media.map((item) => {
-                  const selected = config.mediaUrl === item.url;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => { setPreviewUrl(item.url); setConfig((current) => ({ ...current, mediaUrl: item.url })); }}
-                      className={`overflow-hidden rounded-xl border text-left transition ${selected ? "border-primary ring-2 ring-primary/25" : "border-border hover:border-primary/50"}`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.url} alt="" className="aspect-video w-full object-cover" />
-                      <span className="block truncate px-2 py-1.5 text-xs">{item.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">ยังไม่มีรูปในคลัง กรุณาอัปโหลดที่เมนูคลังสื่อก่อน</p>
-            )}
-            {config.mediaUrl && <Button type="button" size="sm" variant="ghost" className="mt-2" onClick={() => { setPreviewUrl(""); setConfig((current) => ({ ...current, mediaUrl: undefined })); }}>ไม่ใช้รูป</Button>}
+          </div>
+        </Field>
+        {!configLocked && themeImageUsage && (
+          <Field label="รูปตกแต่งที่ใช้จริง" hint="รูปนี้จะถูกวาดในธีมจริง และใช้เป็นรูปตัวอย่างให้ด้วยถ้ายังไม่ได้เลือกไว้">
+            <MediaPicker
+              media={media}
+              usage={themeImageUsage}
+              value={config.mediaUrl}
+              onSelect={(url) => {
+                setPreviewUrl((current) => current || url);
+                setConfig((current) => ({ ...current, mediaUrl: url }));
+              }}
+              onClear={() => setConfig((current) => ({ ...current, mediaUrl: undefined }))}
+            />
           </Field>
         )}
         <Field label={tc("description")}>

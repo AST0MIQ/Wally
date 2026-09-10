@@ -15,7 +15,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { StatusActions } from "@/components/admin/status-actions";
 import { AssetForm } from "@/components/admin/asset-form";
 import { DuplicateAssetButton } from "@/components/admin/duplicate-asset-button";
-import { listMedia } from "@/server/services/cosmetics/media.service";
+import { listPickableMedia } from "@/server/services/cosmetics/media.service";
 
 export default async function AssetDetailPage({
   params,
@@ -28,7 +28,7 @@ export default async function AssetDetailPage({
 
   const [asset, media] = await Promise.all([
     getAsset(id).catch(() => null),
-    listMedia(true),
+    listPickableMedia(),
   ]);
   if (!asset) notFound();
 
@@ -81,7 +81,7 @@ export default async function AssetDetailPage({
         <h2 className="mb-4 text-sm font-semibold">{t("editTitle")}</h2>
         <AssetForm
           configLocked={configLocked}
-          media={media.map(({ id: mediaId, name, url }) => ({ id: mediaId, name, url }))}
+          media={media}
           asset={{
             id: asset.id,
             slug: asset.slug,
