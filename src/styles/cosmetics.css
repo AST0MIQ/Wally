@@ -248,6 +248,23 @@
     transparent 70%
   );
 }
+/* Artwork supplied by the asset stands in for the drawn decoration. */
+.ck-layer-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.ck-profile-frame.ck-has-media {
+  box-shadow: none;
+  inset: -12%;
+}
+.ck-profile-badge.ck-has-media {
+  background: none;
+  border: none;
+}
 .ck-profile-badge {
   position: absolute;
   right: -2px;

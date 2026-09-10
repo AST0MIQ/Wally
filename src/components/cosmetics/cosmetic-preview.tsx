@@ -100,10 +100,10 @@ export function CosmeticPreview({
 
   const vars = cosmeticVars(config) as React.CSSProperties;
   const fx = cosmeticClasses(config, { slot });
+  const media = cosmeticMediaUrl(config);
 
   let body: React.ReactNode;
   if (slot === "APP_BACKGROUND") {
-    const media = cosmeticMediaUrl(config);
     body = (
       <div
         style={vars}
@@ -138,9 +138,25 @@ export function CosmeticPreview({
           <span className="flex size-full items-center justify-center rounded-full bg-primary/15 text-base font-bold text-primary">
             A
           </span>
-          {slot === "PROFILE_FRAME" && <span aria-hidden className={cn("ck-profile-frame", fx)} />}
+          {/* Same layer shape as ProfileAvatarDecorations, so what the admin
+              sees here is what the avatar will actually render. */}
+          {slot === "PROFILE_FRAME" && (
+            <span aria-hidden className={cn("ck-profile-frame", media && "ck-has-media", fx)}>
+              {media && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={media} alt="" aria-hidden className="ck-layer-media" />
+              )}
+            </span>
+          )}
           {slot === "PROFILE_AURA" && <span aria-hidden className={cn("ck-profile-aura", fx)} />}
-          {slot === "PROFILE_BADGE" && <span aria-hidden className={cn("ck-profile-badge", fx)} />}
+          {slot === "PROFILE_BADGE" && (
+            <span aria-hidden className={cn("ck-profile-badge", media && "ck-has-media", fx)}>
+              {media && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={media} alt="" aria-hidden className="ck-layer-media" />
+              )}
+            </span>
+          )}
         </div>
       </div>
     );

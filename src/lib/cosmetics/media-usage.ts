@@ -30,6 +30,8 @@ export const MEDIA_ACCEPTED_TYPES = [
 export const MEDIA_USAGES = [
   "APP_BACKGROUND",
   "AMBIENT_EFFECT",
+  "PROFILE_FRAME",
+  "PROFILE_BADGE",
   "ASSET_PREVIEW",
   "COLLECTION_COVER",
 ] as const;
@@ -65,6 +67,16 @@ const PORTRAIT = {
   minWidth: 720,
 } as const;
 
+/** Square, transparent, drawn over a round avatar. */
+const AVATAR = {
+  ratioLabel: "1:1 (จัตุรัส)",
+  recommendedSize: "512 × 512 px",
+  idealRatio: 1,
+  minRatio: 0.95,
+  maxRatio: 1.05,
+  minWidth: 256,
+} as const;
+
 const LANDSCAPE = {
   ratioLabel: "16:9 (แนวนอน)",
   recommendedSize: "1280 × 720 px",
@@ -86,6 +98,18 @@ export const MEDIA_USAGE_SPECS: Record<MediaUsage, MediaUsageSpec> = {
     label: "เอฟเฟกต์พื้นหลัง",
     where: "เลเยอร์เอฟเฟกต์ที่ซ้อนทับพื้นหลังอีกชั้น",
     note: "ควรเป็น PNG หรือ WebP พื้นหลังโปร่งใส ไม่อย่างนั้นจะบังพื้นหลังจนมิด",
+  },
+  PROFILE_FRAME: {
+    ...AVATAR,
+    label: "กรอบโปรไฟล์",
+    where: "วงกรอบที่วาดล้อมรูปโปรไฟล์จริง",
+    note: "ต้องเป็น PNG พื้นหลังโปร่งใส และตรงกลางต้องกลวง ไม่งั้นจะบังรูปโปรไฟล์",
+  },
+  PROFILE_BADGE: {
+    ...AVATAR,
+    label: "ป้ายโปรไฟล์",
+    where: "ป้ายเล็กมุมขวาล่างของรูปโปรไฟล์",
+    note: "PNG พื้นหลังโปร่งใส ตัวป้ายควรเต็มเฟรมเพราะถูกย่อเหลือ 44% ของรูปโปรไฟล์",
   },
   ASSET_PREVIEW: {
     ...LANDSCAPE,
@@ -114,9 +138,13 @@ export function mediaUsageSpec(usage: string): MediaUsageSpec {
  * slots the renderer paints without any image.
  */
 export function usageForSlot(slot: string): MediaUsage | null {
-  if (slot === "APP_BACKGROUND") return "APP_BACKGROUND";
-  if (slot === "AMBIENT_EFFECT") return "AMBIENT_EFFECT";
-  return null;
+  switch (slot) {
+    case "APP_BACKGROUND": return "APP_BACKGROUND";
+    case "AMBIENT_EFFECT": return "AMBIENT_EFFECT";
+    case "PROFILE_FRAME": return "PROFILE_FRAME";
+    case "PROFILE_BADGE": return "PROFILE_BADGE";
+    default: return null;
+  }
 }
 
 const COMMON_RATIOS: readonly (readonly [string, number])[] = [

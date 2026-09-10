@@ -95,9 +95,9 @@ export const SLOT_CONFIG_FIELDS: Record<RenderedSlot, readonly ConfigField[]> = 
   ACCOUNT_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
   INVESTMENT_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
   TRANSACTION_CARD: ["colors", "shape", "surface", "borderEffect", "texture", "motion", "intensity"],
-  PROFILE_FRAME: ["colors", "borderEffect", "motion", "intensity"],
+  PROFILE_FRAME: ["colors", "borderEffect", "motion", "intensity", "mediaUrl"],
   PROFILE_AURA: ["colors", "motion", "intensity"],
-  PROFILE_BADGE: ["colors", "shape"],
+  PROFILE_BADGE: ["colors", "shape", "mediaUrl"],
   CHART_STYLE: ["colors", "chartStyle", "intensity"],
   ICON_SET: ["colors", "iconStyle"],
   // Retained for stored v2 assets, but the renderer deliberately applies no

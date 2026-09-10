@@ -32,12 +32,16 @@ describe("media usages", () => {
     );
     const mapped = EQUIPMENT_SLOTS.filter((slot) => usageForSlot(slot) !== null);
     expect(mapped).toEqual(withMedia);
-    expect(usageForSlot("PROFILE_FRAME")).toBeNull();
+    // A slot the renderer paints from CSS alone must not offer a usage —
+    // filing an image under it would promise an effect nothing applies.
+    expect(usageForSlot("CHART_STYLE")).toBeNull();
+    expect(usageForSlot("NAVIGATION")).toBeNull();
   });
 
   it("rejects unknown usage strings", () => {
     expect(isMediaUsage("APP_BACKGROUND")).toBe(true);
-    expect(isMediaUsage("PROFILE_FRAME")).toBe(false);
+    expect(isMediaUsage("PROFILE_FRAME")).toBe(true);
+    expect(isMediaUsage("CHART_STYLE")).toBe(false);
     expect(isMediaUsage(null)).toBe(false);
   });
 });
