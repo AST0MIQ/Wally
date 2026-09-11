@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
 import { formatMoney } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
+import { exceedsAvailable } from "@/lib/amount-input";
 import type { AccountLite } from "@/server/services/account.service";
 import type { CategoryNode } from "@/server/services/category.service";
 import type { FeedItem } from "@/server/services/transaction.service";
@@ -116,7 +117,7 @@ function TxnEdit({
   const overBalance =
     kind === "EXPENSE" &&
     Number(amount) > 0 &&
-    Number(amount) > editAvailable + 1e-6;
+    exceedsAvailable(Number(amount), editAvailable);
 
   async function save() {
     await update.run(
@@ -328,7 +329,7 @@ function TransferEdit({
       : 0);
   const overBalance =
     Number(fromAmount) > 0 &&
-    Number(fromAmount) + (Number(fee) || 0) > fromAvailable + 1e-6;
+    exceedsAvailable(Number(fromAmount) + (Number(fee) || 0), fromAvailable);
 
   async function save() {
     await update.run(

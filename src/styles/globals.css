@@ -264,18 +264,25 @@ body {
 }
 
 /* ── Bottom sheets and the on-screen keyboard ──────────────
-   vaul already lifts an open sheet clear of the keyboard, but it does not cap
-   the sheet's height while doing so — so a tall form (the trade sheet, say) is
-   pushed off the top of the screen and its first fields become unreachable.
+   iOS never resizes the layout viewport when the keyboard opens. It shrinks
+   the visual viewport (--keyboard-inset) and then scrolls it down to reveal
+   the focused field (--viewport-shift). A `position: fixed` sheet is laid out
+   against the layout viewport, so the shift alone drags it up off the screen.
 
-   Capping the height to what the keyboard leaves keeps the top on screen and
-   hands scrolling back to the sheet's own scroll area, which is where vaul
-   brings the focused field into view. `--keyboard-inset` comes from
-   src/hooks/use-keyboard-inset.ts and is 0px when no keyboard is showing.
+   vaul does this repositioning itself, but only from the first number — it
+   never reads `visualViewport.offsetTop` — so its sheet still lands too high
+   by the shift, with a matching gap between the sheet and the keyboard. We
+   turn its handling off (see drawer.tsx) and own all three properties here.
 
-   The max() floor is a guard: a keyboard taller than 57dvh would otherwise
-   drive the cap to zero and collapse the sheet entirely. */
+   Both values come from src/hooks/use-keyboard-inset.ts and are 0px whenever
+   no keyboard is showing, so the closed state is plain `bottom: 0`.
+
+   The max() floor on the height is a guard: a keyboard taller than 57dvh would
+   otherwise drive the cap to zero and collapse the sheet entirely. */
 .sheet-keyboard-safe {
+  /* The visual viewport can never scroll further than the keyboard is tall,
+     so this subtraction cannot go negative. */
+  bottom: calc(var(--keyboard-inset, 0px) - var(--viewport-shift, 0px));
   max-height: max(35dvh, calc(92dvh - var(--keyboard-inset, 0px)));
   /* The home indicator sits behind the keyboard while it is open, so its inset
      would only add dead space above the keys. */

@@ -5,7 +5,7 @@ import { AppError, notFound } from "@/server/lib/errors";
 import { assertAccountOwned } from "@/server/services/account.service";
 import { registerStreakActivity } from "@/server/services/streak.service";
 import { computeAccountBalances } from "@/server/lib/balance";
-import { money, toPlain } from "@/lib/money";
+import { exceedsBalance, money, toPlain } from "@/lib/money";
 import type {
   TransferCreateInput,
   TransferUpdateInput,
@@ -90,13 +90,13 @@ export async function createTransfer(
     const fee = money(input.fee ?? 0);
     const feeOnFrom = !input.feeAccountId || input.feeAccountId === from.id;
     const fromCharge = money(input.fromAmount).plus(feeOnFrom ? fee : 0);
-    if (fromCharge.gt(money(balances.get(from.id) ?? 0))) {
+    if (exceedsBalance(fromCharge, balances.get(from.id) ?? 0)) {
       throw new AppError("insufficient_balance", "BAD_REQUEST");
     }
     if (
       input.feeAccountId &&
       input.feeAccountId !== from.id &&
-      fee.gt(money(balances.get(input.feeAccountId) ?? 0))
+      exceedsBalance(fee, balances.get(input.feeAccountId) ?? 0)
     ) {
       throw new AppError("insufficient_balance", "BAD_REQUEST");
     }
@@ -201,7 +201,7 @@ export async function updateTransfer(
         .plus(existing.fromAmount)
         .plus(oldFeeOnFrom ? existing.fee : 0);
     }
-    if (nextCharge.gt(available)) {
+    if (exceedsBalance(nextCharge, available)) {
       throw new AppError("insufficient_balance", "BAD_REQUEST");
     }
   }
