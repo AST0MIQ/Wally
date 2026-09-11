@@ -10,6 +10,7 @@ import type { Locale } from "@/i18n/config";
 import { formatCurrency } from "@/lib/format";
 import { categoryLabel } from "@/lib/category-i18n";
 import { parseFxSlip, type ParsedFxSlip } from "@/lib/fx-slip";
+import { exceedsAvailable } from "@/lib/amount-input";
 import type { AccountLite } from "@/server/services/account.service";
 import type { CategoryNode } from "@/server/services/category.service";
 import { createTransactionAction } from "@/app/actions/transactions";
@@ -288,7 +289,7 @@ export function QuickAddSheet({
     mode !== "INCOME" &&
     !!(mode === "TRANSFER" ? fromAccountId : accountId) &&
     amountValue > 0 &&
-    sourceCharge > sourceBalance + 1e-6;
+    exceedsAvailable(sourceCharge, sourceBalance);
 
   const canSave =
     !overBalance &&

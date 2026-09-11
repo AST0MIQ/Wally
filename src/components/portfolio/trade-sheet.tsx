@@ -42,6 +42,7 @@ export function TradeSheet({
 }) {
   const t = useTranslations("portfolio");
   const tc = useTranslations("common");
+  const tt = useTranslations("transactions");
 
   const [type, setType] = useState<"HOLDING" | "BUY" | "SELL">(defaultType);
   const [symbol, setSymbol] = useState("");
@@ -359,7 +360,7 @@ export function TradeSheet({
             </Select>
           </Field>}
 
-          {!isHolding && <Field label={tc("none")}>
+          {!isHolding && <Field label={tt("note")}>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
