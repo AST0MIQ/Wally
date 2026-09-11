@@ -192,7 +192,22 @@ export function TradeSheet({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="mx-auto max-w-lg">
+      {/* Save lives in the sheet footer, outside the scroll area: with the
+          keyboard up the sheet is short, and a button at the end of a long
+          form would be several scrolls away from the field being typed in. */}
+      <DrawerContent
+        className="mx-auto max-w-lg"
+        footer={
+          <Button
+            size="lg"
+            className="w-full"
+            disabled={!canSave || create.pending}
+            onClick={save}
+          >
+            {create.pending ? tc("saving") : tc("save")}
+          </Button>
+        }
+      >
         <DrawerTitle className="mb-4 text-lg font-semibold">
           {isHolding ? t("addHolding") : t("addTrade")}
         </DrawerTitle>
@@ -352,14 +367,6 @@ export function TradeSheet({
             />
           </Field>}
 
-          <Button
-            size="lg"
-            className="mt-1 w-full"
-            disabled={!canSave || create.pending}
-            onClick={save}
-          >
-            {create.pending ? tc("saving") : tc("save")}
-          </Button>
         </div>
       </DrawerContent>
     </Drawer>
