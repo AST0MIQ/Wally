@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "@/lib/utils";
+import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 
 export const Drawer = DrawerPrimitive.Root;
 export const DrawerTrigger = DrawerPrimitive.Trigger;
@@ -16,13 +17,16 @@ export function DrawerContent({
   footer,
   ...props
 }: React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & { footer?: React.ReactNode }) {
+  useKeyboardInset();
   return (
     <DrawerPrimitive.Portal>
       <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45" />
       <DrawerPrimitive.Content
         className={cn(
-          "glass fixed inset-x-0 bottom-0 z-50 mt-8 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-glass",
-          "pb-[env(safe-area-inset-bottom)]",
+          "glass fixed inset-x-0 bottom-0 z-50 mt-8 flex flex-col rounded-t-2xl border-t border-glass",
+          // Height cap + bottom padding both depend on the keyboard, so they
+          // live together in one class — see globals.css.
+          "sheet-keyboard-safe",
           className,
         )}
         {...props}

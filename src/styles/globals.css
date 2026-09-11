@@ -275,6 +275,28 @@ body {
   }
 }
 
+/* ── Bottom sheets and the on-screen keyboard ──────────────
+   vaul already lifts an open sheet clear of the keyboard, but it does not cap
+   the sheet's height while doing so — so a tall form (the trade sheet, say) is
+   pushed off the top of the screen and its first fields become unreachable.
+
+   Capping the height to what the keyboard leaves keeps the top on screen and
+   hands scrolling back to the sheet's own scroll area, which is where vaul
+   brings the focused field into view. `--keyboard-inset` comes from
+   src/hooks/use-keyboard-inset.ts and is 0px when no keyboard is showing.
+
+   The max() floor is a guard: a keyboard taller than 57dvh would otherwise
+   drive the cap to zero and collapse the sheet entirely. */
+.sheet-keyboard-safe {
+  max-height: max(35dvh, calc(92dvh - var(--keyboard-inset, 0px)));
+  /* The home indicator sits behind the keyboard while it is open, so its inset
+     would only add dead space above the keys. */
+  padding-bottom: max(
+    0px,
+    calc(env(safe-area-inset-bottom, 0px) - var(--keyboard-inset, 0px))
+  );
+}
+
 ::selection {
   background-color: color-mix(in oklab, var(--color-primary) 25%, transparent);
 }
