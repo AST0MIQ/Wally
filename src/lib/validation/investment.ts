@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  zAmount,
+  zUnitPrice,
   zAmountNonNegative,
   zCurrency,
   zCuid,
@@ -48,7 +48,7 @@ export const investmentTxnCreateSchema = z.object({
   securityType: z.enum(SECURITY_TYPES).default("STOCK"),
   securityCurrency: zCurrency.default("USD"),
   quantity: zQuantity,
-  price: zAmount,
+  price: zUnitPrice,
   fee: zAmountNonNegative.default("0"),
   tradeDate: zDate.default(() => new Date()),
   settlementAccountId: zCuid.optional(),
@@ -62,7 +62,7 @@ export const investmentHoldingImportSchema = z.object({
     symbol: zShortText.min(1),
     securityCurrency: zCurrency.default("USD"),
     quantity: zQuantity,
-    price: zAmount,
+    price: zUnitPrice,
     idempotencyKey: zIdempotencyKey,
   })).min(1).max(50),
 });
@@ -71,7 +71,7 @@ export const investmentTxnUpdateSchema = z.object({
   id: zCuid,
   type: z.enum(["BUY", "SELL"]).optional(),
   quantity: zQuantity.optional(),
-  price: zAmount.optional(),
+  price: zUnitPrice.optional(),
   fee: zAmountNonNegative.optional(),
   tradeDate: zDate.optional(),
   settlementAccountId: zCuid.nullable().optional(),
@@ -82,7 +82,7 @@ export const investmentTxnIdSchema = z.object({ id: zCuid });
 
 export const manualPriceSchema = z.object({
   securityId: zCuid,
-  price: zAmount,
+  price: zUnitPrice,
   asOf: zDate.default(() => new Date()),
 });
 

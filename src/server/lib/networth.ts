@@ -3,7 +3,7 @@ import { computeAccountBalances } from "@/server/lib/balance";
 import { convert } from "@/server/lib/fx";
 import { getPricesAsOf } from "@/server/services/security.service";
 import { computeHolding, type InvTxnLike } from "@/server/lib/holdings";
-import { money, sum, toPlain, ZERO, type Decimal } from "@/lib/money";
+import { money, roundTo, sum, toPlain, ZERO, type Decimal } from "@/lib/money";
 
 export type NetWorthAccount = {
   id: string;
@@ -157,12 +157,15 @@ export async function computeNetWorth(
       costBase = costBase.plus(money(costConv.amount));
     }
 
+    // These are reported figures, not share maths — quantity * price carries
+    // far more precision than the two decimals every screen shows. Round once
+    // here so a stored snapshot and a live read agree digit for digit.
     portfolioResults.push({
       id: p.id,
       name: p.name,
-      marketValueBase: toPlain(mvBase),
-      costBase: toPlain(costBase),
-      unrealizedBase: toPlain(mvBase.minus(costBase)),
+      marketValueBase: toPlain(roundTo(mvBase)),
+      costBase: toPlain(roundTo(costBase)),
+      unrealizedBase: toPlain(roundTo(mvBase.minus(costBase))),
     });
   }
 
@@ -173,9 +176,9 @@ export async function computeNetWorth(
   return {
     baseCurrency: base,
     asOf: asOf.toISOString(),
-    totalCash: toPlain(totalCash),
-    totalInvestment: toPlain(totalInvestment),
-    netWorth: toPlain(totalCash.plus(totalInvestment)),
+    totalCash: toPlain(roundTo(totalCash)),
+    totalInvestment: toPlain(roundTo(totalInvestment)),
+    netWorth: toPlain(roundTo(totalCash.plus(totalInvestment))),
     approx,
     accounts,
     portfolios: portfolioResults,

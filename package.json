@@ -22,6 +22,7 @@
     "db:studio": "prisma studio",
     "fx:backfill": "tsx scripts/backfill-fx.ts",
     "networth:backfill": "tsx scripts/backfill-networth.ts",
+    "money:backfill": "tsx scripts/backfill-money-rounding.ts",
     "dev:user": "tsx scripts/dev-user.ts",
     "mock:finance": "tsx scripts/mock-finance.ts",
     "postinstall": "prisma generate",
