@@ -5,7 +5,20 @@ import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "@/lib/utils";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 
-export const Drawer = DrawerPrimitive.Root;
+/**
+ * vaul's own keyboard handling writes `bottom` and `height` as inline styles
+ * from `visualViewport.height` alone — it never reads `visualViewport.offsetTop`,
+ * so on iOS the sheet lands too high by exactly that offset. We turn it off and
+ * position the sheet from both numbers in CSS instead (see `sheet-keyboard-safe`
+ * in globals.css and src/hooks/use-keyboard-inset.ts). A caller can still opt
+ * back in by passing `repositionInputs`.
+ */
+export function Drawer({
+  repositionInputs = false,
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) {
+  return <DrawerPrimitive.Root repositionInputs={repositionInputs} {...props} />;
+}
 export const DrawerTrigger = DrawerPrimitive.Trigger;
 export const DrawerClose = DrawerPrimitive.Close;
 export const DrawerTitle = DrawerPrimitive.Title;
@@ -23,9 +36,9 @@ export function DrawerContent({
       <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45" />
       <DrawerPrimitive.Content
         className={cn(
-          "glass fixed inset-x-0 bottom-0 z-50 mt-8 flex flex-col rounded-t-2xl border-t border-glass",
-          // Height cap + bottom padding both depend on the keyboard, so they
-          // live together in one class — see globals.css.
+          "glass fixed inset-x-0 z-50 mt-8 flex flex-col rounded-t-2xl border-t border-glass",
+          // Owns `bottom`, `max-height` and the bottom padding, all three of
+          // which depend on the keyboard — see globals.css.
           "sheet-keyboard-safe",
           className,
         )}

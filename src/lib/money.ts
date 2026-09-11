@@ -30,6 +30,23 @@ export function roundTo(value: DecimalInput, fractionDigits = 2): Prisma.Decimal
   );
 }
 
+/**
+ * Does `charge` exceed `available` at the precision amounts are entered in?
+ *
+ * The numpad caps input at two decimals (see AMOUNT_DECIMALS) and balances are
+ * displayed rounded to two, while a stored balance can carry more — settling a
+ * stock trade leaves sub-cent change in the cash account. Comparing exactly
+ * therefore rejects "spend the whole balance" for a fraction of a cent the
+ * user was never shown and could not have typed.
+ */
+export function exceedsBalance(
+  charge: DecimalInput,
+  available: DecimalInput,
+  fractionDigits = 2,
+): boolean {
+  return roundTo(charge, fractionDigits).gt(roundTo(available, fractionDigits));
+}
+
 /** Serialize for the client boundary (Server Component -> Client Component props). */
 export function toPlain(value: DecimalInput): string {
   return money(value).toString();

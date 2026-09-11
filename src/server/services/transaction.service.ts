@@ -5,7 +5,7 @@ import { AppError, notFound } from "@/server/lib/errors";
 import { assertAccountOwned } from "@/server/services/account.service";
 import { registerStreakActivity } from "@/server/services/streak.service";
 import { computeAccountBalances } from "@/server/lib/balance";
-import { money, toPlain } from "@/lib/money";
+import { exceedsBalance, money, toPlain } from "@/lib/money";
 import type {
   TransactionCreateInput,
   TransactionListInput,
@@ -153,7 +153,7 @@ export async function createTransaction(
   if (input.kind === "EXPENSE") {
     const balances = await computeAccountBalances(userId);
     const available = money(balances.get(account.id) ?? 0);
-    if (money(input.amount).gt(available)) {
+    if (exceedsBalance(input.amount, available)) {
       throw new AppError("insufficient_balance", "BAD_REQUEST");
     }
   }
@@ -210,7 +210,7 @@ export async function updateTransaction(
           ? available.plus(existing.amount)
           : available.minus(existing.amount);
     }
-    if (money(nextAmount).gt(available)) {
+    if (exceedsBalance(nextAmount, available)) {
       throw new AppError("insufficient_balance", "BAD_REQUEST");
     }
   }
