@@ -14,7 +14,7 @@ import {
   quantityAsOf,
   type InvTxnLike,
 } from "@/server/lib/holdings";
-import { money, sum, toPlain, ZERO } from "@/lib/money";
+import { money, roundTo, sum, toPlain, ZERO } from "@/lib/money";
 import type {
   InvestmentTxnCreateInput,
   PortfolioCreateInput,
@@ -409,8 +409,15 @@ export async function createInvestmentTransaction(
 
   const gross = money(input.quantity).mul(money(input.price));
   const fee = money(input.fee ?? "0");
-  const amount =
-    input.type === "BUY" ? gross.plus(fee) : gross.minus(fee);
+  // `amount` is the cash that moves in or out of the settlement account, and
+  // it is the only thing that column feeds — the holdings engine recomputes
+  // cost basis from quantity and price directly. So round it to the currency's
+  // minor unit: 2.831873 shares at 328.63 is 930.63744, and letting that reach
+  // a cash balance leaves sub-cent dust the UI can neither show nor let anyone
+  // spend, since every amount field is capped at two decimals.
+  const amount = roundTo(
+    input.type === "BUY" ? gross.plus(fee) : gross.minus(fee),
+  );
 
   const txn = await prisma.investmentTransaction.create({
     data: {
@@ -471,7 +478,8 @@ export async function updateInvestmentTransaction(
   const price = money(input.price ?? existing.price);
   const fee = money(input.fee ?? existing.fee);
   const gross = quantity.mul(price);
-  const amount = type === "BUY" ? gross.plus(fee) : gross.minus(fee);
+  // Same rounding as on create — see the note there.
+  const amount = roundTo(type === "BUY" ? gross.plus(fee) : gross.minus(fee));
 
   await prisma.investmentTransaction.update({
     where: { id: existing.id },
